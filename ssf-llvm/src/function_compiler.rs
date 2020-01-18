@@ -1,7 +1,6 @@
 use super::error::CompileError;
 use super::expression_compiler::ExpressionCompiler;
 use super::type_compiler::TypeCompiler;
-use crate::ast;
 use std::collections::HashMap;
 
 pub struct FunctionCompiler<'a> {
@@ -28,7 +27,7 @@ impl<'a> FunctionCompiler<'a> {
 
     pub fn compile(
         &mut self,
-        function_definition: &ast::FunctionDefinition,
+        function_definition: &ssf::ast::FunctionDefinition,
     ) -> Result<llvm::Value, CompileError> {
         let closure_type = self.type_compiler.compile_closure(function_definition);
 

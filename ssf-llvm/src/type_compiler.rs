@@ -1,6 +1,3 @@
-use crate::ast;
-use crate::types::{self, Type};
-
 pub struct TypeCompiler<'a> {
     context: &'a llvm::Context,
     module: &'a llvm::Module,
@@ -16,22 +13,25 @@ impl<'a> TypeCompiler<'a> {
         }
     }
 
-    fn compile(&self, type_: &Type) -> llvm::Type {
+    fn compile(&self, type_: &ssf::types::Type) -> llvm::Type {
         match type_ {
-            Type::Function(function) => self
+            ssf::types::Type::Function(function) => self
                 .context
                 .pointer_type(self.compile_unsized_closure(function)),
-            Type::Value(value) => self.compile_value(value),
+            ssf::types::Type::Value(value) => self.compile_value(value),
         }
     }
 
-    pub fn compile_value(&self, value: &types::Value) -> llvm::Type {
+    pub fn compile_value(&self, value: &ssf::types::Value) -> llvm::Type {
         match value {
-            types::Value::Number => self.context.double_type(),
+            ssf::types::Value::Number => self.context.double_type(),
         }
     }
 
-    pub fn compile_closure(&self, function_definition: &ast::FunctionDefinition) -> llvm::Type {
+    pub fn compile_closure(
+        &self,
+        function_definition: &ssf::ast::FunctionDefinition,
+    ) -> llvm::Type {
         let other =
             self.push_struct_type(self.compile_unsized_closure(function_definition.type_()));
 
@@ -42,7 +42,7 @@ impl<'a> TypeCompiler<'a> {
         ])
     }
 
-    pub fn compile_unsized_closure(&self, function: &types::Function) -> llvm::Type {
+    pub fn compile_unsized_closure(&self, function: &ssf::types::Function) -> llvm::Type {
         let id = function.to_id();
 
         if let Some(type_) = self.module.get_type_by_name(&id) {
@@ -62,7 +62,7 @@ impl<'a> TypeCompiler<'a> {
         type_
     }
 
-    fn compile_environment(&self, free_variables: &[ast::Argument]) -> llvm::Type {
+    fn compile_environment(&self, free_variables: &[ssf::ast::Argument]) -> llvm::Type {
         self.context.struct_type(
             &free_variables
                 .iter()
@@ -75,7 +75,7 @@ impl<'a> TypeCompiler<'a> {
         self.context.struct_type(&[])
     }
 
-    fn compile_entry_function(&self, function: &types::Function) -> llvm::Type {
+    fn compile_entry_function(&self, function: &ssf::types::Function) -> llvm::Type {
         let mut arguments = vec![self
             .context
             .pointer_type(self.compile_unsized_environment())];
@@ -109,14 +109,18 @@ mod tests {
     fn compile_number() {
         let context = llvm::Context::new();
         TypeCompiler::new(&context, &context.create_module(""))
-            .compile(&types::Value::Number.into());
+            .compile(&ssf::types::Value::Number.into());
     }
 
     #[test]
     fn compile_function() {
         let context = llvm::Context::new();
         TypeCompiler::new(&context, &context.create_module("")).compile(
-            &types::Function::new(vec![types::Value::Number.into()], types::Value::Number).into(),
+            &ssf::types::Function::new(
+                vec![ssf::types::Value::Number.into()],
+                ssf::types::Value::Number,
+            )
+            .into(),
         );
     }
 
@@ -125,8 +129,11 @@ mod tests {
         let context = llvm::Context::new();
         let module = context.create_module("");
         let compiler = TypeCompiler::new(&context, &module);
-        let type_ =
-            types::Function::new(vec![types::Value::Number.into()], types::Value::Number).into();
+        let type_ = ssf::types::Function::new(
+            vec![ssf::types::Value::Number.into()],
+            ssf::types::Value::Number,
+        )
+        .into();
 
         compiler.compile(&type_);
         compiler.compile(&type_);

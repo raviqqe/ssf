@@ -1,2 +1,6 @@
 [workspace]
-members = ["llvm", "ssf"]
+members = [
+  "llvm",
+  "ssf",
+  "ssf-llvm",
+]

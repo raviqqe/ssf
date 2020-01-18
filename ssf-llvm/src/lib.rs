@@ -7,8 +7,6 @@ mod module;
 mod module_compiler;
 mod type_compiler;
 
-use super::verify::verify;
-use crate::ast;
 pub use error::CompileError;
 pub use initializer_configuration::InitializerConfiguration;
 pub use module::Module;
@@ -16,10 +14,10 @@ use module_compiler::ModuleCompiler;
 use type_compiler::TypeCompiler;
 
 pub fn compile(
-    ast_module: &ast::Module,
+    ast_module: &ssf::ast::Module,
     initializer_configuration: &InitializerConfiguration,
 ) -> Result<Module, CompileError> {
-    verify(ast_module)?;
+    ssf::verify(ast_module)?;
 
     let context = llvm::Context::new();
     let module = context.create_module("main");

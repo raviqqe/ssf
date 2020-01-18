@@ -1,4 +1,3 @@
-use super::super::verify::VerificationError;
 use petgraph::algo::Cycle;
 use std::error::Error;
 use std::fmt::Display;
@@ -19,8 +18,8 @@ impl Display for CompileError {
 
 impl Error for CompileError {}
 
-impl From<VerificationError> for CompileError {
-    fn from(_: VerificationError) -> Self {
+impl From<ssf::VerificationError> for CompileError {
+    fn from(_: ssf::VerificationError) -> Self {
         CompileError::Verification
     }
 }

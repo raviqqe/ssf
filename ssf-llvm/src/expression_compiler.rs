@@ -1,7 +1,6 @@
 use super::error::CompileError;
 use super::function_compiler::FunctionCompiler;
 use super::type_compiler::TypeCompiler;
-use crate::ast;
 use std::collections::HashMap;
 
 pub struct ExpressionCompiler<'a, 'b> {
@@ -28,11 +27,11 @@ impl<'a, 'b> ExpressionCompiler<'a, 'b> {
 
     pub fn compile(
         &mut self,
-        expression: &ast::Expression,
+        expression: &ssf::ast::Expression,
         variables: &HashMap<String, llvm::Value>,
     ) -> Result<llvm::Value, CompileError> {
         match expression {
-            ast::Expression::Application(application) => {
+            ssf::ast::Expression::Application(application) => {
                 let closure = self.compile_variable(application.function(), variables)?;
 
                 let mut arguments = vec![self.builder.build_gep(
@@ -58,7 +57,7 @@ impl<'a, 'b> ExpressionCompiler<'a, 'b> {
                     &arguments,
                 ))
             }
-            ast::Expression::LetFunctions(let_functions) => {
+            ssf::ast::Expression::LetFunctions(let_functions) => {
                 let mut variables = variables.clone();
                 let mut closures = HashMap::<&str, llvm::Value>::new();
 
@@ -122,7 +121,7 @@ impl<'a, 'b> ExpressionCompiler<'a, 'b> {
 
                 self.compile(let_functions.expression(), &variables)
             }
-            ast::Expression::LetValues(let_values) => {
+            ssf::ast::Expression::LetValues(let_values) => {
                 let mut variables = variables.clone();
 
                 for definition in let_values.definitions() {
@@ -134,27 +133,27 @@ impl<'a, 'b> ExpressionCompiler<'a, 'b> {
 
                 self.compile(let_values.expression(), &variables)
             }
-            ast::Expression::Number(number) => {
+            ssf::ast::Expression::Number(number) => {
                 Ok(llvm::const_real(self.context.double_type(), *number))
             }
-            ast::Expression::Operation(operation) => {
+            ssf::ast::Expression::Operation(operation) => {
                 let lhs = self.compile(operation.lhs(), variables)?;
                 let rhs = self.compile(operation.rhs(), variables)?;
 
                 Ok(match operation.operator() {
-                    ast::Operator::Add => self.builder.build_fadd(lhs, rhs),
-                    ast::Operator::Subtract => self.builder.build_fsub(lhs, rhs),
-                    ast::Operator::Multiply => self.builder.build_fmul(lhs, rhs),
-                    ast::Operator::Divide => self.builder.build_fdiv(lhs, rhs),
+                    ssf::ast::Operator::Add => self.builder.build_fadd(lhs, rhs),
+                    ssf::ast::Operator::Subtract => self.builder.build_fsub(lhs, rhs),
+                    ssf::ast::Operator::Multiply => self.builder.build_fmul(lhs, rhs),
+                    ssf::ast::Operator::Divide => self.builder.build_fdiv(lhs, rhs),
                 })
             }
-            ast::Expression::Variable(variable) => self.compile_variable(variable, variables),
+            ssf::ast::Expression::Variable(variable) => self.compile_variable(variable, variables),
         }
     }
 
     fn compile_variable(
         &self,
-        variable: &ast::Variable,
+        variable: &ssf::ast::Variable,
         variables: &HashMap<String, llvm::Value>,
     ) -> Result<llvm::Value, CompileError> {
         match variables.get(variable.name()) {

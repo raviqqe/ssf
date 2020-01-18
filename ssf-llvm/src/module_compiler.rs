@@ -1,17 +1,15 @@
-use super::super::ast;
 use super::error::CompileError;
 use super::expression_compiler::ExpressionCompiler;
 use super::function_compiler::FunctionCompiler;
 use super::initializer_configuration::InitializerConfiguration;
 use super::initializer_sorter::InitializerSorter;
 use super::type_compiler::TypeCompiler;
-use crate::types::{self, Type};
 use std::collections::HashMap;
 
 pub struct ModuleCompiler<'a> {
     context: &'a llvm::Context,
     module: &'a llvm::Module,
-    ast_module: &'a ast::Module,
+    ast_module: &'a ssf::ast::Module,
     type_compiler: &'a TypeCompiler<'a>,
     global_variables: HashMap<String, llvm::Value>,
     initializers: HashMap<String, llvm::Value>,
@@ -22,7 +20,7 @@ impl<'a> ModuleCompiler<'a> {
     pub fn new(
         context: &'a llvm::Context,
         module: &'a llvm::Module,
-        ast_module: &'a ast::Module,
+        ast_module: &'a ssf::ast::Module,
         type_compiler: &'a TypeCompiler<'a>,
         initializer_configuration: &'a InitializerConfiguration,
     ) -> ModuleCompiler<'a> {
@@ -42,10 +40,10 @@ impl<'a> ModuleCompiler<'a> {
 
         for declaration in self.ast_module.declarations() {
             match declaration.type_() {
-                Type::Function(function_type) => {
+                ssf::types::Type::Function(function_type) => {
                     self.declare_function(declaration.name(), function_type)
                 }
-                Type::Value(value_type) => {
+                ssf::types::Type::Value(value_type) => {
                     self.declare_global_variable(declaration.name(), value_type)
                 }
             }
@@ -53,10 +51,10 @@ impl<'a> ModuleCompiler<'a> {
 
         for definition in self.ast_module.definitions() {
             match definition {
-                ast::Definition::FunctionDefinition(function_definition) => {
+                ssf::ast::Definition::FunctionDefinition(function_definition) => {
                     self.declare_function(function_definition.name(), function_definition.type_())
                 }
-                ast::Definition::ValueDefinition(value_definition) => {
+                ssf::ast::Definition::ValueDefinition(value_definition) => {
                     self.declare_global_variable(value_definition.name(), value_definition.type_())
                 }
             }
@@ -64,10 +62,10 @@ impl<'a> ModuleCompiler<'a> {
 
         for definition in self.ast_module.definitions() {
             match definition {
-                ast::Definition::FunctionDefinition(function_definition) => {
+                ssf::ast::Definition::FunctionDefinition(function_definition) => {
                     self.compile_function(function_definition)?
                 }
-                ast::Definition::ValueDefinition(value_definition) => {
+                ssf::ast::Definition::ValueDefinition(value_definition) => {
                     self.compile_global_variable(value_definition)?
                 }
             }
@@ -80,7 +78,7 @@ impl<'a> ModuleCompiler<'a> {
         Ok(())
     }
 
-    fn declare_function(&mut self, name: &str, type_: &types::Function) {
+    fn declare_function(&mut self, name: &str, type_: &ssf::types::Function) {
         self.global_variables.insert(
             name.into(),
             self.module
@@ -90,7 +88,7 @@ impl<'a> ModuleCompiler<'a> {
 
     fn compile_function(
         &mut self,
-        function_definition: &ast::FunctionDefinition,
+        function_definition: &ssf::ast::FunctionDefinition,
     ) -> Result<(), CompileError> {
         let global_variable = self.global_variables[function_definition.name()];
 
@@ -111,7 +109,7 @@ impl<'a> ModuleCompiler<'a> {
         Ok(())
     }
 
-    fn declare_global_variable(&mut self, name: &str, value_type: &types::Value) {
+    fn declare_global_variable(&mut self, name: &str, value_type: &ssf::types::Value) {
         self.global_variables.insert(
             name.into(),
             self.module
@@ -121,7 +119,7 @@ impl<'a> ModuleCompiler<'a> {
 
     fn compile_global_variable(
         &mut self,
-        value_definition: &ast::ValueDefinition,
+        value_definition: &ssf::ast::ValueDefinition,
     ) -> Result<(), CompileError> {
         let global_variable = self.global_variables[value_definition.name()];
         global_variable.set_initializer(llvm::get_undef(global_variable.type_().element()));
