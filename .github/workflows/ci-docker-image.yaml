@@ -1,7 +1,6 @@
 name: ci-docker-image
 on:
-  schedule:
-    - cron: "0 0 * * *"
+  - push
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -9,7 +8,7 @@ jobs:
       - uses: actions/checkout@master
       - uses: elgohr/Publish-Docker-Github-Action@master
         with:
-          name: ssf/ci
+          name: raviqqe/ssf-ci
           dockerfile: etc/ci/Dockerfile
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
