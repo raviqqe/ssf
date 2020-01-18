@@ -6,6 +6,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: raviqqe/ssf-ci
+    env:
+      HOME: /root
     steps:
       - uses: actions/checkout@master
       - run: npx cspell '**/*.{md,rs}'
