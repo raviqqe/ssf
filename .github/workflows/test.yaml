@@ -1,0 +1,16 @@
+name: test
+on:
+  - push
+jobs:
+  spell-check:
+    runs-on: ubuntu-latest
+    container:
+      image: raviqqe/ssf-ci
+    steps:
+      - uses: actions/checkout@master
+      - run: npx cspell '**/*.{md,rs}'
+      - run: cargo build
+      - run: cargo fmt -- --check
+      - run: cargo clippy -- -D warnings
+      - run: cargo audit
+      - run: cargo test --lib
