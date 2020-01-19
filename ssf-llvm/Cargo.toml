@@ -1,0 +1,10 @@
+[package]
+name = "ssf-llvm"
+version = "0.1.0"
+authors = ["Yota Toyama <raviqqe@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "llvm8-0" }
+petgraph = "0.5"
+ssf = { path = "../ssf" }

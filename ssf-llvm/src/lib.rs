@@ -3,35 +3,28 @@ mod expression_compiler;
 mod function_compiler;
 mod initializer_configuration;
 mod initializer_sorter;
-mod module;
 mod module_compiler;
 mod type_compiler;
 
-use super::verify::verify;
-use crate::ast;
 pub use error::CompileError;
 pub use initializer_configuration::InitializerConfiguration;
-pub use module::Module;
 use module_compiler::ModuleCompiler;
 use type_compiler::TypeCompiler;
 
 pub fn compile(
-    ast_module: &ast::Module,
+    ast_module: &ssf::ast::Module,
     initializer_configuration: &InitializerConfiguration,
-) -> Result<Module, CompileError> {
-    verify(ast_module)?;
+) -> Result<Vec<u8>, CompileError> {
+    ssf::verify(ast_module)?;
 
-    let context = llvm::Context::new();
+    let context = inkwell::context::Context::create();
     let module = context.create_module("main");
+    let type_compiler = TypeCompiler::new(&context, &module);
 
-    ModuleCompiler::new(
-        &context,
-        &module,
-        ast_module,
-        &TypeCompiler::new(&context, &module),
-        initializer_configuration,
-    )
-    .compile()?;
+    ModuleCompiler::new(&context, &module, &type_compiler, initializer_configuration)
+        .compile(ast_module)?;
 
-    Ok(Module::new(module))
+    let bitcode = module.write_bitcode_to_memory().as_slice().to_vec();
+
+    Ok(bitcode)
 }
