@@ -89,13 +89,6 @@ version = "0.2.66"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "llvm"
-version = "0.1.0"
-dependencies = [
- "llvm-sys 80.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "llvm-sys"
 version = "80.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

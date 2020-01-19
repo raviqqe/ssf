@@ -1,6 +1,5 @@
 [workspace]
 members = [
-  "llvm",
   "ssf",
   "ssf-llvm",
 ]
