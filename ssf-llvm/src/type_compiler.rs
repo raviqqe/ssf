@@ -1,84 +1,98 @@
-pub struct TypeCompiler<'a> {
-    context: &'a llvm::Context,
-    module: &'a llvm::Module,
-    struct_types: Vec<llvm::Type>,
+pub struct TypeCompiler<'c, 'm> {
+    context: &'c inkwell::context::Context,
+    module: &'m inkwell::module::Module<'c>,
 }
 
-impl<'a> TypeCompiler<'a> {
-    pub fn new(context: &'a llvm::Context, module: &'a llvm::Module) -> Self {
-        Self {
-            context,
-            module,
-            struct_types: vec![],
-        }
+impl<'c, 'm> TypeCompiler<'c, 'm> {
+    pub fn new(
+        context: &'c inkwell::context::Context,
+        module: &'m inkwell::module::Module<'c>,
+    ) -> Self {
+        Self { context, module }
     }
 
-    fn compile(&self, type_: &ssf::types::Type) -> llvm::Type {
+    fn compile(&self, type_: &ssf::types::Type) -> inkwell::types::BasicTypeEnum {
         match type_ {
             ssf::types::Type::Function(function) => self
-                .context
-                .pointer_type(self.compile_unsized_closure(function)),
-            ssf::types::Type::Value(value) => self.compile_value(value),
+                .compile_unsized_closure(function)
+                .ptr_type(inkwell::AddressSpace::Generic)
+                .into(),
+            ssf::types::Type::Value(value) => self.compile_value(value).into(),
         }
     }
 
-    pub fn compile_value(&self, value: &ssf::types::Value) -> llvm::Type {
+    pub fn compile_value(&self, value: &ssf::types::Value) -> inkwell::types::FloatType<'c> {
         match value {
-            ssf::types::Value::Number => self.context.double_type(),
+            ssf::types::Value::Number => self.context.f64_type(),
         }
     }
 
     pub fn compile_closure(
         &self,
         function_definition: &ssf::ast::FunctionDefinition,
-    ) -> llvm::Type {
-        let other =
-            self.push_struct_type(self.compile_unsized_closure(function_definition.type_()));
-
-        self.context.struct_type(&[
-            self.context
-                .pointer_type(other.compile_entry_function(function_definition.type_())),
-            other.compile_environment(function_definition.environment()),
-        ])
+    ) -> inkwell::types::StructType<'c> {
+        self.context.struct_type(
+            &[
+                self.compile_entry_function(function_definition.type_())
+                    .ptr_type(inkwell::AddressSpace::Generic)
+                    .into(),
+                self.compile_environment(function_definition.environment())
+                    .into(),
+            ],
+            false,
+        )
     }
 
-    pub fn compile_unsized_closure(&self, function: &ssf::types::Function) -> llvm::Type {
+    pub fn compile_unsized_closure(
+        &self,
+        function: &ssf::types::Function,
+    ) -> inkwell::types::StructType<'c> {
         let id = function.to_id();
 
-        if let Some(type_) = self.module.get_type_by_name(&id) {
-            return type_;
+        if let Some(type_) = self.module.get_type(&id) {
+            return type_.into_struct_type();
         }
 
-        let type_ = self.context.named_struct_type(&id);
+        let type_ = self.context.opaque_struct_type(&id);
 
-        type_.struct_set_body(&[
-            self.context.pointer_type(
-                self.push_struct_type(type_)
-                    .compile_entry_function(function),
-            ),
-            self.compile_unsized_environment(),
-        ]);
+        type_.set_body(
+            &[
+                self.compile_entry_function(function)
+                    .ptr_type(inkwell::AddressSpace::Generic)
+                    .into(),
+                self.compile_unsized_environment().into(),
+            ],
+            false,
+        );
 
         type_
     }
 
-    fn compile_environment(&self, free_variables: &[ssf::ast::Argument]) -> llvm::Type {
+    fn compile_environment(
+        &self,
+        free_variables: &[ssf::ast::Argument],
+    ) -> inkwell::types::StructType {
         self.context.struct_type(
             &free_variables
                 .iter()
                 .map(|argument| self.compile(argument.type_()))
                 .collect::<Vec<_>>(),
+            false,
         )
     }
 
-    fn compile_unsized_environment(&self) -> llvm::Type {
-        self.context.struct_type(&[])
+    fn compile_unsized_environment(&self) -> inkwell::types::StructType<'c> {
+        self.context.struct_type(&[], false)
     }
 
-    fn compile_entry_function(&self, function: &ssf::types::Function) -> llvm::Type {
+    fn compile_entry_function(
+        &self,
+        function: &ssf::types::Function,
+    ) -> inkwell::types::FunctionType {
         let mut arguments = vec![self
-            .context
-            .pointer_type(self.compile_unsized_environment())];
+            .compile_unsized_environment()
+            .ptr_type(inkwell::AddressSpace::Generic)
+            .into()];
 
         arguments.extend_from_slice(
             &function
@@ -88,16 +102,8 @@ impl<'a> TypeCompiler<'a> {
                 .collect::<Vec<_>>(),
         );
 
-        self.context
-            .function_type(self.compile_value(function.result()), &arguments)
-    }
-
-    fn push_struct_type(&self, type_: llvm::Type) -> Self {
-        Self {
-            context: self.context,
-            module: self.module,
-            struct_types: self.struct_types.iter().chain(&[type_]).cloned().collect(),
-        }
+        self.compile_value(function.result())
+            .fn_type(&arguments, false)
     }
 }
 
@@ -107,14 +113,14 @@ mod tests {
 
     #[test]
     fn compile_number() {
-        let context = llvm::Context::new();
+        let context = inkwell::context::Context::create();
         TypeCompiler::new(&context, &context.create_module(""))
             .compile(&ssf::types::Value::Number.into());
     }
 
     #[test]
     fn compile_function() {
-        let context = llvm::Context::new();
+        let context = inkwell::context::Context::create();
         TypeCompiler::new(&context, &context.create_module("")).compile(
             &ssf::types::Function::new(
                 vec![ssf::types::Value::Number.into()],
@@ -126,7 +132,7 @@ mod tests {
 
     #[test]
     fn compile_function_twice() {
-        let context = llvm::Context::new();
+        let context = inkwell::context::Context::create();
         let module = context.create_module("");
         let compiler = TypeCompiler::new(&context, &module);
         let type_ = ssf::types::Function::new(

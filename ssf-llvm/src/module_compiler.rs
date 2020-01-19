@@ -6,28 +6,25 @@ use super::initializer_sorter::InitializerSorter;
 use super::type_compiler::TypeCompiler;
 use std::collections::HashMap;
 
-pub struct ModuleCompiler<'a> {
-    context: &'a llvm::Context,
-    module: &'a llvm::Module,
-    ast_module: &'a ssf::ast::Module,
-    type_compiler: &'a TypeCompiler<'a>,
-    global_variables: HashMap<String, llvm::Value>,
-    initializers: HashMap<String, llvm::Value>,
-    initializer_configuration: &'a InitializerConfiguration,
+pub struct ModuleCompiler<'c, 'm, 't, 'i> {
+    context: &'c inkwell::context::Context,
+    module: &'m inkwell::module::Module<'c>,
+    type_compiler: &'t TypeCompiler<'c, 'm>,
+    global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
+    initializers: HashMap<String, inkwell::values::FunctionValue<'c>>,
+    initializer_configuration: &'i InitializerConfiguration,
 }
 
-impl<'a> ModuleCompiler<'a> {
+impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
     pub fn new(
-        context: &'a llvm::Context,
-        module: &'a llvm::Module,
-        ast_module: &'a ssf::ast::Module,
-        type_compiler: &'a TypeCompiler<'a>,
-        initializer_configuration: &'a InitializerConfiguration,
-    ) -> ModuleCompiler<'a> {
+        context: &'c inkwell::context::Context,
+        module: &'m inkwell::module::Module<'c>,
+        type_compiler: &'t TypeCompiler<'c, 'm>,
+        initializer_configuration: &'i InitializerConfiguration,
+    ) -> ModuleCompiler<'c, 'm, 't, 'i> {
         ModuleCompiler {
             context,
             module,
-            ast_module,
             type_compiler,
             global_variables: HashMap::new(),
             initializers: HashMap::new(),
@@ -35,10 +32,10 @@ impl<'a> ModuleCompiler<'a> {
         }
     }
 
-    pub fn compile(&mut self) -> Result<(), CompileError> {
-        self.module.declare_intrinsics();
+    pub fn compile<'s>(&mut self, ast_module: &'s ssf::ast::Module) -> Result<(), CompileError> {
+        self.declare_intrinsics();
 
-        for declaration in self.ast_module.declarations() {
+        for declaration in ast_module.declarations() {
             match declaration.type_() {
                 ssf::types::Type::Function(function_type) => {
                     self.declare_function(declaration.name(), function_type)
@@ -49,7 +46,7 @@ impl<'a> ModuleCompiler<'a> {
             }
         }
 
-        for definition in self.ast_module.definitions() {
+        for definition in ast_module.definitions() {
             match definition {
                 ssf::ast::Definition::FunctionDefinition(function_definition) => {
                     self.declare_function(function_definition.name(), function_definition.type_())
@@ -60,7 +57,7 @@ impl<'a> ModuleCompiler<'a> {
             }
         }
 
-        for definition in self.ast_module.definitions() {
+        for definition in ast_module.definitions() {
             match definition {
                 ssf::ast::Definition::FunctionDefinition(function_definition) => {
                     self.compile_function(function_definition)?
@@ -71,9 +68,9 @@ impl<'a> ModuleCompiler<'a> {
             }
         }
 
-        self.compile_module_initializer()?;
+        self.compile_module_initializer(ast_module)?;
 
-        self.module.verify();
+        self.module.verify()?;
 
         Ok(())
     }
@@ -81,8 +78,11 @@ impl<'a> ModuleCompiler<'a> {
     fn declare_function(&mut self, name: &str, type_: &ssf::types::Function) {
         self.global_variables.insert(
             name.into(),
-            self.module
-                .add_global(name, self.type_compiler.compile_unsized_closure(type_)),
+            self.module.add_global(
+                self.type_compiler.compile_unsized_closure(type_),
+                None,
+                name,
+            ),
         );
     }
 
@@ -92,19 +92,26 @@ impl<'a> ModuleCompiler<'a> {
     ) -> Result<(), CompileError> {
         let global_variable = self.global_variables[function_definition.name()];
 
-        global_variable.set_initializer(llvm::const_named_struct(
-            global_variable.type_().element(),
-            &[
-                FunctionCompiler::new(
-                    self.context,
-                    self.module,
-                    self.type_compiler,
-                    &self.global_variables,
-                )
-                .compile(function_definition)?,
-                self.context.const_struct(&[]),
-            ],
-        ));
+        global_variable.set_initializer(
+            &global_variable
+                .as_pointer_value()
+                .get_type()
+                .get_element_type()
+                .into_struct_type()
+                .const_named_struct(&[
+                    FunctionCompiler::new(
+                        self.context,
+                        self.module,
+                        self.type_compiler,
+                        &self.global_variables,
+                    )
+                    .compile(function_definition)?
+                    .as_global_value()
+                    .as_pointer_value()
+                    .into(),
+                    self.context.const_struct(&[], false).into(),
+                ]),
+        );
 
         Ok(())
     }
@@ -113,7 +120,7 @@ impl<'a> ModuleCompiler<'a> {
         self.global_variables.insert(
             name.into(),
             self.module
-                .add_global(name, self.type_compiler.compile_value(value_type)),
+                .add_global(self.type_compiler.compile_value(value_type), None, name),
         );
     }
 
@@ -122,20 +129,30 @@ impl<'a> ModuleCompiler<'a> {
         value_definition: &ssf::ast::ValueDefinition,
     ) -> Result<(), CompileError> {
         let global_variable = self.global_variables[value_definition.name()];
-        global_variable.set_initializer(llvm::get_undef(global_variable.type_().element()));
+        global_variable.set_initializer(
+            &global_variable
+                .as_pointer_value()
+                .get_type()
+                .get_element_type()
+                .into_struct_type()
+                .get_undef(),
+        );
 
         let initializer = self.module.add_function(
             &Self::get_initializer_name(value_definition.name()),
-            self.context.function_type(self.context.void_type(), &[]),
+            self.context.void_type().fn_type(&[], false),
+            None,
         );
 
-        let builder = llvm::Builder::new(initializer);
-        builder.position_at_end(builder.append_basic_block("entry"));
+        let builder = self.context.create_builder();
+        builder.position_at_end(&self.context.append_basic_block(initializer, "entry"));
         builder.build_store(
+            global_variable.as_pointer_value(),
             ExpressionCompiler::new(
                 self.context,
+                self.module,
                 &builder,
-                &mut FunctionCompiler::new(
+                &FunctionCompiler::new(
                     self.context,
                     self.module,
                     self.type_compiler,
@@ -143,62 +160,102 @@ impl<'a> ModuleCompiler<'a> {
                 ),
                 &self.type_compiler,
             )
-            .compile(&value_definition.body(), &self.global_variables)?,
-            global_variable,
+            .compile(
+                &value_definition.body(),
+                &self
+                    .global_variables
+                    .iter()
+                    .map(|(name, value)| (name.into(), value.as_pointer_value().into()))
+                    .collect(),
+            )?,
         );
-        builder.build_ret_void();
+        builder.build_return(None);
 
-        initializer.verify_function();
+        initializer.verify(true);
         self.initializers
             .insert(value_definition.name().into(), initializer);
 
         Ok(())
     }
 
-    fn compile_module_initializer(&mut self) -> Result<(), CompileError> {
+    fn compile_module_initializer(
+        &mut self,
+        ast_module: &ssf::ast::Module,
+    ) -> Result<(), CompileError> {
         let flag = self.module.add_global(
+            self.context.i8_type(),
+            None,
             &[self.initializer_configuration.name(), "$initialized"].concat(),
-            self.context.i1_type(),
         );
-        flag.set_initializer(llvm::const_int(self.context.i1_type(), 0));
+        flag.set_initializer(&self.context.i8_type().const_int(0, false));
 
         let initializer = self.module.add_function(
             self.initializer_configuration.name(),
-            self.context.function_type(self.context.void_type(), &[]),
+            self.context.void_type().fn_type(&[], false),
+            None,
         );
 
-        let builder = llvm::Builder::new(initializer);
+        let builder = self.context.create_builder();
 
-        builder.position_at_end(builder.append_basic_block("entry"));
-        let initialize_block = builder.append_basic_block("initialize");
-        let end_block = builder.append_basic_block("end");
+        builder.position_at_end(&self.context.append_basic_block(initializer, "entry"));
+        let initialize_block = self.context.append_basic_block(initializer, "initialize");
+        let end_block = self.context.append_basic_block(initializer, "end");
 
-        builder.build_cond_br(builder.build_load(flag), end_block, initialize_block);
-        builder.position_at_end(initialize_block);
+        builder.build_conditional_branch(
+            builder
+                .build_load(flag.as_pointer_value(), "")
+                .into_int_value(),
+            &end_block,
+            &initialize_block,
+        );
+        builder.position_at_end(&initialize_block);
 
         for dependent_initializer_name in
             self.initializer_configuration.dependent_initializer_names()
         {
-            self.module
-                .declare_function(dependent_initializer_name, self.context.void_type(), &[]);
-            builder.build_call_with_name(dependent_initializer_name, &[]);
+            self.module.add_function(
+                dependent_initializer_name,
+                self.context.void_type().fn_type(&[], false),
+                None,
+            );
+            builder.build_call(
+                self.module
+                    .get_function(dependent_initializer_name)
+                    .unwrap(),
+                &[],
+                "",
+            );
         }
 
-        for name in InitializerSorter::sort(&self.ast_module)? {
-            builder.build_call(self.initializers[name], &[]);
+        for name in InitializerSorter::sort(&ast_module)? {
+            builder.build_call(self.initializers[name], &[], "");
         }
 
-        builder.build_store(llvm::const_int(self.context.i1_type(), 1), flag);
+        builder.build_store(
+            flag.as_pointer_value(),
+            self.context.i8_type().const_int(1, false),
+        );
 
-        builder.build_br(end_block);
-        builder.position_at_end(end_block);
+        builder.build_unconditional_branch(&end_block);
+        builder.position_at_end(&end_block);
 
-        builder.build_ret_void();
+        builder.build_return(None);
 
         Ok(())
     }
 
     fn get_initializer_name(name: &str) -> String {
         [name, ".$init"].concat()
+    }
+
+    fn declare_intrinsics(&self) {
+        self.module.add_function(
+            "malloc",
+            self.context
+                .i8_type()
+                .ptr_type(inkwell::AddressSpace::Generic)
+                .fn_type(&[self.context.i64_type().into()], false),
+            None,
+        );
     }
 }

@@ -5,6 +5,6 @@ authors = ["Yota Toyama <raviqqe@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-llvm = { path = "../llvm" }
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "llvm8-0" }
 petgraph = "0.5"
 ssf = { path = "../ssf" }

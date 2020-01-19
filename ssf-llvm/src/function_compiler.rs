@@ -3,19 +3,19 @@ use super::expression_compiler::ExpressionCompiler;
 use super::type_compiler::TypeCompiler;
 use std::collections::HashMap;
 
-pub struct FunctionCompiler<'a> {
-    context: &'a llvm::Context,
-    module: &'a llvm::Module,
-    type_compiler: &'a TypeCompiler<'a>,
-    global_variables: &'a HashMap<String, llvm::Value>,
+pub struct FunctionCompiler<'c, 'm, 't, 'v> {
+    context: &'c inkwell::context::Context,
+    module: &'m inkwell::module::Module<'c>,
+    type_compiler: &'t TypeCompiler<'c, 'm>,
+    global_variables: &'v HashMap<String, inkwell::values::GlobalValue<'c>>,
 }
 
-impl<'a> FunctionCompiler<'a> {
+impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     pub fn new(
-        context: &'a llvm::Context,
-        module: &'a llvm::Module,
-        type_compiler: &'a TypeCompiler<'a>,
-        global_variables: &'a HashMap<String, llvm::Value>,
+        context: &'c inkwell::context::Context,
+        module: &'m inkwell::module::Module<'c>,
+        type_compiler: &'t TypeCompiler<'c, 'm>,
+        global_variables: &'v HashMap<String, inkwell::values::GlobalValue<'c>>,
     ) -> Self {
         Self {
             context,
@@ -26,52 +26,77 @@ impl<'a> FunctionCompiler<'a> {
     }
 
     pub fn compile(
-        &mut self,
+        &self,
         function_definition: &ssf::ast::FunctionDefinition,
-    ) -> Result<llvm::Value, CompileError> {
+    ) -> Result<inkwell::values::FunctionValue, CompileError> {
         let closure_type = self.type_compiler.compile_closure(function_definition);
 
         let entry_function = self.module.add_function(
             &Self::generate_closure_entry_name(function_definition.name()),
-            closure_type.struct_elements()[0].element(),
+            closure_type.get_field_types()[0]
+                .into_pointer_type()
+                .get_element_type()
+                .into_function_type(),
+            None,
         );
 
-        let builder = llvm::Builder::new(entry_function);
-        builder.position_at_end(builder.append_basic_block("entry"));
+        let builder = self.context.create_builder();
+        builder.position_at_end(&self.context.append_basic_block(entry_function, "entry"));
 
-        let environment = builder.build_bit_cast(
-            entry_function.get_param(0),
-            self.context.pointer_type(closure_type.struct_elements()[1]),
-        );
+        let environment = builder
+            .build_bitcast(
+                entry_function.get_params()[0],
+                closure_type.get_field_types()[1]
+                    .into_struct_type()
+                    .ptr_type(inkwell::AddressSpace::Generic),
+                "",
+            )
+            .into_pointer_value();
 
-        let mut variables = self.global_variables.clone();
+        let mut variables = self
+            .global_variables
+            .iter()
+            .map(|(name, value)| (name.into(), value.as_pointer_value().into()))
+            .collect::<HashMap<String, inkwell::values::BasicValueEnum>>();
 
         for (index, free_variable) in function_definition.environment().iter().enumerate() {
             variables.insert(
                 free_variable.name().into(),
-                builder.build_load(builder.build_gep(
-                    environment,
-                    &[
-                        llvm::const_int(self.context.i32_type(), 0),
-                        llvm::const_int(self.context.i32_type(), index as u64),
-                    ],
-                )),
+                builder.build_load(
+                    unsafe {
+                        builder.build_gep(
+                            environment,
+                            &[
+                                self.context.i32_type().const_int(0, false),
+                                self.context.i32_type().const_int(index as u64, false),
+                            ],
+                            "",
+                        )
+                    },
+                    "",
+                ),
             );
         }
 
         for (index, argument) in function_definition.arguments().iter().enumerate() {
             variables.insert(
                 argument.name().into(),
-                entry_function.get_param(index as u32 + 1),
+                entry_function.get_params()[index + 1],
             );
         }
 
-        builder.build_ret(
-            ExpressionCompiler::new(self.context, &builder, self, self.type_compiler)
-                .compile(&function_definition.body(), &variables)?,
+        let expression_compiler = ExpressionCompiler::new(
+            self.context,
+            self.module,
+            &builder,
+            self,
+            self.type_compiler,
         );
+        builder.build_return(Some(
+            &expression_compiler.compile(&function_definition.body(), &variables)?,
+        ));
 
-        entry_function.verify_function();
+        entry_function.verify(true);
 
         Ok(entry_function)
     }
