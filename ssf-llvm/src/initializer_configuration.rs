@@ -4,9 +4,9 @@ pub struct InitializerConfiguration {
 }
 
 impl InitializerConfiguration {
-    pub fn new(name: String, dependent_initializer_names: Vec<String>) -> Self {
+    pub fn new(name: impl Into<String>, dependent_initializer_names: Vec<String>) -> Self {
         Self {
-            name,
+            name: name.into(),
             dependent_initializer_names,
         }
     }

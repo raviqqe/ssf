@@ -5,6 +5,7 @@ mod initializer_configuration;
 mod initializer_sorter;
 mod module_compiler;
 mod type_compiler;
+mod utilities;
 
 pub use error::CompileError;
 pub use initializer_configuration::InitializerConfiguration;
@@ -27,4 +28,35 @@ pub fn compile(
     let bitcode = module.write_bitcode_to_memory().as_slice().to_vec();
 
     Ok(bitcode)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn compile_() {
+        compile(
+            &ssf::ast::Module::new(vec![], vec![]),
+            &InitializerConfiguration::new("foo", vec![]),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn compile_with_global_variable() {
+        compile(
+            &ssf::ast::Module::new(
+                vec![],
+                vec![ssf::ast::ValueDefinition::new(
+                    "foo",
+                    ssf::ast::Expression::Number(42.0),
+                    ssf::types::Value::Number,
+                )
+                .into()],
+            ),
+            &InitializerConfiguration::new("foo", vec![]),
+        )
+        .unwrap();
+    }
 }

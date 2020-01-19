@@ -4,6 +4,7 @@ use super::function_compiler::FunctionCompiler;
 use super::initializer_configuration::InitializerConfiguration;
 use super::initializer_sorter::InitializerSorter;
 use super::type_compiler::TypeCompiler;
+use super::utilities;
 use std::collections::HashMap;
 
 pub struct ModuleCompiler<'c, 'm, 't, 'i> {
@@ -130,12 +131,13 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
     ) -> Result<(), CompileError> {
         let global_variable = self.global_variables[value_definition.name()];
         global_variable.set_initializer(
-            &global_variable
-                .as_pointer_value()
-                .get_type()
-                .get_element_type()
-                .into_struct_type()
-                .get_undef(),
+            utilities::get_any_type_enum_undef(
+                &global_variable
+                    .as_pointer_value()
+                    .get_type()
+                    .get_element_type(),
+            )
+            .as_ref(),
         );
 
         let initializer = self.module.add_function(
@@ -183,11 +185,11 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
         ast_module: &ssf::ast::Module,
     ) -> Result<(), CompileError> {
         let flag = self.module.add_global(
-            self.context.i8_type(),
+            self.context.bool_type(),
             None,
             &[self.initializer_configuration.name(), "$initialized"].concat(),
         );
-        flag.set_initializer(&self.context.i8_type().const_int(0, false));
+        flag.set_initializer(&self.context.bool_type().const_int(0, false));
 
         let initializer = self.module.add_function(
             self.initializer_configuration.name(),
@@ -233,7 +235,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
 
         builder.build_store(
             flag.as_pointer_value(),
-            self.context.i8_type().const_int(1, false),
+            self.context.bool_type().const_int(1, false),
         );
 
         builder.build_unconditional_branch(&end_block);
