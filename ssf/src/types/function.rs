@@ -42,7 +42,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn function_id() {
+    fn to_id() {
         assert_eq!(
             &Function::new(vec![Value::Number.into()], Value::Number).to_id(),
             "(Number->Number)"
