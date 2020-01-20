@@ -2,7 +2,7 @@ use petgraph::algo::Cycle;
 use std::error::Error;
 use std::fmt::Display;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum AnalysisError {
     CircularInitialization,
 }
