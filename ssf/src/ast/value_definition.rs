@@ -38,7 +38,7 @@ impl ValueDefinition {
         )
     }
 
-    pub fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
         self.body.find_global_variables(&local_variables)
     }
 }

@@ -27,7 +27,7 @@ impl Definition {
         }
     }
 
-    pub fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
         match self {
             Self::FunctionDefinition(function_definition) => {
                 function_definition.find_global_variables(local_variables)

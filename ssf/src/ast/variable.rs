@@ -21,7 +21,7 @@ impl Variable {
         }
     }
 
-    pub fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
         if local_variables.contains(&self.name) {
             HashSet::new()
         } else {

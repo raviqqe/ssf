@@ -34,7 +34,7 @@ impl Application {
         )
     }
 
-    pub fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
         self.arguments.iter().fold(
             self.function.find_global_variables(local_variables),
             |mut global_variables, argument| {

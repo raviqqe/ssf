@@ -38,7 +38,7 @@ impl Operation {
         )
     }
 
-    pub fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
         let mut global_variables = self.lhs.find_global_variables(local_variables);
         global_variables.extend(self.rhs.find_global_variables(local_variables));
         global_variables

@@ -34,7 +34,7 @@ impl Expression {
         }
     }
 
-    pub fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
         match self {
             Self::Application(application) => application.find_global_variables(local_variables),
             Self::LetFunctions(let_functions) => {
