@@ -30,7 +30,7 @@ impl ValueDefinition {
         &self.type_
     }
 
-    pub fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
+    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
         Self::new(
             self.name.clone(),
             self.body.rename_variables(names),
@@ -38,7 +38,10 @@ impl ValueDefinition {
         )
     }
 
-    pub(crate) fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_global_variables(
+        &self,
+        local_variables: &HashSet<String>,
+    ) -> HashSet<String> {
         self.body.find_global_variables(&local_variables)
     }
 }

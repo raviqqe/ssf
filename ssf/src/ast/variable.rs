@@ -14,14 +14,17 @@ impl Variable {
         &self.name
     }
 
-    pub fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
+    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
         match names.get(self.name.as_str()) {
             Some(name) => Self::new(name),
             None => self.clone(),
         }
     }
 
-    pub(crate) fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_global_variables(
+        &self,
+        local_variables: &HashSet<String>,
+    ) -> HashSet<String> {
         if local_variables.contains(&self.name) {
             HashSet::new()
         } else {

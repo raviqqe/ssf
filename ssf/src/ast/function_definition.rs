@@ -61,7 +61,7 @@ impl FunctionDefinition {
         &self.type_
     }
 
-    pub fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
+    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
         let mut names = names.clone();
 
         names.remove(self.name.as_str());
@@ -83,7 +83,10 @@ impl FunctionDefinition {
         )
     }
 
-    pub(crate) fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_global_variables(
+        &self,
+        local_variables: &HashSet<String>,
+    ) -> HashSet<String> {
         let mut local_variables = local_variables.clone();
 
         local_variables.insert(self.name.clone());

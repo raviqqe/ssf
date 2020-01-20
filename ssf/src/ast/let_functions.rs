@@ -24,7 +24,7 @@ impl LetFunctions {
         &self.expression
     }
 
-    pub fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
+    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
         let mut names = names.clone();
 
         for definition in &self.definitions {
@@ -40,7 +40,10 @@ impl LetFunctions {
         Self::new(definitions, self.expression.rename_variables(&names))
     }
 
-    pub(crate) fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_global_variables(
+        &self,
+        local_variables: &HashSet<String>,
+    ) -> HashSet<String> {
         let mut local_variables = local_variables.clone();
 
         local_variables.extend(
