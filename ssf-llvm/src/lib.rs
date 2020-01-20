@@ -2,7 +2,6 @@ mod error;
 mod expression_compiler;
 mod function_compiler;
 mod initializer_configuration;
-mod initializer_sorter;
 mod module_compiler;
 mod type_compiler;
 mod utilities;
@@ -16,7 +15,7 @@ pub fn compile(
     ast_module: &ssf::ast::Module,
     initializer_configuration: &InitializerConfiguration,
 ) -> Result<Vec<u8>, CompileError> {
-    ssf::verify(ast_module)?;
+    ast_module.check_types()?;
 
     let context = inkwell::context::Context::create();
     let module = context.create_module("main");

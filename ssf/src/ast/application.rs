@@ -24,7 +24,7 @@ impl Application {
         &self.arguments
     }
 
-    pub fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
+    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
         Self::new(
             self.function.rename_variables(names),
             self.arguments
@@ -34,7 +34,10 @@ impl Application {
         )
     }
 
-    pub fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_global_variables(
+        &self,
+        local_variables: &HashSet<String>,
+    ) -> HashSet<String> {
         self.arguments.iter().fold(
             self.function.find_global_variables(local_variables),
             |mut global_variables, argument| {

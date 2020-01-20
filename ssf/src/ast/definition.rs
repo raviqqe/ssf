@@ -16,7 +16,7 @@ impl Definition {
         }
     }
 
-    pub fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
+    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
         match self {
             Self::FunctionDefinition(function_definition) => {
                 function_definition.rename_variables(names).into()
@@ -27,7 +27,10 @@ impl Definition {
         }
     }
 
-    pub fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_global_variables(
+        &self,
+        local_variables: &HashSet<String>,
+    ) -> HashSet<String> {
         match self {
             Self::FunctionDefinition(function_definition) => {
                 function_definition.find_global_variables(local_variables)

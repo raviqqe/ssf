@@ -23,7 +23,7 @@ impl Expression {
         }
     }
 
-    pub fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
+    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
         match self {
             Self::Application(application) => application.rename_variables(names).into(),
             Self::LetFunctions(let_functions) => let_functions.rename_variables(names).into(),
@@ -34,7 +34,10 @@ impl Expression {
         }
     }
 
-    pub fn find_global_variables(&self, local_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_global_variables(
+        &self,
+        local_variables: &HashSet<String>,
+    ) -> HashSet<String> {
         match self {
             Self::Application(application) => application.find_global_variables(local_variables),
             Self::LetFunctions(let_functions) => {
