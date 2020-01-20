@@ -2,7 +2,6 @@ use super::error::CompileError;
 use super::expression_compiler::ExpressionCompiler;
 use super::function_compiler::FunctionCompiler;
 use super::initializer_configuration::InitializerConfiguration;
-use super::initializer_sorter::InitializerSorter;
 use super::type_compiler::TypeCompiler;
 use super::utilities;
 use std::collections::HashMap;
@@ -229,7 +228,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
             );
         }
 
-        for name in InitializerSorter::sort(&ast_module)? {
+        for name in ast_module.sort_global_variables()? {
             builder.build_call(self.initializers[name], &[], "");
         }
 

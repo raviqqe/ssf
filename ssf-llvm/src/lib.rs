@@ -2,7 +2,6 @@ mod error;
 mod expression_compiler;
 mod function_compiler;
 mod initializer_configuration;
-mod initializer_sorter;
 mod module_compiler;
 mod type_compiler;
 mod utilities;

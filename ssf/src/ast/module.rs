@@ -1,5 +1,6 @@
 use super::declaration::Declaration;
 use super::definition::Definition;
+use crate::analysis::{sort_global_variables, AnalysisError};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Module {
@@ -21,5 +22,9 @@ impl Module {
 
     pub fn definitions(&self) -> &[Definition] {
         &self.definitions
+    }
+
+    pub fn sort_global_variables(&self) -> Result<Vec<&str>, AnalysisError> {
+        sort_global_variables(self)
     }
 }

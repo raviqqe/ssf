@@ -1,10 +1,9 @@
-use petgraph::algo::Cycle;
 use std::error::Error;
 use std::fmt::Display;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CompileError {
-    CircularInitialization,
+    AnalysisError(ssf::AnalysisError),
     InvalidTypeIndex,
     LlvmError(String),
     VariableNotFound,
@@ -25,9 +24,9 @@ impl From<ssf::VerificationError> for CompileError {
     }
 }
 
-impl<N> From<Cycle<N>> for CompileError {
-    fn from(_: Cycle<N>) -> Self {
-        Self::CircularInitialization
+impl From<ssf::AnalysisError> for CompileError {
+    fn from(error: ssf::AnalysisError) -> Self {
+        Self::AnalysisError(error)
     }
 }
 
