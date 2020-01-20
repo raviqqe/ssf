@@ -18,8 +18,8 @@ impl Display for CompileError {
 
 impl Error for CompileError {}
 
-impl From<ssf::VerificationError> for CompileError {
-    fn from(_: ssf::VerificationError) -> Self {
+impl From<ssf::TypeCheckError> for CompileError {
+    fn from(_: ssf::TypeCheckError) -> Self {
         CompileError::Verification
     }
 }
