@@ -1,6 +1,6 @@
 use super::function_definition::*;
 use super::value_definition::*;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Definition {
@@ -13,17 +13,6 @@ impl Definition {
         match self {
             Self::FunctionDefinition(function_definition) => function_definition.name(),
             Self::ValueDefinition(value_definition) => value_definition.name(),
-        }
-    }
-
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        match self {
-            Self::FunctionDefinition(function_definition) => {
-                function_definition.rename_variables(names).into()
-            }
-            Self::ValueDefinition(value_definition) => {
-                value_definition.rename_variables(names).into()
-            }
         }
     }
 
