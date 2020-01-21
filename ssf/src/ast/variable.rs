@@ -21,11 +21,8 @@ impl Variable {
         }
     }
 
-    pub(crate) fn find_global_variables(
-        &self,
-        local_variables: &HashSet<String>,
-    ) -> HashSet<String> {
-        if local_variables.contains(&self.name) {
+    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
+        if excluded_variables.contains(&self.name) {
             HashSet::new()
         } else {
             vec![self.name.clone()].into_iter().collect()

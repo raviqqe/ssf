@@ -36,20 +36,17 @@ impl LetValues {
         Self::new(definitions, self.expression.rename_variables(&names))
     }
 
-    pub(crate) fn find_global_variables(
-        &self,
-        local_variables: &HashSet<String>,
-    ) -> HashSet<String> {
-        let mut local_variables = local_variables.clone();
-        let mut global_variables = HashSet::new();
+    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
+        let mut excluded_variables = excluded_variables.clone();
+        let mut variables = HashSet::new();
 
         for definition in &self.definitions {
-            global_variables.extend(definition.find_global_variables(&local_variables));
-            local_variables.insert(definition.name().into());
+            variables.extend(definition.find_variables(&excluded_variables));
+            excluded_variables.insert(definition.name().into());
         }
 
-        global_variables.extend(self.expression.find_global_variables(&local_variables));
+        variables.extend(self.expression.find_variables(&excluded_variables));
 
-        global_variables
+        variables
     }
 }
