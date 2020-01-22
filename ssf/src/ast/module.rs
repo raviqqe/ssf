@@ -36,7 +36,7 @@ impl Module {
     }
 
     pub fn rename_global_definitions(&self, names: &HashMap<String, String>) -> Self {
-        Module::new(
+        Self::new(
             self.declarations.to_vec(),
             self.definitions
                 .iter()
