@@ -83,28 +83,25 @@ impl FunctionDefinition {
         )
     }
 
-    pub(crate) fn find_global_variables(
-        &self,
-        local_variables: &HashSet<String>,
-    ) -> HashSet<String> {
-        let mut local_variables = local_variables.clone();
+    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
+        let mut excluded_variables = excluded_variables.clone();
 
-        local_variables.insert(self.name.clone());
+        excluded_variables.insert(self.name.clone());
 
-        local_variables.extend(
+        excluded_variables.extend(
             self.environment
                 .iter()
                 .map(|argument| argument.name().into())
                 .collect::<HashSet<_>>(),
         );
 
-        local_variables.extend(
+        excluded_variables.extend(
             self.arguments
                 .iter()
                 .map(|argument| argument.name().into())
                 .collect::<HashSet<_>>(),
         );
 
-        self.body.find_global_variables(&local_variables)
+        self.body.find_variables(&excluded_variables)
     }
 }

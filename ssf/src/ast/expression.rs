@@ -34,18 +34,13 @@ impl Expression {
         }
     }
 
-    pub(crate) fn find_global_variables(
-        &self,
-        local_variables: &HashSet<String>,
-    ) -> HashSet<String> {
+    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
         match self {
-            Self::Application(application) => application.find_global_variables(local_variables),
-            Self::LetFunctions(let_functions) => {
-                let_functions.find_global_variables(local_variables)
-            }
-            Self::LetValues(let_values) => let_values.find_global_variables(local_variables),
-            Self::Operation(operation) => operation.find_global_variables(local_variables),
-            Self::Variable(variable) => variable.find_global_variables(local_variables),
+            Self::Application(application) => application.find_variables(excluded_variables),
+            Self::LetFunctions(let_functions) => let_functions.find_variables(excluded_variables),
+            Self::LetValues(let_values) => let_values.find_variables(excluded_variables),
+            Self::Operation(operation) => operation.find_variables(excluded_variables),
+            Self::Variable(variable) => variable.find_variables(excluded_variables),
             _ => HashSet::new(),
         }
     }

@@ -34,15 +34,12 @@ impl Application {
         )
     }
 
-    pub(crate) fn find_global_variables(
-        &self,
-        local_variables: &HashSet<String>,
-    ) -> HashSet<String> {
+    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
         self.arguments.iter().fold(
-            self.function.find_global_variables(local_variables),
-            |mut global_variables, argument| {
-                global_variables.extend(argument.find_global_variables(local_variables));
-                global_variables
+            self.function.find_variables(excluded_variables),
+            |mut variables, argument| {
+                variables.extend(argument.find_variables(excluded_variables));
+                variables
             },
         )
     }

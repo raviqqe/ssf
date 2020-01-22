@@ -24,7 +24,7 @@ pub fn sort_global_variables(module: &ast::Module) -> Result<Vec<&str>, Analysis
     }
 
     for definition in module.definitions() {
-        for name in definition.find_global_variables(&HashSet::new()) {
+        for name in definition.find_variables(&HashSet::new()) {
             if value_names.contains(name.as_str()) {
                 graph.add_edge(
                     name_indices[name.as_str()],

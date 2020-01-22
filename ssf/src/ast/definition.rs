@@ -16,16 +16,13 @@ impl Definition {
         }
     }
 
-    pub(crate) fn find_global_variables(
-        &self,
-        local_variables: &HashSet<String>,
-    ) -> HashSet<String> {
+    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
         match self {
             Self::FunctionDefinition(function_definition) => {
-                function_definition.find_global_variables(local_variables)
+                function_definition.find_variables(excluded_variables)
             }
             Self::ValueDefinition(value_definition) => {
-                value_definition.find_global_variables(local_variables)
+                value_definition.find_variables(excluded_variables)
             }
         }
     }

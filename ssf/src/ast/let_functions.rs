@@ -40,13 +40,10 @@ impl LetFunctions {
         Self::new(definitions, self.expression.rename_variables(&names))
     }
 
-    pub(crate) fn find_global_variables(
-        &self,
-        local_variables: &HashSet<String>,
-    ) -> HashSet<String> {
-        let mut local_variables = local_variables.clone();
+    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
+        let mut excluded_variables = excluded_variables.clone();
 
-        local_variables.extend(
+        excluded_variables.extend(
             self.definitions
                 .iter()
                 .map(|definition| definition.name().into())
@@ -54,10 +51,10 @@ impl LetFunctions {
         );
 
         self.definitions.iter().fold(
-            self.expression.find_global_variables(&local_variables),
-            |mut global_variables, argument| {
-                global_variables.extend(argument.find_global_variables(&local_variables));
-                global_variables
+            self.expression.find_variables(&excluded_variables),
+            |mut variables, argument| {
+                variables.extend(argument.find_variables(&excluded_variables));
+                variables
             },
         )
     }
