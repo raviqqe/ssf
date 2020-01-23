@@ -3,7 +3,6 @@ use super::definition::Definition;
 use super::function_definition::FunctionDefinition;
 use super::value_definition::ValueDefinition;
 use crate::analysis::{check_types, sort_global_variables, AnalysisError, TypeCheckError};
-use crate::types::Type;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -68,24 +67,24 @@ impl Module {
     }
 
     pub fn infer_environment(&self) -> Self {
-        let variables: HashMap<String, Type> = self
+        let global_variables = self
             .declarations
             .iter()
-            .map(|declaration| (declaration.name().into(), declaration.type_().clone()))
+            .map(|declaration| declaration.name().into())
             .chain(
                 self.definitions
                     .iter()
-                    .map(|definition| (definition.name().into(), definition.type_())),
+                    .map(|definition| definition.name().into()),
             )
             .collect();
-
-        let global_variables = variables.keys().cloned().collect();
 
         Self::new(
             self.declarations.to_vec(),
             self.definitions
                 .iter()
-                .map(|definition| definition.infer_environment(&variables, &global_variables))
+                .map(|definition| {
+                    definition.infer_environment(&Default::default(), &global_variables)
+                })
                 .collect(),
         )
     }
