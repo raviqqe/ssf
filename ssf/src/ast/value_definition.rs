@@ -1,5 +1,5 @@
 use super::expression::Expression;
-use crate::types;
+use crate::types::{self, Type};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -40,5 +40,19 @@ impl ValueDefinition {
 
     pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
         self.body.find_variables(&excluded_variables)
+    }
+
+    pub(crate) fn infer_environment(
+        &self,
+        variables: &HashMap<String, Type>,
+        global_variables: &HashSet<String>,
+    ) -> Self {
+        Self::new(
+            self.name.clone(),
+            self.body
+                .infer_environment(variables, global_variables)
+                .clone(),
+            self.type_.clone(),
+        )
     }
 }

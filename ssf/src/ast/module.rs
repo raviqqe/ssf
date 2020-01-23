@@ -3,6 +3,7 @@ use super::definition::Definition;
 use super::function_definition::FunctionDefinition;
 use super::value_definition::ValueDefinition;
 use crate::analysis::{check_types, sort_global_variables, AnalysisError, TypeCheckError};
+use crate::types::Type;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -65,12 +66,36 @@ impl Module {
                 .collect(),
         )
     }
+
+    pub fn infer_environment(&self) -> Self {
+        let variables: HashMap<String, Type> = self
+            .declarations
+            .iter()
+            .map(|declaration| (declaration.name().into(), declaration.type_().clone()))
+            .chain(
+                self.definitions
+                    .iter()
+                    .map(|definition| (definition.name().into(), definition.type_())),
+            )
+            .collect();
+
+        let global_variables = variables.keys().cloned().collect();
+
+        Self::new(
+            self.declarations.to_vec(),
+            self.definitions
+                .iter()
+                .map(|definition| definition.infer_environment(&variables, &global_variables))
+                .collect(),
+        )
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::super::expression::Expression;
     use super::*;
+    use crate::ast::*;
     use crate::types;
 
     #[test]
@@ -98,6 +123,119 @@ mod tests {
                     types::Value::Number.into()
                 )
                 .into()]
+            )
+        );
+    }
+
+    #[test]
+    fn infer_environment() {
+        assert_eq!(
+            Module::new(
+                vec![],
+                vec![FunctionDefinition::new(
+                    "f",
+                    vec![],
+                    vec![Argument::new("x", types::Value::Number)],
+                    Expression::Number(42.0),
+                    types::Value::Number
+                )
+                .into()]
+            )
+            .infer_environment(),
+            Module::new(
+                vec![],
+                vec![FunctionDefinition::new(
+                    "f",
+                    vec![],
+                    vec![Argument::new("x", types::Value::Number)],
+                    Expression::Number(42.0),
+                    types::Value::Number
+                )
+                .into()]
+            )
+        );
+        assert_eq!(
+            Module::new(
+                vec![],
+                vec![
+                    ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
+                        .into(),
+                    FunctionDefinition::new(
+                        "f",
+                        vec![],
+                        vec![Argument::new("x", types::Value::Number)],
+                        Variable::new("y"),
+                        types::Value::Number
+                    )
+                    .into()
+                ]
+            )
+            .infer_environment(),
+            Module::new(
+                vec![],
+                vec![
+                    ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
+                        .into(),
+                    FunctionDefinition::new(
+                        "f",
+                        vec![],
+                        vec![Argument::new("x", types::Value::Number)],
+                        Variable::new("y"),
+                        types::Value::Number
+                    )
+                    .into()
+                ]
+            )
+        );
+        assert_eq!(
+            Module::new(
+                vec![],
+                vec![
+                    ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
+                        .into(),
+                    FunctionDefinition::new(
+                        "f",
+                        vec![],
+                        vec![Argument::new("x", types::Value::Number)],
+                        LetFunctions::new(
+                            vec![FunctionDefinition::new(
+                                "g",
+                                vec![],
+                                vec![Argument::new("y", types::Value::Number)],
+                                Variable::new("x"),
+                                types::Value::Number
+                            )],
+                            Expression::Number(42.0)
+                        ),
+                        types::Value::Number
+                    )
+                    .into()
+                ]
+            )
+            .infer_environment(),
+            Module::new(
+                vec![],
+                vec![
+                    ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
+                        .into(),
+                    FunctionDefinition::new(
+                        "f",
+                        vec![],
+                        vec![Argument::new("x", types::Value::Number)],
+                        LetFunctions::new(
+                            vec![FunctionDefinition::new(
+                                "g",
+                                vec![Argument::new("x", types::Value::Number)],
+                                vec![Argument::new("y", types::Value::Number)],
+                                Variable::new("x"),
+                                types::Value::Number
+                            )],
+                            Expression::Number(42.0)
+                        ),
+                        types::Value::Number
+                    )
+                    .into()
+                ]
             )
         );
     }

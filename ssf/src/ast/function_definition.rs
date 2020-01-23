@@ -1,6 +1,6 @@
 use super::expression::Expression;
 use super::Argument;
-use crate::types;
+use crate::types::{self, Type};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -103,5 +103,91 @@ impl FunctionDefinition {
         );
 
         self.body.find_variables(&excluded_variables)
+    }
+
+    pub(crate) fn infer_environment(
+        &self,
+        original_variables: &HashMap<String, Type>,
+        global_variables: &HashSet<String>,
+    ) -> Self {
+        let mut variables = original_variables.clone();
+
+        for argument in &self.arguments {
+            variables.insert(argument.name().into(), argument.type_().clone());
+        }
+
+        Self {
+            name: self.name.clone(),
+            environment: self
+                .find_variables(global_variables)
+                .iter()
+                .filter(|name| {
+                    self.arguments
+                        .iter()
+                        .all(|argument| argument.name() != name.as_str())
+                })
+                .map(|name| Argument::new(name, original_variables[name].clone()))
+                .collect(),
+            arguments: self.arguments.clone(),
+            body: self
+                .body
+                .infer_environment(&variables, global_variables)
+                .clone(),
+            result_type: self.result_type.clone(),
+            type_: self.type_.clone(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ast::*;
+
+    #[test]
+    fn infer_empty_environment() {
+        assert_eq!(
+            FunctionDefinition::new(
+                "f",
+                vec![],
+                vec![Argument::new("x", types::Value::Number)],
+                Expression::Number(42.0),
+                types::Value::Number
+            )
+            .infer_environment(&Default::default(), &Default::default()),
+            FunctionDefinition::new(
+                "f",
+                vec![],
+                vec![Argument::new("x", types::Value::Number)],
+                Expression::Number(42.0),
+                types::Value::Number
+            )
+        );
+    }
+
+    #[test]
+    fn infer_environment() {
+        assert_eq!(
+            FunctionDefinition::new(
+                "f",
+                vec![],
+                vec![Argument::new("x", types::Value::Number)],
+                Variable::new("y"),
+                types::Value::Number
+            )
+            .infer_environment(
+                &vec![("y".into(), types::Value::Number.into())]
+                    .drain(..)
+                    .collect(),
+                &Default::default()
+            ),
+            FunctionDefinition::new(
+                "f",
+                vec![Argument::new("y", types::Value::Number)],
+                vec![Argument::new("x", types::Value::Number)],
+                Variable::new("y"),
+                types::Value::Number
+            )
+        );
     }
 }

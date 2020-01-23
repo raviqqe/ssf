@@ -1,5 +1,6 @@
 use super::expression::Expression;
 use super::value_definition::ValueDefinition;
+use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -48,5 +49,28 @@ impl LetValues {
         variables.extend(self.expression.find_variables(&excluded_variables));
 
         variables
+    }
+
+    pub(crate) fn infer_environment(
+        &self,
+        variables: &HashMap<String, Type>,
+        global_variables: &HashSet<String>,
+    ) -> Self {
+        let mut variables = variables.clone();
+        let mut definitions = vec![];
+
+        for value_definition in &self.definitions {
+            definitions.push(value_definition.infer_environment(&variables, global_variables));
+            variables.insert(
+                value_definition.name().into(),
+                value_definition.type_().clone().into(),
+            );
+        }
+
+        Self::new(
+            definitions,
+            self.expression
+                .infer_environment(&variables, global_variables),
+        )
     }
 }
