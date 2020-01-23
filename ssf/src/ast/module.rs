@@ -13,9 +13,24 @@ pub struct Module {
 
 impl Module {
     pub fn new(declarations: Vec<Declaration>, definitions: Vec<Definition>) -> Self {
+        let global_variables = declarations
+            .iter()
+            .map(|declaration| declaration.name().into())
+            .chain(
+                definitions
+                    .iter()
+                    .map(|definition| definition.name().into()),
+            )
+            .collect();
+
         Self {
             declarations,
-            definitions,
+            definitions: definitions
+                .iter()
+                .map(|definition| {
+                    definition.infer_environment(&Default::default(), &global_variables)
+                })
+                .collect(),
         }
     }
 
@@ -41,17 +56,19 @@ impl Module {
             self.definitions
                 .iter()
                 .map(|definition| match definition {
-                    Definition::FunctionDefinition(function_definition) => FunctionDefinition::new(
-                        names
-                            .get(function_definition.name())
-                            .cloned()
-                            .unwrap_or_else(|| function_definition.name().into()),
-                        function_definition.environment().to_vec(),
-                        function_definition.arguments().to_vec(),
-                        function_definition.body().rename_variables(names),
-                        function_definition.result_type().clone(),
-                    )
-                    .into(),
+                    Definition::FunctionDefinition(function_definition) => {
+                        FunctionDefinition::with_environment(
+                            names
+                                .get(function_definition.name())
+                                .cloned()
+                                .unwrap_or_else(|| function_definition.name().into()),
+                            function_definition.environment().to_vec(),
+                            function_definition.arguments().to_vec(),
+                            function_definition.body().rename_variables(names),
+                            function_definition.result_type().clone(),
+                        )
+                        .into()
+                    }
                     Definition::ValueDefinition(value_definition) => ValueDefinition::new(
                         names
                             .get(value_definition.name())
@@ -61,29 +78,6 @@ impl Module {
                         value_definition.type_().clone(),
                     )
                     .into(),
-                })
-                .collect(),
-        )
-    }
-
-    pub fn infer_environment(&self) -> Self {
-        let global_variables = self
-            .declarations
-            .iter()
-            .map(|declaration| declaration.name().into())
-            .chain(
-                self.definitions
-                    .iter()
-                    .map(|definition| definition.name().into()),
-            )
-            .collect();
-
-        Self::new(
-            self.declarations.to_vec(),
-            self.definitions
-                .iter()
-                .map(|definition| {
-                    definition.infer_environment(&Default::default(), &global_variables)
                 })
                 .collect(),
         )
@@ -133,17 +127,15 @@ mod tests {
                 vec![],
                 vec![FunctionDefinition::new(
                     "f",
-                    vec![],
                     vec![Argument::new("x", types::Value::Number)],
                     Expression::Number(42.0),
                     types::Value::Number
                 )
                 .into()]
-            )
-            .infer_environment(),
-            Module::new(
-                vec![],
-                vec![FunctionDefinition::new(
+            ),
+            Module {
+                declarations: vec![],
+                definitions: vec![FunctionDefinition::with_environment(
                     "f",
                     vec![],
                     vec![Argument::new("x", types::Value::Number)],
@@ -151,7 +143,7 @@ mod tests {
                     types::Value::Number
                 )
                 .into()]
-            )
+            }
         );
         assert_eq!(
             Module::new(
@@ -161,21 +153,19 @@ mod tests {
                         .into(),
                     FunctionDefinition::new(
                         "f",
-                        vec![],
                         vec![Argument::new("x", types::Value::Number)],
                         Variable::new("y"),
                         types::Value::Number
                     )
                     .into()
                 ]
-            )
-            .infer_environment(),
-            Module::new(
-                vec![],
-                vec![
+            ),
+            Module {
+                declarations: vec![],
+                definitions: vec![
                     ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
                         .into(),
-                    FunctionDefinition::new(
+                    FunctionDefinition::with_environment(
                         "f",
                         vec![],
                         vec![Argument::new("x", types::Value::Number)],
@@ -184,7 +174,7 @@ mod tests {
                     )
                     .into()
                 ]
-            )
+            }
         );
         assert_eq!(
             Module::new(
@@ -194,12 +184,10 @@ mod tests {
                         .into(),
                     FunctionDefinition::new(
                         "f",
-                        vec![],
                         vec![Argument::new("x", types::Value::Number)],
                         LetFunctions::new(
                             vec![FunctionDefinition::new(
                                 "g",
-                                vec![],
                                 vec![Argument::new("y", types::Value::Number)],
                                 Variable::new("x"),
                                 types::Value::Number
@@ -210,19 +198,18 @@ mod tests {
                     )
                     .into()
                 ]
-            )
-            .infer_environment(),
-            Module::new(
-                vec![],
-                vec![
+            ),
+            Module {
+                declarations: vec![],
+                definitions: vec![
                     ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
                         .into(),
-                    FunctionDefinition::new(
+                    FunctionDefinition::with_environment(
                         "f",
                         vec![],
                         vec![Argument::new("x", types::Value::Number)],
                         LetFunctions::new(
-                            vec![FunctionDefinition::new(
+                            vec![FunctionDefinition::with_environment(
                                 "g",
                                 vec![Argument::new("x", types::Value::Number)],
                                 vec![Argument::new("y", types::Value::Number)],
@@ -235,7 +222,7 @@ mod tests {
                     )
                     .into()
                 ]
-            )
+            }
         );
     }
 }

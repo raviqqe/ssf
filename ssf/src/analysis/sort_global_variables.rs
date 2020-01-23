@@ -113,7 +113,6 @@ mod tests {
                     .into(),
                     ast::FunctionDefinition::new(
                         "f",
-                        vec![],
                         vec![ast::Argument::new("a", types::Value::Number)],
                         ast::Variable::new("x"),
                         types::Value::Number
@@ -143,7 +142,6 @@ mod tests {
                     .into(),
                     ast::FunctionDefinition::new(
                         "f",
-                        vec![],
                         vec![ast::Argument::new("a", types::Value::Number)],
                         ast::Application::new(
                             ast::Variable::new("g"),
@@ -154,7 +152,6 @@ mod tests {
                     .into(),
                     ast::FunctionDefinition::new(
                         "g",
-                        vec![],
                         vec![ast::Argument::new("a", types::Value::Number)],
                         ast::Application::new(
                             ast::Variable::new("f"),

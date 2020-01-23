@@ -16,6 +16,28 @@ pub struct FunctionDefinition {
 impl FunctionDefinition {
     pub fn new(
         name: impl Into<String>,
+        arguments: Vec<Argument>,
+        body: impl Into<Expression>,
+        result_type: types::Value,
+    ) -> Self {
+        Self {
+            type_: types::Function::new(
+                arguments
+                    .iter()
+                    .map(|argument| argument.type_().clone())
+                    .collect(),
+                result_type.clone(),
+            ),
+            name: name.into(),
+            environment: vec![],
+            arguments,
+            body: body.into(),
+            result_type,
+        }
+    }
+
+    pub(crate) fn with_environment(
+        name: impl Into<String>,
         environment: Vec<Argument>,
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
@@ -74,7 +96,7 @@ impl FunctionDefinition {
             names.remove(argument.name());
         }
 
-        Self::new(
+        Self::with_environment(
             self.name.clone(),
             self.environment.clone(),
             self.arguments.clone(),
@@ -146,13 +168,12 @@ mod tests {
         assert_eq!(
             FunctionDefinition::new(
                 "f",
-                vec![],
                 vec![Argument::new("x", types::Value::Number)],
                 Expression::Number(42.0),
                 types::Value::Number
             )
             .infer_environment(&Default::default(), &Default::default()),
-            FunctionDefinition::new(
+            FunctionDefinition::with_environment(
                 "f",
                 vec![],
                 vec![Argument::new("x", types::Value::Number)],
@@ -167,7 +188,6 @@ mod tests {
         assert_eq!(
             FunctionDefinition::new(
                 "f",
-                vec![],
                 vec![Argument::new("x", types::Value::Number)],
                 Variable::new("y"),
                 types::Value::Number
@@ -178,7 +198,7 @@ mod tests {
                     .collect(),
                 &Default::default()
             ),
-            FunctionDefinition::new(
+            FunctionDefinition::with_environment(
                 "f",
                 vec![Argument::new("y", types::Value::Number)],
                 vec![Argument::new("x", types::Value::Number)],

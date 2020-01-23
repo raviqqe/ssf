@@ -37,7 +37,6 @@ mod tests {
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![],
                     vec![Argument::new("x", types::Value::Number)],
                     42.0,
                     types::Value::Number,
@@ -56,7 +55,6 @@ mod tests {
             vec![],
             vec![FunctionDefinition::new(
                 "f",
-                vec![],
                 vec![Argument::new("x", types::Value::Number)],
                 42.0,
                 types::Value::Number,
@@ -74,7 +72,6 @@ mod tests {
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![],
                     vec![Argument::new("x", types::Value::Number)],
                     42.0,
                     types::Value::Number,
@@ -82,7 +79,6 @@ mod tests {
                 .into(),
                 FunctionDefinition::new(
                     "g",
-                    vec![],
                     vec![Argument::new("x", types::Value::Number)],
                     Variable::new("f"),
                     types::Value::Number,
@@ -101,7 +97,6 @@ mod tests {
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![],
                     vec![Argument::new("x", types::Value::Number)],
                     42.0,
                     types::Value::Number,
@@ -126,7 +121,6 @@ mod tests {
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![],
                     vec![Argument::new("x", types::Value::Number)],
                     42.0,
                     types::Value::Number,
@@ -185,7 +179,6 @@ mod tests {
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![],
                     vec![Argument::new("x", types::Value::Number)],
                     42.0,
                     types::Value::Number,
