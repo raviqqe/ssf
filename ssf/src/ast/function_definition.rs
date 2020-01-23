@@ -129,10 +129,7 @@ impl FunctionDefinition {
                 .map(|name| Argument::new(name, original_variables[name].clone()))
                 .collect(),
             arguments: self.arguments.clone(),
-            body: self
-                .body
-                .infer_environment(&variables, global_variables)
-                .clone(),
+            body: self.body.infer_environment(&variables, global_variables),
             result_type: self.result_type.clone(),
             type_: self.type_.clone(),
         }

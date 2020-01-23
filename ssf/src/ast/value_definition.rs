@@ -49,9 +49,7 @@ impl ValueDefinition {
     ) -> Self {
         Self::new(
             self.name.clone(),
-            self.body
-                .infer_environment(variables, global_variables)
-                .clone(),
+            self.body.infer_environment(variables, global_variables),
             self.type_.clone(),
         )
     }
