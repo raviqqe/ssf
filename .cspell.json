@@ -25,6 +25,7 @@
     "fmul",
     "fsub",
     "hasher",
+    "idempotently",
     "indoc",
     "intrinsic",
     "intrinsics",

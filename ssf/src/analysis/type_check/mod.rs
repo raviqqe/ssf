@@ -18,12 +18,15 @@ mod tests {
 
     #[test]
     fn check_types_with_empty_modules() {
-        assert_eq!(check_types(&Module::new(vec![], vec![])), Ok(()));
+        assert_eq!(
+            check_types(&Module::without_validation(vec![], vec![])),
+            Ok(())
+        );
     }
 
     #[test]
     fn check_types_of_variables() {
-        let module = Module::new(
+        let module = Module::without_validation(
             vec![],
             vec![ValueDefinition::new("x", 42.0, types::Value::Number).into()],
         );
@@ -32,12 +35,11 @@ mod tests {
 
     #[test]
     fn fail_to_check_types_of_variables() {
-        let module = Module::new(
+        let module = Module::without_validation(
             vec![],
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![],
                     vec![Argument::new("x", types::Value::Number)],
                     42.0,
                     types::Value::Number,
@@ -52,11 +54,10 @@ mod tests {
 
     #[test]
     fn check_types_of_functions() {
-        let module = Module::new(
+        let module = Module::without_validation(
             vec![],
             vec![FunctionDefinition::new(
                 "f",
-                vec![],
                 vec![Argument::new("x", types::Value::Number)],
                 42.0,
                 types::Value::Number,
@@ -69,12 +70,11 @@ mod tests {
 
     #[test]
     fn fail_to_check_types_of_functions() {
-        let module = Module::new(
+        let module = Module::without_validation(
             vec![],
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![],
                     vec![Argument::new("x", types::Value::Number)],
                     42.0,
                     types::Value::Number,
@@ -82,7 +82,6 @@ mod tests {
                 .into(),
                 FunctionDefinition::new(
                     "g",
-                    vec![],
                     vec![Argument::new("x", types::Value::Number)],
                     Variable::new("f"),
                     types::Value::Number,
@@ -96,12 +95,11 @@ mod tests {
 
     #[test]
     fn check_types_of_applications() {
-        let module = Module::new(
+        let module = Module::without_validation(
             vec![],
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![],
                     vec![Argument::new("x", types::Value::Number)],
                     42.0,
                     types::Value::Number,
@@ -121,12 +119,11 @@ mod tests {
 
     #[test]
     fn fail_to_check_types_of_applications() {
-        let module = Module::new(
+        let module = Module::without_validation(
             vec![],
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![],
                     vec![Argument::new("x", types::Value::Number)],
                     42.0,
                     types::Value::Number,
@@ -149,7 +146,7 @@ mod tests {
 
     #[test]
     fn fail_to_check_types_because_of_missing_variables() {
-        let module = Module::new(
+        let module = Module::without_validation(
             vec![],
             vec![ValueDefinition::new("x", Variable::new("y"), types::Value::Number).into()],
         );
@@ -159,7 +156,7 @@ mod tests {
 
     #[test]
     fn check_types_of_let_values() {
-        let module = Module::new(
+        let module = Module::without_validation(
             vec![],
             vec![ValueDefinition::new(
                 "x",
@@ -180,12 +177,11 @@ mod tests {
 
     #[test]
     fn fail_to_check_types_of_let_values() {
-        let module = Module::new(
+        let module = Module::without_validation(
             vec![],
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![],
                     vec![Argument::new("x", types::Value::Number)],
                     42.0,
                     types::Value::Number,
@@ -212,7 +208,7 @@ mod tests {
 
     #[test]
     fn check_types_of_declarations() {
-        let module = Module::new(
+        let module = Module::without_validation(
             vec![Declaration::new("x", types::Value::Number)],
             vec![ValueDefinition::new("y", Variable::new("x"), types::Value::Number).into()],
         );
@@ -221,7 +217,7 @@ mod tests {
 
     #[test]
     fn fail_to_check_types_of_declarations() {
-        let module = Module::new(
+        let module = Module::without_validation(
             vec![Declaration::new(
                 "x",
                 types::Function::new(vec![types::Value::Number.into()], types::Value::Number),

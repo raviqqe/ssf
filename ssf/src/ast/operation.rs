@@ -1,5 +1,6 @@
 use super::expression::Expression;
 use super::operator::Operator;
+use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -42,5 +43,17 @@ impl Operation {
         let mut variables = self.lhs.find_variables(excluded_variables);
         variables.extend(self.rhs.find_variables(excluded_variables));
         variables
+    }
+
+    pub(crate) fn infer_environment(
+        &self,
+        variables: &HashMap<String, Type>,
+        global_variables: &HashSet<String>,
+    ) -> Self {
+        Self::new(
+            self.operator,
+            self.lhs.infer_environment(variables, global_variables),
+            self.rhs.infer_environment(variables, global_variables),
+        )
     }
 }

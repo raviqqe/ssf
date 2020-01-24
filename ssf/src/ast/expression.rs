@@ -3,6 +3,7 @@ use super::let_functions::LetFunctions;
 use super::let_values::LetValues;
 use super::operation::Operation;
 use super::variable::Variable;
+use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -42,6 +43,28 @@ impl Expression {
             Self::Operation(operation) => operation.find_variables(excluded_variables),
             Self::Variable(variable) => variable.find_variables(excluded_variables),
             _ => HashSet::new(),
+        }
+    }
+
+    pub(crate) fn infer_environment(
+        &self,
+        variables: &HashMap<String, Type>,
+        global_variables: &HashSet<String>,
+    ) -> Self {
+        match self {
+            Self::Application(application) => application
+                .infer_environment(variables, global_variables)
+                .into(),
+            Self::LetFunctions(let_functions) => let_functions
+                .infer_environment(variables, global_variables)
+                .into(),
+            Self::LetValues(let_values) => let_values
+                .infer_environment(variables, global_variables)
+                .into(),
+            Self::Operation(operation) => operation
+                .infer_environment(variables, global_variables)
+                .into(),
+            Self::Number(_) | Self::Variable(_) => self.clone(),
         }
     }
 }

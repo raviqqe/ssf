@@ -1,5 +1,6 @@
 use super::expression::Expression;
 use super::function_definition::FunctionDefinition;
+use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -56,6 +57,30 @@ impl LetFunctions {
                 variables.extend(argument.find_variables(&excluded_variables));
                 variables
             },
+        )
+    }
+
+    pub(crate) fn infer_environment(
+        &self,
+        variables: &HashMap<String, Type>,
+        global_variables: &HashSet<String>,
+    ) -> Self {
+        let mut variables = variables.clone();
+
+        for function_definition in &self.definitions {
+            variables.insert(
+                function_definition.name().into(),
+                function_definition.type_().clone().into(),
+            );
+        }
+
+        Self::new(
+            self.definitions
+                .iter()
+                .map(|definition| definition.infer_environment(&variables, global_variables))
+                .collect(),
+            self.expression
+                .infer_environment(&variables, global_variables),
         )
     }
 }
