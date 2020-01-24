@@ -88,10 +88,6 @@ impl FunctionDefinition {
 
         names.remove(self.name.as_str());
 
-        for free_variable in &self.environment {
-            names.remove(free_variable.name());
-        }
-
         for argument in &self.arguments {
             names.remove(argument.name());
         }
@@ -109,13 +105,6 @@ impl FunctionDefinition {
         let mut excluded_variables = excluded_variables.clone();
 
         excluded_variables.insert(self.name.clone());
-
-        excluded_variables.extend(
-            self.environment
-                .iter()
-                .map(|argument| argument.name().into())
-                .collect::<HashSet<_>>(),
-        );
 
         excluded_variables.extend(
             self.arguments
@@ -140,19 +129,15 @@ impl FunctionDefinition {
 
         Self::with_environment(
             self.name.clone(),
-            if self.environment.len() > 0 {
-                self.environment.clone()
-            } else {
-                self.find_variables(global_variables)
-                    .iter()
-                    .filter(|name| {
-                        self.arguments
-                            .iter()
-                            .all(|argument| argument.name() != name.as_str())
-                    })
-                    .map(|name| Argument::new(name, original_variables[name].clone()))
-                    .collect()
-            },
+            self.find_variables(global_variables)
+                .iter()
+                .filter(|name| {
+                    self.arguments
+                        .iter()
+                        .all(|argument| argument.name() != name.as_str())
+                })
+                .map(|name| Argument::new(name, original_variables[name].clone()))
+                .collect(),
             self.arguments.clone(),
             self.body.infer_environment(&variables, global_variables),
             self.result_type.clone(),
