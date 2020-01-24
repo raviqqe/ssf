@@ -6,6 +6,9 @@ use std::collections::{HashMap, HashSet};
 #[derive(Clone, Debug, PartialEq)]
 pub struct FunctionDefinition {
     name: String,
+    // Environment is inferred on module creation and this field is used just
+    // as its cache.  So it must be safe to clone function definitions inside a
+    // module and use it on creation of another module.
     environment: Vec<Argument>,
     arguments: Vec<Argument>,
     body: Expression,
