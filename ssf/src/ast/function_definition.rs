@@ -140,15 +140,19 @@ impl FunctionDefinition {
 
         Self::with_environment(
             self.name.clone(),
-            self.find_variables(global_variables)
-                .iter()
-                .filter(|name| {
-                    self.arguments
-                        .iter()
-                        .all(|argument| argument.name() != name.as_str())
-                })
-                .map(|name| Argument::new(name, original_variables[name].clone()))
-                .collect(),
+            if self.environment.len() > 0 {
+                self.environment.clone()
+            } else {
+                self.find_variables(global_variables)
+                    .iter()
+                    .filter(|name| {
+                        self.arguments
+                            .iter()
+                            .all(|argument| argument.name() != name.as_str())
+                    })
+                    .map(|name| Argument::new(name, original_variables[name].clone()))
+                    .collect()
+            },
             self.arguments.clone(),
             self.body.infer_environment(&variables, global_variables),
             self.result_type.clone(),
@@ -196,6 +200,31 @@ mod tests {
                     .collect(),
                 &Default::default()
             ),
+            FunctionDefinition::with_environment(
+                "f",
+                vec![Argument::new("y", types::Value::Number)],
+                vec![Argument::new("x", types::Value::Number)],
+                Variable::new("y"),
+                types::Value::Number
+            )
+        );
+    }
+
+    #[test]
+    fn infer_environment_idempotently() {
+        let variables = vec![("y".into(), types::Value::Number.into())]
+            .drain(..)
+            .collect();
+
+        assert_eq!(
+            FunctionDefinition::new(
+                "f",
+                vec![Argument::new("x", types::Value::Number)],
+                Variable::new("y"),
+                types::Value::Number
+            )
+            .infer_environment(&variables, &Default::default())
+            .infer_environment(&variables, &Default::default()),
             FunctionDefinition::with_environment(
                 "f",
                 vec![Argument::new("y", types::Value::Number)],
