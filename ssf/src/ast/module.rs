@@ -51,9 +51,10 @@ impl Module {
     }
 
     pub fn rename_global_definitions(&self, names: &HashMap<String, String>) -> Self {
-        Self::new(
-            self.declarations.to_vec(),
-            self.definitions
+        Self {
+            declarations: self.declarations.to_vec(),
+            definitions: self
+                .definitions
                 .iter()
                 .map(|definition| match definition {
                     Definition::FunctionDefinition(function_definition) => {
@@ -80,7 +81,7 @@ impl Module {
                     .into(),
                 })
                 .collect(),
-        )
+        }
     }
 }
 
@@ -117,6 +118,59 @@ mod tests {
                 )
                 .into()]
             )
+        );
+    }
+
+    #[test]
+    fn do_not_infer_environment_while_renaming_global_definitions() {
+        assert_eq!(
+            Module::new(
+                vec![],
+                vec![
+                    ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
+                        .into(),
+                    FunctionDefinition::new(
+                        "f",
+                        vec![Argument::new("x", types::Value::Number)],
+                        LetFunctions::new(
+                            vec![FunctionDefinition::new(
+                                "g",
+                                vec![Argument::new("y", types::Value::Number)],
+                                Variable::new("x"),
+                                types::Value::Number
+                            )],
+                            Expression::Number(42.0)
+                        ),
+                        types::Value::Number
+                    )
+                    .into()
+                ]
+            )
+            .rename_global_definitions(&Default::default()),
+            Module {
+                declarations: vec![],
+                definitions: vec![
+                    ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
+                        .into(),
+                    FunctionDefinition::with_environment(
+                        "f",
+                        vec![],
+                        vec![Argument::new("x", types::Value::Number)],
+                        LetFunctions::new(
+                            vec![FunctionDefinition::with_environment(
+                                "g",
+                                vec![Argument::new("x", types::Value::Number)],
+                                vec![Argument::new("y", types::Value::Number)],
+                                Variable::new("x"),
+                                types::Value::Number
+                            )],
+                            Expression::Number(42.0)
+                        ),
+                        types::Value::Number
+                    )
+                    .into()
+                ]
+            }
         );
     }
 
