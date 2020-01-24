@@ -138,10 +138,9 @@ impl FunctionDefinition {
             variables.insert(argument.name().into(), argument.type_().clone());
         }
 
-        Self {
-            name: self.name.clone(),
-            environment: self
-                .find_variables(global_variables)
+        Self::with_environment(
+            self.name.clone(),
+            self.find_variables(global_variables)
                 .iter()
                 .filter(|name| {
                     self.arguments
@@ -150,11 +149,10 @@ impl FunctionDefinition {
                 })
                 .map(|name| Argument::new(name, original_variables[name].clone()))
                 .collect(),
-            arguments: self.arguments.clone(),
-            body: self.body.infer_environment(&variables, global_variables),
-            result_type: self.result_type.clone(),
-            type_: self.type_.clone(),
-        }
+            self.arguments.clone(),
+            self.body.infer_environment(&variables, global_variables),
+            self.result_type.clone(),
+        )
     }
 }
 
