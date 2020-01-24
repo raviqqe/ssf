@@ -5,7 +5,6 @@ use std::fmt::Display;
 pub enum CompileError {
     Analysis(ssf::AnalysisError),
     Llvm(String),
-    TypeCheck(ssf::TypeCheckError),
     VariableNotFound,
 }
 
@@ -16,12 +15,6 @@ impl Display for CompileError {
 }
 
 impl Error for CompileError {}
-
-impl From<ssf::TypeCheckError> for CompileError {
-    fn from(error: ssf::TypeCheckError) -> Self {
-        CompileError::TypeCheck(error)
-    }
-}
 
 impl From<ssf::AnalysisError> for CompileError {
     fn from(error: ssf::AnalysisError) -> Self {

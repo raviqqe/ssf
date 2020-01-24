@@ -15,8 +15,6 @@ pub fn compile(
     ast_module: &ssf::ast::Module,
     initializer_configuration: &InitializerConfiguration,
 ) -> Result<Vec<u8>, CompileError> {
-    ast_module.check_types()?;
-
     let context = inkwell::context::Context::create();
     let module = context.create_module("main");
     let type_compiler = TypeCompiler::new(&context, &module);
@@ -36,7 +34,7 @@ mod tests {
     #[test]
     fn compile_() {
         compile(
-            &ssf::ast::Module::new(vec![], vec![]),
+            &ssf::ast::Module::new(vec![], vec![]).unwrap(),
             &InitializerConfiguration::new("foo", vec![]),
         )
         .unwrap();
@@ -53,7 +51,8 @@ mod tests {
                     ssf::types::Value::Number,
                 )
                 .into()],
-            ),
+            )
+            .unwrap(),
             &InitializerConfiguration::new("foo", vec![]),
         )
         .unwrap();

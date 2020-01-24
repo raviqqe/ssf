@@ -12,7 +12,10 @@ pub struct Module {
 }
 
 impl Module {
-    pub fn new(declarations: Vec<Declaration>, definitions: Vec<Definition>) -> Self {
+    pub fn new(
+        declarations: Vec<Declaration>,
+        definitions: Vec<Definition>,
+    ) -> Result<Self, TypeCheckError> {
         let global_variables = declarations
             .iter()
             .map(|declaration| declaration.name().into())
@@ -23,7 +26,7 @@ impl Module {
             )
             .collect();
 
-        Self {
+        let module = Self {
             declarations,
             definitions: definitions
                 .iter()
@@ -31,6 +34,21 @@ impl Module {
                     definition.infer_environment(&Default::default(), &global_variables)
                 })
                 .collect(),
+        };
+
+        check_types(&module)?;
+
+        Ok(module)
+    }
+
+    #[cfg(test)]
+    pub fn without_validation(
+        declarations: Vec<Declaration>,
+        definitions: Vec<Definition>,
+    ) -> Self {
+        Self {
+            declarations,
+            definitions,
         }
     }
 
@@ -40,10 +58,6 @@ impl Module {
 
     pub fn definitions(&self) -> &[Definition] {
         &self.definitions
-    }
-
-    pub fn check_types(&self) -> Result<(), TypeCheckError> {
-        check_types(self)
     }
 
     pub fn sort_global_variables(&self) -> Result<Vec<&str>, AnalysisError> {
@@ -95,8 +109,10 @@ mod tests {
     #[test]
     fn rename_global_definitions() {
         assert_eq!(
-            Module::new(vec![], vec![]).rename_global_definitions(&Default::default()),
             Module::new(vec![], vec![])
+                .unwrap()
+                .rename_global_definitions(&Default::default()),
+            Module::without_validation(vec![], vec![])
         );
         assert_eq!(
             Module::new(
@@ -108,8 +124,9 @@ mod tests {
                 )
                 .into()]
             )
+            .unwrap()
             .rename_global_definitions(&vec![("foo".into(), "bar".into())].drain(..).collect()),
-            Module::new(
+            Module::without_validation(
                 vec![],
                 vec![ValueDefinition::new(
                     "bar",
@@ -146,10 +163,11 @@ mod tests {
                     .into()
                 ]
             )
+            .unwrap()
             .rename_global_definitions(&Default::default()),
-            Module {
-                declarations: vec![],
-                definitions: vec![
+            Module::without_validation(
+                vec![],
+                vec![
                     ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
                         .into(),
                     FunctionDefinition::with_environment(
@@ -170,7 +188,7 @@ mod tests {
                     )
                     .into()
                 ]
-            }
+            )
         );
     }
 
@@ -187,9 +205,9 @@ mod tests {
                 )
                 .into()]
             ),
-            Module {
-                declarations: vec![],
-                definitions: vec![FunctionDefinition::with_environment(
+            Ok(Module::without_validation(
+                vec![],
+                vec![FunctionDefinition::with_environment(
                     "f",
                     vec![],
                     vec![Argument::new("x", types::Value::Number)],
@@ -197,7 +215,7 @@ mod tests {
                     types::Value::Number
                 )
                 .into()]
-            }
+            ))
         );
         assert_eq!(
             Module::new(
@@ -214,9 +232,9 @@ mod tests {
                     .into()
                 ]
             ),
-            Module {
-                declarations: vec![],
-                definitions: vec![
+            Ok(Module::without_validation(
+                vec![],
+                vec![
                     ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
                         .into(),
                     FunctionDefinition::with_environment(
@@ -228,7 +246,7 @@ mod tests {
                     )
                     .into()
                 ]
-            }
+            ))
         );
         assert_eq!(
             Module::new(
@@ -253,9 +271,9 @@ mod tests {
                     .into()
                 ]
             ),
-            Module {
-                declarations: vec![],
-                definitions: vec![
+            Ok(Module::without_validation(
+                vec![],
+                vec![
                     ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
                         .into(),
                     FunctionDefinition::with_environment(
@@ -276,7 +294,7 @@ mod tests {
                     )
                     .into()
                 ]
-            }
+            ))
         );
     }
 }
