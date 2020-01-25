@@ -29,7 +29,7 @@ impl<'c, 'm> TypeCompiler<'c, 'm> {
 
     pub fn compile_closure(
         &self,
-        function_definition: &ssf::ast::FunctionDefinition,
+        function_definition: &ssf::ir::FunctionDefinition,
     ) -> inkwell::types::StructType<'c> {
         self.context.struct_type(
             &[
@@ -70,7 +70,7 @@ impl<'c, 'm> TypeCompiler<'c, 'm> {
 
     fn compile_environment(
         &self,
-        free_variables: &[ssf::ast::Argument],
+        free_variables: &[ssf::ir::Argument],
     ) -> inkwell::types::StructType {
         self.context.struct_type(
             &free_variables

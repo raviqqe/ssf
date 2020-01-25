@@ -1,5 +1,5 @@
 use super::error::TypeCheckError;
-use crate::ast::*;
+use crate::ir::*;
 use crate::types::{self, Type};
 use std::collections::*;
 

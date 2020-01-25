@@ -117,7 +117,7 @@ impl Module {
 mod tests {
     use super::super::expression::Expression;
     use super::*;
-    use crate::ast::*;
+    use crate::ir::*;
     use crate::types;
 
     #[test]

@@ -1,7 +1,7 @@
 mod error;
 mod type_checker;
 
-use crate::ast::*;
+use crate::ir::*;
 pub use error::*;
 use type_checker::*;
 
@@ -13,7 +13,7 @@ pub fn check_types(module: &Module) -> Result<(), TypeCheckError> {
 mod tests {
     use super::check_types;
     use super::error::*;
-    use crate::ast::*;
+    use crate::ir::*;
     use crate::types;
 
     #[test]

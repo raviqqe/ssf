@@ -27,7 +27,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
 
     pub fn compile(
         &self,
-        function_definition: &ssf::ast::FunctionDefinition,
+        function_definition: &ssf::ir::FunctionDefinition,
     ) -> Result<inkwell::values::FunctionValue, CompileError> {
         let closure_type = self.type_compiler.compile_closure(function_definition);
 

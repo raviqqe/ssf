@@ -1,16 +1,16 @@
 use super::error::AnalysisError;
-use crate::ast;
+use crate::ir;
 use petgraph::algo::toposort;
 use petgraph::graph::Graph;
 use std::collections::{HashMap, HashSet};
 
-pub fn sort_global_variables(module: &ast::Module) -> Result<Vec<&str>, AnalysisError> {
+pub fn sort_global_variables(module: &ir::Module) -> Result<Vec<&str>, AnalysisError> {
     let value_names = module
         .definitions()
         .iter()
         .map(|definition| match definition {
-            ast::Definition::FunctionDefinition(_) => None,
-            ast::Definition::ValueDefinition(value_definition) => Some(value_definition.name()),
+            ir::Definition::FunctionDefinition(_) => None,
+            ir::Definition::ValueDefinition(value_definition) => Some(value_definition.name()),
         })
         .filter(|option| option.is_some())
         .collect::<Option<HashSet<&str>>>()
@@ -50,7 +50,7 @@ mod tests {
     #[test]
     fn sort_no_constants() {
         assert_eq!(
-            sort_global_variables(&ast::Module::without_validation(vec![], vec![], vec![])),
+            sort_global_variables(&ir::Module::without_validation(vec![], vec![], vec![])),
             Ok(vec![])
         );
     }
@@ -58,9 +58,9 @@ mod tests {
     #[test]
     fn sort_a_constant() {
         assert_eq!(
-            sort_global_variables(&ast::Module::without_validation(
+            sort_global_variables(&ir::Module::without_validation(
                 vec![],
-                vec![ast::ValueDefinition::new("x", 42.0, types::Value::Number).into()],
+                vec![ir::ValueDefinition::new("x", 42.0, types::Value::Number).into()],
                 vec![]
             )),
             Ok(vec!["x".into()])
@@ -70,11 +70,11 @@ mod tests {
     #[test]
     fn sort_sorted_constants() {
         assert_eq!(
-            sort_global_variables(&ast::Module::without_validation(
+            sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ast::ValueDefinition::new("x", 42.0, types::Value::Number).into(),
-                    ast::ValueDefinition::new("y", ast::Variable::new("x"), types::Value::Number)
+                    ir::ValueDefinition::new("x", 42.0, types::Value::Number).into(),
+                    ir::ValueDefinition::new("y", ir::Variable::new("x"), types::Value::Number)
                         .into()
                 ],
                 vec![]
@@ -86,12 +86,12 @@ mod tests {
     #[test]
     fn sort_constants_not_sorted() {
         assert_eq!(
-            sort_global_variables(&ast::Module::without_validation(
+            sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ast::ValueDefinition::new("y", ast::Variable::new("x"), types::Value::Number)
+                    ir::ValueDefinition::new("y", ir::Variable::new("x"), types::Value::Number)
                         .into(),
-                    ast::ValueDefinition::new("x", 42.0, types::Value::Number).into(),
+                    ir::ValueDefinition::new("x", 42.0, types::Value::Number).into(),
                 ],
                 vec![]
             )),
@@ -102,26 +102,26 @@ mod tests {
     #[test]
     fn sort_constants_not_sorted_with_function() {
         assert_eq!(
-            sort_global_variables(&ast::Module::without_validation(
+            sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ast::ValueDefinition::new(
+                    ir::ValueDefinition::new(
                         "y",
-                        ast::Application::new(
-                            ast::Variable::new("f"),
-                            vec![ast::Expression::Number(42.0)]
+                        ir::Application::new(
+                            ir::Variable::new("f"),
+                            vec![ir::Expression::Number(42.0)]
                         ),
                         types::Value::Number
                     )
                     .into(),
-                    ast::FunctionDefinition::new(
+                    ir::FunctionDefinition::new(
                         "f",
-                        vec![ast::Argument::new("a", types::Value::Number)],
-                        ast::Variable::new("x"),
+                        vec![ir::Argument::new("a", types::Value::Number)],
+                        ir::Variable::new("x"),
                         types::Value::Number
                     )
                     .into(),
-                    ast::ValueDefinition::new("x", 42.0, types::Value::Number).into(),
+                    ir::ValueDefinition::new("x", 42.0, types::Value::Number).into(),
                 ],
                 vec![]
             )),
@@ -132,39 +132,39 @@ mod tests {
     #[test]
     fn sort_constants_not_sorted_with_recursive_functions() {
         assert_eq!(
-            sort_global_variables(&ast::Module::without_validation(
+            sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ast::ValueDefinition::new(
+                    ir::ValueDefinition::new(
                         "y",
-                        ast::Application::new(
-                            ast::Variable::new("f"),
-                            vec![ast::Expression::Number(42.0)]
+                        ir::Application::new(
+                            ir::Variable::new("f"),
+                            vec![ir::Expression::Number(42.0)]
                         ),
                         types::Value::Number
                     )
                     .into(),
-                    ast::FunctionDefinition::new(
+                    ir::FunctionDefinition::new(
                         "f",
-                        vec![ast::Argument::new("a", types::Value::Number)],
-                        ast::Application::new(
-                            ast::Variable::new("g"),
-                            vec![ast::Variable::new("x").into()]
+                        vec![ir::Argument::new("a", types::Value::Number)],
+                        ir::Application::new(
+                            ir::Variable::new("g"),
+                            vec![ir::Variable::new("x").into()]
                         ),
                         types::Value::Number
                     )
                     .into(),
-                    ast::FunctionDefinition::new(
+                    ir::FunctionDefinition::new(
                         "g",
-                        vec![ast::Argument::new("a", types::Value::Number)],
-                        ast::Application::new(
-                            ast::Variable::new("f"),
-                            vec![ast::Variable::new("x").into()]
+                        vec![ir::Argument::new("a", types::Value::Number)],
+                        ir::Application::new(
+                            ir::Variable::new("f"),
+                            vec![ir::Variable::new("x").into()]
                         ),
                         types::Value::Number
                     )
                     .into(),
-                    ast::ValueDefinition::new("x", 42.0, types::Value::Number).into(),
+                    ir::ValueDefinition::new("x", 42.0, types::Value::Number).into(),
                 ],
                 vec![]
             )),
@@ -175,10 +175,10 @@ mod tests {
     #[test]
     fn fail_to_sort_recursively_defined_constant() {
         assert_eq!(
-            sort_global_variables(&ast::Module::without_validation(
+            sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ast::ValueDefinition::new("x", ast::Variable::new("x"), types::Value::Number)
+                    ir::ValueDefinition::new("x", ir::Variable::new("x"), types::Value::Number)
                         .into()
                 ],
                 vec![]
@@ -190,12 +190,12 @@ mod tests {
     #[test]
     fn fail_to_sort_recursively_defined_constants() {
         assert_eq!(
-            sort_global_variables(&ast::Module::without_validation(
+            sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ast::ValueDefinition::new("x", ast::Variable::new("y"), types::Value::Number)
+                    ir::ValueDefinition::new("x", ir::Variable::new("y"), types::Value::Number)
                         .into(),
-                    ast::ValueDefinition::new("y", ast::Variable::new("x"), types::Value::Number)
+                    ir::ValueDefinition::new("y", ir::Variable::new("x"), types::Value::Number)
                         .into(),
                 ],
                 vec![]
