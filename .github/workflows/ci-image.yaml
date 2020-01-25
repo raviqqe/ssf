@@ -1,4 +1,4 @@
-name: ci-docker-image
+name: ci-image
 on:
   schedule:
     - cron: "0 0 * * *"
