@@ -2,20 +2,21 @@ use super::declaration::Declaration;
 use super::definition::Definition;
 use super::function_definition::FunctionDefinition;
 use super::value_definition::ValueDefinition;
-use crate::analysis::{check_types, sort_global_variables, AnalysisError, TypeCheckError};
+use crate::analysis::{check_types, sort_global_variables, AnalysisError};
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Module {
     declarations: Vec<Declaration>,
     definitions: Vec<Definition>,
+    global_variable_initialization_order: Vec<String>,
 }
 
 impl Module {
     pub fn new(
         declarations: Vec<Declaration>,
         definitions: Vec<Definition>,
-    ) -> Result<Self, TypeCheckError> {
+    ) -> Result<Self, AnalysisError> {
         let global_variables = declarations
             .iter()
             .map(|declaration| declaration.name().into())
@@ -26,7 +27,7 @@ impl Module {
             )
             .collect();
 
-        let module = Self {
+        let mut module = Self {
             declarations,
             definitions: definitions
                 .iter()
@@ -34,9 +35,14 @@ impl Module {
                     definition.infer_environment(&Default::default(), &global_variables)
                 })
                 .collect(),
+            global_variable_initialization_order: vec![],
         };
 
         check_types(&module)?;
+        module.global_variable_initialization_order = sort_global_variables(&module)?
+            .into_iter()
+            .map(|string| string.into())
+            .collect();
 
         Ok(module)
     }
@@ -45,10 +51,12 @@ impl Module {
     pub fn without_validation(
         declarations: Vec<Declaration>,
         definitions: Vec<Definition>,
+        global_variable_initialization_order: Vec<String>,
     ) -> Self {
         Self {
             declarations,
             definitions,
+            global_variable_initialization_order,
         }
     }
 
@@ -60,8 +68,8 @@ impl Module {
         &self.definitions
     }
 
-    pub fn sort_global_variables(&self) -> Result<Vec<&str>, AnalysisError> {
-        sort_global_variables(self)
+    pub fn global_variable_initialization_order(&self) -> &[String] {
+        &self.global_variable_initialization_order
     }
 
     pub fn rename_global_definitions(&self, names: &HashMap<String, String>) -> Self {
@@ -95,6 +103,12 @@ impl Module {
                     .into(),
                 })
                 .collect(),
+            global_variable_initialization_order: self
+                .global_variable_initialization_order
+                .iter()
+                .map(|name| names.get(name).unwrap_or_else(|| name))
+                .cloned()
+                .collect(),
         }
     }
 }
@@ -112,7 +126,7 @@ mod tests {
             Module::new(vec![], vec![])
                 .unwrap()
                 .rename_global_definitions(&Default::default()),
-            Module::without_validation(vec![], vec![])
+            Module::without_validation(vec![], vec![], vec![])
         );
         assert_eq!(
             Module::new(
@@ -133,7 +147,8 @@ mod tests {
                     Expression::Number(42.0),
                     types::Value::Number.into()
                 )
-                .into()]
+                .into()],
+                vec!["bar".into()]
             )
         );
     }
@@ -187,7 +202,8 @@ mod tests {
                         types::Value::Number
                     )
                     .into()
-                ]
+                ],
+                vec!["y".into()]
             )
         );
     }
@@ -214,7 +230,8 @@ mod tests {
                     Expression::Number(42.0),
                     types::Value::Number
                 )
-                .into()]
+                .into()],
+                vec![]
             ))
         );
         assert_eq!(
@@ -245,7 +262,8 @@ mod tests {
                         types::Value::Number
                     )
                     .into()
-                ]
+                ],
+                vec!["y".into()]
             ))
         );
         assert_eq!(
@@ -269,7 +287,7 @@ mod tests {
                         types::Value::Number
                     )
                     .into()
-                ]
+                ],
             ),
             Ok(Module::without_validation(
                 vec![],
@@ -293,7 +311,8 @@ mod tests {
                         types::Value::Number
                     )
                     .into()
-                ]
+                ],
+                vec!["y".into()]
             ))
         );
     }

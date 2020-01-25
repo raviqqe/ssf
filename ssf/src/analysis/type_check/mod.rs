@@ -19,7 +19,7 @@ mod tests {
     #[test]
     fn check_types_with_empty_modules() {
         assert_eq!(
-            check_types(&Module::without_validation(vec![], vec![])),
+            check_types(&Module::without_validation(vec![], vec![], vec![])),
             Ok(())
         );
     }
@@ -29,6 +29,7 @@ mod tests {
         let module = Module::without_validation(
             vec![],
             vec![ValueDefinition::new("x", 42.0, types::Value::Number).into()],
+            vec![],
         );
         assert_eq!(check_types(&module), Ok(()));
     }
@@ -47,6 +48,7 @@ mod tests {
                 .into(),
                 ValueDefinition::new("x", Variable::new("f"), types::Value::Number).into(),
             ],
+            vec![],
         );
 
         assert_eq!(check_types(&module), Err(TypeCheckError));
@@ -63,6 +65,7 @@ mod tests {
                 types::Value::Number,
             )
             .into()],
+            vec![],
         );
 
         assert_eq!(check_types(&module), Ok(()));
@@ -88,6 +91,7 @@ mod tests {
                 )
                 .into(),
             ],
+            vec![],
         );
 
         assert_eq!(check_types(&module), Err(TypeCheckError));
@@ -112,6 +116,7 @@ mod tests {
                 )
                 .into(),
             ],
+            vec![],
         );
 
         assert_eq!(check_types(&module), Ok(()));
@@ -139,6 +144,7 @@ mod tests {
                 )
                 .into(),
             ],
+            vec![],
         );
 
         assert_eq!(check_types(&module), Err(TypeCheckError));
@@ -149,6 +155,7 @@ mod tests {
         let module = Module::without_validation(
             vec![],
             vec![ValueDefinition::new("x", Variable::new("y"), types::Value::Number).into()],
+            vec![],
         );
 
         assert_eq!(check_types(&module), Err(TypeCheckError));
@@ -170,6 +177,7 @@ mod tests {
                 types::Value::Number,
             )
             .into()],
+            vec![],
         );
 
         assert_eq!(check_types(&module), Ok(()));
@@ -201,6 +209,7 @@ mod tests {
                 )
                 .into(),
             ],
+            vec![],
         );
 
         assert_eq!(check_types(&module), Err(TypeCheckError));
@@ -211,6 +220,7 @@ mod tests {
         let module = Module::without_validation(
             vec![Declaration::new("x", types::Value::Number)],
             vec![ValueDefinition::new("y", Variable::new("x"), types::Value::Number).into()],
+            vec![],
         );
         assert_eq!(check_types(&module), Ok(()));
     }
@@ -223,6 +233,7 @@ mod tests {
                 types::Function::new(vec![types::Value::Number.into()], types::Value::Number),
             )],
             vec![ValueDefinition::new("y", Variable::new("x"), types::Value::Number).into()],
+            vec![],
         );
         assert_eq!(check_types(&module), Err(TypeCheckError));
     }
