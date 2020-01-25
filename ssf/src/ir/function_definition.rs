@@ -151,7 +151,7 @@ impl FunctionDefinition {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::*;
+    use crate::ir::*;
 
     #[test]
     fn infer_empty_environment() {

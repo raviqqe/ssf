@@ -12,7 +12,7 @@ use module_compiler::ModuleCompiler;
 use type_compiler::TypeCompiler;
 
 pub fn compile(
-    ast_module: &ssf::ast::Module,
+    ir_module: &ssf::ir::Module,
     initializer_configuration: &InitializerConfiguration,
 ) -> Result<Vec<u8>, CompileError> {
     let context = inkwell::context::Context::create();
@@ -20,7 +20,7 @@ pub fn compile(
     let type_compiler = TypeCompiler::new(&context, &module);
 
     ModuleCompiler::new(&context, &module, &type_compiler, initializer_configuration)
-        .compile(ast_module)?;
+        .compile(ir_module)?;
 
     let bitcode = module.write_bitcode_to_memory().as_slice().to_vec();
 
@@ -34,7 +34,7 @@ mod tests {
     #[test]
     fn compile_() {
         compile(
-            &ssf::ast::Module::new(vec![], vec![]).unwrap(),
+            &ssf::ir::Module::new(vec![], vec![]).unwrap(),
             &InitializerConfiguration::new("foo", vec![]),
         )
         .unwrap();
@@ -43,11 +43,11 @@ mod tests {
     #[test]
     fn compile_with_global_variable() {
         compile(
-            &ssf::ast::Module::new(
+            &ssf::ir::Module::new(
                 vec![],
-                vec![ssf::ast::ValueDefinition::new(
+                vec![ssf::ir::ValueDefinition::new(
                     "foo",
-                    ssf::ast::Expression::Number(42.0),
+                    ssf::ir::Expression::Number(42.0),
                     ssf::types::Value::Number,
                 )
                 .into()],

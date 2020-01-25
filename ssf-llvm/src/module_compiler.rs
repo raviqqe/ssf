@@ -32,10 +32,10 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
         }
     }
 
-    pub fn compile<'s>(&mut self, ast_module: &'s ssf::ast::Module) -> Result<(), CompileError> {
+    pub fn compile<'s>(&mut self, ir_module: &'s ssf::ir::Module) -> Result<(), CompileError> {
         self.declare_intrinsics();
 
-        for declaration in ast_module.declarations() {
+        for declaration in ir_module.declarations() {
             match declaration.type_() {
                 ssf::types::Type::Function(function_type) => {
                     self.declare_function(declaration.name(), function_type)
@@ -46,29 +46,29 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
             }
         }
 
-        for definition in ast_module.definitions() {
+        for definition in ir_module.definitions() {
             match definition {
-                ssf::ast::Definition::FunctionDefinition(function_definition) => {
+                ssf::ir::Definition::FunctionDefinition(function_definition) => {
                     self.declare_function(function_definition.name(), function_definition.type_())
                 }
-                ssf::ast::Definition::ValueDefinition(value_definition) => {
+                ssf::ir::Definition::ValueDefinition(value_definition) => {
                     self.declare_global_variable(value_definition.name(), value_definition.type_())
                 }
             }
         }
 
-        for definition in ast_module.definitions() {
+        for definition in ir_module.definitions() {
             match definition {
-                ssf::ast::Definition::FunctionDefinition(function_definition) => {
+                ssf::ir::Definition::FunctionDefinition(function_definition) => {
                     self.compile_function(function_definition)?
                 }
-                ssf::ast::Definition::ValueDefinition(value_definition) => {
+                ssf::ir::Definition::ValueDefinition(value_definition) => {
                     self.compile_global_variable(value_definition)?
                 }
             }
         }
 
-        self.compile_module_initializer(ast_module)?;
+        self.compile_module_initializer(ir_module)?;
 
         self.module.verify()?;
 
@@ -88,7 +88,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
 
     fn compile_function(
         &mut self,
-        function_definition: &ssf::ast::FunctionDefinition,
+        function_definition: &ssf::ir::FunctionDefinition,
     ) -> Result<(), CompileError> {
         let global_variable = self.global_variables[function_definition.name()];
 
@@ -126,7 +126,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
 
     fn compile_global_variable(
         &mut self,
-        value_definition: &ssf::ast::ValueDefinition,
+        value_definition: &ssf::ir::ValueDefinition,
     ) -> Result<(), CompileError> {
         let global_variable = self.global_variables[value_definition.name()];
         global_variable.set_initializer(
@@ -181,7 +181,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
 
     fn compile_module_initializer(
         &mut self,
-        ast_module: &ssf::ast::Module,
+        ir_module: &ssf::ir::Module,
     ) -> Result<(), CompileError> {
         let flag = self.module.add_global(
             self.context.bool_type(),
@@ -228,7 +228,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
             );
         }
 
-        for name in ast_module.global_variable_initialization_order() {
+        for name in ir_module.global_variable_initialization_order() {
             builder.build_call(self.initializers[name], &[], "");
         }
 

@@ -30,11 +30,11 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
     pub fn compile(
         &self,
-        expression: &ssf::ast::Expression,
+        expression: &ssf::ir::Expression,
         variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         match expression {
-            ssf::ast::Expression::Application(application) => {
+            ssf::ir::Expression::Application(application) => {
                 let closure = self
                     .compile_variable(application.function(), variables)?
                     .into_pointer_value();
@@ -80,7 +80,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     .left()
                     .unwrap())
             }
-            ssf::ast::Expression::LetFunctions(let_functions) => {
+            ssf::ir::Expression::LetFunctions(let_functions) => {
                 let mut variables = variables.clone();
                 let mut closures = HashMap::<&str, inkwell::values::PointerValue>::new();
 
@@ -167,7 +167,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
                 self.compile(let_functions.expression(), &variables)
             }
-            ssf::ast::Expression::LetValues(let_values) => {
+            ssf::ir::Expression::LetValues(let_values) => {
                 let mut variables = variables.clone();
 
                 for definition in let_values.definitions() {
@@ -179,28 +179,28 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
                 self.compile(let_values.expression(), &variables)
             }
-            ssf::ast::Expression::Number(number) => {
+            ssf::ir::Expression::Number(number) => {
                 Ok(self.context.f64_type().const_float(*number).into())
             }
-            ssf::ast::Expression::Operation(operation) => {
+            ssf::ir::Expression::Operation(operation) => {
                 let lhs = self.compile(operation.lhs(), variables)?.into_float_value();
                 let rhs = self.compile(operation.rhs(), variables)?.into_float_value();
 
                 Ok(match operation.operator() {
-                    ssf::ast::Operator::Add => self.builder.build_float_add(lhs, rhs, ""),
-                    ssf::ast::Operator::Subtract => self.builder.build_float_sub(lhs, rhs, ""),
-                    ssf::ast::Operator::Multiply => self.builder.build_float_mul(lhs, rhs, ""),
-                    ssf::ast::Operator::Divide => self.builder.build_float_div(lhs, rhs, ""),
+                    ssf::ir::Operator::Add => self.builder.build_float_add(lhs, rhs, ""),
+                    ssf::ir::Operator::Subtract => self.builder.build_float_sub(lhs, rhs, ""),
+                    ssf::ir::Operator::Multiply => self.builder.build_float_mul(lhs, rhs, ""),
+                    ssf::ir::Operator::Divide => self.builder.build_float_div(lhs, rhs, ""),
                 }
                 .into())
             }
-            ssf::ast::Expression::Variable(variable) => self.compile_variable(variable, variables),
+            ssf::ir::Expression::Variable(variable) => self.compile_variable(variable, variables),
         }
     }
 
     fn compile_variable(
         &self,
-        variable: &ssf::ast::Variable,
+        variable: &ssf::ir::Variable,
         variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         match variables.get(variable.name()) {
