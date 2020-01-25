@@ -228,7 +228,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
             );
         }
 
-        for name in ast_module.sort_global_variables()? {
+        for name in ast_module.global_variable_initialization_order() {
             builder.build_call(self.initializers[name], &[], "");
         }
 
