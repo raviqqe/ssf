@@ -12,4 +12,5 @@ jobs:
       HOME: /root
     steps:
       - uses: actions/checkout@master
-      - run: cargo release --token $CARGO_TOKEN
+      - run: cargo login $CARGO_TOKEN
+      - run: cargo release --no-confirm patch
