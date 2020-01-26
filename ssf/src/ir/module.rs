@@ -72,9 +72,21 @@ impl Module {
         &self.global_variable_initialization_order
     }
 
-    pub fn rename_global_definitions(&self, names: &HashMap<String, String>) -> Self {
+    pub fn rename_global_variables(&self, names: &HashMap<String, String>) -> Self {
         Self {
-            declarations: self.declarations.to_vec(),
+            declarations: self
+                .declarations
+                .iter()
+                .map(|declaration| {
+                    Declaration::new(
+                        names
+                            .get(declaration.name())
+                            .cloned()
+                            .unwrap_or_else(|| declaration.name().into()),
+                        declaration.type_().clone(),
+                    )
+                })
+                .collect(),
             definitions: self
                 .definitions
                 .iter()
@@ -121,11 +133,11 @@ mod tests {
     use crate::types;
 
     #[test]
-    fn rename_global_definitions() {
+    fn rename_global_variables() {
         assert_eq!(
             Module::new(vec![], vec![])
                 .unwrap()
-                .rename_global_definitions(&Default::default()),
+                .rename_global_variables(&Default::default()),
             Module::without_validation(vec![], vec![], vec![])
         );
         assert_eq!(
@@ -139,7 +151,7 @@ mod tests {
                 .into()]
             )
             .unwrap()
-            .rename_global_definitions(&vec![("foo".into(), "bar".into())].drain(..).collect()),
+            .rename_global_variables(&vec![("foo".into(), "bar".into())].drain(..).collect()),
             Module::without_validation(
                 vec![],
                 vec![ValueDefinition::new(
@@ -149,6 +161,16 @@ mod tests {
                 )
                 .into()],
                 vec!["bar".into()]
+            )
+        );
+        assert_eq!(
+            Module::new(vec![Declaration::new("foo", types::Value::Number)], vec![])
+                .unwrap()
+                .rename_global_variables(&vec![("foo".into(), "bar".into())].drain(..).collect()),
+            Module::without_validation(
+                vec![Declaration::new("bar", types::Value::Number)],
+                vec![],
+                vec![]
             )
         );
     }
@@ -179,7 +201,7 @@ mod tests {
                 ]
             )
             .unwrap()
-            .rename_global_definitions(&Default::default()),
+            .rename_global_variables(&Default::default()),
             Module::without_validation(
                 vec![],
                 vec![
