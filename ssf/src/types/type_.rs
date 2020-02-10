@@ -1,7 +1,7 @@
 use super::function::Function;
 use super::value::Value;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Type {
     Function(Function),
     Value(Value),

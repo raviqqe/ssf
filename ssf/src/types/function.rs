@@ -2,7 +2,7 @@ use super::type_::Type;
 use super::value::Value;
 use std::rc::Rc;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Function {
     arguments: Vec<Type>,
     result: Rc<Value>,
