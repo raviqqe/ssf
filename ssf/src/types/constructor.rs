@@ -10,6 +10,10 @@ impl Constructor {
         Self { elements }
     }
 
+    pub fn elements(&self) -> &[Type] {
+        &self.elements
+    }
+
     pub fn to_id(&self) -> String {
         format!(
             "{{{}}}",

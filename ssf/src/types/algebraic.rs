@@ -11,6 +11,10 @@ impl Algebraic {
         Self { constructors }
     }
 
+    pub fn constructors(&self) -> &[Constructor] {
+        &self.constructors
+    }
+
     pub fn to_id(&self) -> String {
         format!(
             "{{{}}}",
