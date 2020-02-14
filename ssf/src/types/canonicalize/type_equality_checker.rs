@@ -113,6 +113,18 @@ mod tests {
                 .into(),
             ),
             (
+                Algebraic::new(vec![Constructor::new(vec![Algebraic::new(vec![
+                    Constructor::new(vec![Value::Index(0).into()]),
+                ])
+                .into()])])
+                .into(),
+                Algebraic::new(vec![Constructor::new(vec![Algebraic::new(vec![
+                    Constructor::new(vec![Value::Index(1).into()]),
+                ])
+                .into()])])
+                .into(),
+            ),
+            (
                 Algebraic::new(vec![Constructor::new(vec![Function::new(
                     vec![Value::Number.into()],
                     Value::Index(0).into(),
@@ -153,7 +165,10 @@ mod tests {
         ] {
             assert!(TypeEqualityChecker::new(&[]).equal(one, other));
         }
+    }
 
+    #[test]
+    fn not_equal() {
         for (one, other) in &[
             (
                 Value::Number.into(),

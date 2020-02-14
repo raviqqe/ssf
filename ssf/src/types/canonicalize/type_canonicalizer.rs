@@ -65,24 +65,3 @@ impl<'a> TypeCanonicalizer<'a> {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn canonicalize() {
-        for (type_, canonical_type) in &[
-            (Value::Number.into(), Value::Number.into()),
-            (
-                Function::new(vec![Value::Number.into()], Value::Number.into()).into(),
-                Function::new(vec![Value::Number.into()], Value::Number.into()).into(),
-            ),
-        ] {
-            assert_eq!(
-                &TypeCanonicalizer::new().canonicalize(type_),
-                canonical_type
-            );
-        }
-    }
-}
