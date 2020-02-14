@@ -9,7 +9,7 @@ use std::collections::HashMap;
 pub struct ModuleCompiler<'c, 'm, 't, 'i> {
     context: &'c inkwell::context::Context,
     module: &'m inkwell::module::Module<'c>,
-    type_compiler: &'t TypeCompiler<'c, 'm>,
+    type_compiler: &'t TypeCompiler<'c>,
     global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
     initializers: HashMap<String, inkwell::values::FunctionValue<'c>>,
     initializer_configuration: &'i InitializerConfiguration,
@@ -19,7 +19,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
     pub fn new(
         context: &'c inkwell::context::Context,
         module: &'m inkwell::module::Module<'c>,
-        type_compiler: &'t TypeCompiler<'c, 'm>,
+        type_compiler: &'t TypeCompiler<'c>,
         initializer_configuration: &'i InitializerConfiguration,
     ) -> ModuleCompiler<'c, 'm, 't, 'i> {
         ModuleCompiler {

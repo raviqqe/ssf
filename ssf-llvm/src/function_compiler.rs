@@ -6,7 +6,7 @@ use std::collections::HashMap;
 pub struct FunctionCompiler<'c, 'm, 't, 'v> {
     context: &'c inkwell::context::Context,
     module: &'m inkwell::module::Module<'c>,
-    type_compiler: &'t TypeCompiler<'c, 'm>,
+    type_compiler: &'t TypeCompiler<'c>,
     global_variables: &'v HashMap<String, inkwell::values::GlobalValue<'c>>,
 }
 
@@ -14,7 +14,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     pub fn new(
         context: &'c inkwell::context::Context,
         module: &'m inkwell::module::Module<'c>,
-        type_compiler: &'t TypeCompiler<'c, 'm>,
+        type_compiler: &'t TypeCompiler<'c>,
         global_variables: &'v HashMap<String, inkwell::values::GlobalValue<'c>>,
     ) -> Self {
         Self {

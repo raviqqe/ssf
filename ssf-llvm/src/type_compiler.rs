@@ -1,16 +1,12 @@
 use inkwell::types::BasicType;
 
-pub struct TypeCompiler<'c, 'm> {
+pub struct TypeCompiler<'c> {
     context: &'c inkwell::context::Context,
-    module: &'m inkwell::module::Module<'c>,
 }
 
-impl<'c, 'm> TypeCompiler<'c, 'm> {
-    pub fn new(
-        context: &'c inkwell::context::Context,
-        module: &'m inkwell::module::Module<'c>,
-    ) -> Self {
-        Self { context, module }
+impl<'c> TypeCompiler<'c> {
+    pub fn new(context: &'c inkwell::context::Context) -> Self {
+        Self { context }
     }
 
     fn compile(&self, type_: &ssf::types::Type) -> inkwell::types::BasicTypeEnum {
@@ -66,15 +62,7 @@ impl<'c, 'm> TypeCompiler<'c, 'm> {
         &self,
         function: &ssf::types::Function,
     ) -> inkwell::types::StructType<'c> {
-        let id = function.to_id();
-
-        if let Some(type_) = self.module.get_type(&id) {
-            return type_.into_struct_type();
-        }
-
-        let type_ = self.context.opaque_struct_type(&id);
-
-        type_.set_body(
+        self.context.struct_type(
             &[
                 self.compile_entry_function(function)
                     .ptr_type(inkwell::AddressSpace::Generic)
@@ -82,9 +70,7 @@ impl<'c, 'm> TypeCompiler<'c, 'm> {
                 self.compile_unsized_environment().into(),
             ],
             false,
-        );
-
-        type_
+        )
     }
 
     fn compile_environment(
@@ -155,14 +141,13 @@ mod tests {
     #[test]
     fn compile_number() {
         let context = inkwell::context::Context::create();
-        TypeCompiler::new(&context, &context.create_module(""))
-            .compile(&ssf::types::Value::Number.into());
+        TypeCompiler::new(&context).compile(&ssf::types::Value::Number.into());
     }
 
     #[test]
     fn compile_function() {
         let context = inkwell::context::Context::create();
-        TypeCompiler::new(&context, &context.create_module("")).compile(
+        TypeCompiler::new(&context).compile(
             &ssf::types::Function::new(
                 vec![ssf::types::Value::Number.into()],
                 ssf::types::Value::Number,
@@ -174,22 +159,20 @@ mod tests {
     #[test]
     fn compile_function_twice() {
         let context = inkwell::context::Context::create();
-        let module = context.create_module("");
-        let compiler = TypeCompiler::new(&context, &module);
+        let compiler = TypeCompiler::new(&context);
         let type_ = ssf::types::Function::new(
             vec![ssf::types::Value::Number.into()],
             ssf::types::Value::Number,
         )
         .into();
 
-        compiler.compile(&type_);
-        compiler.compile(&type_);
+        assert_eq!(compiler.compile(&type_), compiler.compile(&type_));
     }
 
     #[test]
     fn compile_algebraic_with_one_constructor() {
         let context = inkwell::context::Context::create();
-        TypeCompiler::new(&context, &context.create_module("")).compile(
+        TypeCompiler::new(&context).compile(
             &ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![
                 ssf::types::Value::Number.into(),
             ])])
@@ -200,7 +183,7 @@ mod tests {
     #[test]
     fn compile_algebraic_with_two_constructors() {
         let context = inkwell::context::Context::create();
-        TypeCompiler::new(&context, &context.create_module("")).compile(
+        TypeCompiler::new(&context).compile(
             &ssf::types::Algebraic::new(vec![
                 ssf::types::Constructor::new(vec![ssf::types::Value::Number.into()]),
                 ssf::types::Constructor::new(vec![ssf::types::Value::Number.into()]),
@@ -212,11 +195,28 @@ mod tests {
     #[test]
     fn compile_recursive_algebraic() {
         let context = inkwell::context::Context::create();
-        TypeCompiler::new(&context, &context.create_module("")).compile(
+        TypeCompiler::new(&context).compile(
             &ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![
                 ssf::types::Value::Index(0).into(),
             ])])
             .into(),
         );
+    }
+
+    #[test]
+    fn keep_equality_of_recursive_types() {
+        let context = inkwell::context::Context::create();
+        let compiler = TypeCompiler::new(&context);
+
+        let compile_type = || {
+            compiler.compile(
+                &ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![
+                    ssf::types::Value::Index(0).into(),
+                ])])
+                .into(),
+            )
+        };
+
+        assert_eq!(compile_type(), compile_type());
     }
 }

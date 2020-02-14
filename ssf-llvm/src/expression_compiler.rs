@@ -8,7 +8,7 @@ pub struct ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
     module: &'m inkwell::module::Module<'c>,
     builder: &'b inkwell::builder::Builder<'c>,
     function_compiler: &'f FunctionCompiler<'c, 'm, 't, 'v>,
-    type_compiler: &'t TypeCompiler<'c, 'm>,
+    type_compiler: &'t TypeCompiler<'c>,
 }
 
 impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
@@ -17,7 +17,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         module: &'m inkwell::module::Module<'c>,
         builder: &'b inkwell::builder::Builder<'c>,
         function_compiler: &'f FunctionCompiler<'c, 'm, 't, 'v>,
-        type_compiler: &'t TypeCompiler<'c, 'm>,
+        type_compiler: &'t TypeCompiler<'c>,
     ) -> Self {
         Self {
             context,
