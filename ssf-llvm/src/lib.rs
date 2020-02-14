@@ -17,7 +17,7 @@ pub fn compile(
 ) -> Result<Vec<u8>, CompileError> {
     let context = inkwell::context::Context::create();
     let module = context.create_module("main");
-    let type_compiler = TypeCompiler::new(&context, &module);
+    let type_compiler = TypeCompiler::new(&context);
 
     ModuleCompiler::new(&context, &module, &type_compiler, initializer_configuration)
         .compile(ir_module)?;
