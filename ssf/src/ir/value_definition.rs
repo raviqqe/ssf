@@ -53,4 +53,12 @@ impl ValueDefinition {
             self.type_.clone(),
         )
     }
+
+    pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
+        Self::new(
+            self.name.clone(),
+            self.body.convert_types(convert),
+            convert(&self.type_.clone().into()).into_value().unwrap(),
+        )
+    }
 }

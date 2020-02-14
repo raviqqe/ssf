@@ -1,8 +1,11 @@
 {
   "words": [
+    "algebraics",
     "algo",
     "bitcast",
     "bitcode",
+    "canonicalize",
+    "canonicalizer",
     "codecov",
     "concat",
     "idempotently",
