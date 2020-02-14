@@ -83,4 +83,14 @@ impl LetFunctions {
                 .infer_environment(&variables, global_variables),
         )
     }
+
+    pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
+        Self::new(
+            self.definitions
+                .iter()
+                .map(|definition| definition.convert_types(convert))
+                .collect(),
+            self.expression.convert_types(convert),
+        )
+    }
 }

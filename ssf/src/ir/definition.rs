@@ -51,6 +51,17 @@ impl Definition {
                 .into(),
         }
     }
+
+    pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
+        match self {
+            Self::FunctionDefinition(function_definition) => {
+                function_definition.convert_types(convert).into()
+            }
+            Self::ValueDefinition(value_definition) => {
+                value_definition.convert_types(convert).into()
+            }
+        }
+    }
 }
 
 impl From<FunctionDefinition> for Definition {

@@ -67,6 +67,16 @@ impl Expression {
             Self::Number(_) | Self::Variable(_) => self.clone(),
         }
     }
+
+    pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
+        match self {
+            Self::Application(application) => application.convert_types(convert).into(),
+            Self::LetFunctions(let_functions) => let_functions.convert_types(convert).into(),
+            Self::LetValues(let_values) => let_values.convert_types(convert).into(),
+            Self::Operation(operation) => operation.convert_types(convert).into(),
+            _ => self.clone(),
+        }
+    }
 }
 
 impl From<f64> for Expression {

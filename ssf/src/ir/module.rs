@@ -3,6 +3,7 @@ use super::definition::Definition;
 use super::function_definition::FunctionDefinition;
 use super::value_definition::ValueDefinition;
 use crate::analysis::{check_types, sort_global_variables, AnalysisError};
+use crate::types::canonicalize;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -36,9 +37,11 @@ impl Module {
                 })
                 .collect(),
             global_variable_initialization_order: vec![],
-        };
+        }
+        .canonicalize_types();
 
         check_types(&module)?;
+
         module.global_variable_initialization_order = sort_global_variables(&module)?
             .into_iter()
             .map(|string| string.into())
@@ -121,6 +124,22 @@ impl Module {
                 .map(|name| names.get(name).unwrap_or_else(|| name))
                 .cloned()
                 .collect(),
+        }
+    }
+
+    fn canonicalize_types(&self) -> Self {
+        Self {
+            declarations: self
+                .declarations
+                .iter()
+                .map(|declaration| declaration.convert_types(&canonicalize))
+                .collect(),
+            definitions: self
+                .definitions
+                .iter()
+                .map(|definition| definition.convert_types(&canonicalize))
+                .collect(),
+            global_variable_initialization_order: self.global_variable_initialization_order.clone(),
         }
     }
 }

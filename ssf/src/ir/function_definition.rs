@@ -24,13 +24,18 @@ impl FunctionDefinition {
         result_type: types::Value,
     ) -> Self {
         Self {
-            type_: types::Function::new(
-                arguments
-                    .iter()
-                    .map(|argument| argument.type_().clone())
-                    .collect(),
-                result_type.clone(),
-            ),
+            type_: types::canonicalize(
+                &types::Function::new(
+                    arguments
+                        .iter()
+                        .map(|argument| argument.type_().clone())
+                        .collect(),
+                    result_type.clone(),
+                )
+                .into(),
+            )
+            .into_function()
+            .unwrap(),
             name: name.into(),
             environment: vec![],
             arguments,
@@ -145,6 +150,27 @@ impl FunctionDefinition {
             self.body.infer_environment(&variables, global_variables),
             self.result_type.clone(),
         )
+    }
+
+    pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
+        Self {
+            name: self.name.clone(),
+            environment: self
+                .environment
+                .iter()
+                .map(|argument| argument.convert_types(convert))
+                .collect(),
+            arguments: self
+                .arguments
+                .iter()
+                .map(|argument| argument.convert_types(convert))
+                .collect(),
+            body: self.body.convert_types(convert),
+            result_type: convert(&self.result_type.clone().into())
+                .into_value()
+                .unwrap(),
+            type_: convert(&self.type_.clone().into()).into_function().unwrap(),
+        }
     }
 }
 

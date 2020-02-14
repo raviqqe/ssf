@@ -41,6 +41,7 @@ impl<'c, 'm> TypeCompiler<'c, 'm> {
                         .into()
                 }
             }
+            ssf::types::Value::Index(_) => unreachable!(),
             ssf::types::Value::Number => self.context.f64_type().into(),
         }
     }

@@ -58,4 +58,15 @@ impl Application {
                 .collect(),
         )
     }
+
+    pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
+        Self {
+            function: self.function.clone(),
+            arguments: self
+                .arguments
+                .iter()
+                .map(|argument| argument.convert_types(convert))
+                .collect(),
+        }
+    }
 }
