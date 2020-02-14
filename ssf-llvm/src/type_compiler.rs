@@ -41,7 +41,7 @@ impl<'c, 'm> TypeCompiler<'c, 'm> {
                         .into()
                 }
             }
-            ssf::types::Value::Index(_) => unreachable!(),
+            ssf::types::Value::Index(_) => self.compile_unsized_constructor().into(),
             ssf::types::Value::Number => self.context.f64_type().into(),
         }
     }
@@ -184,5 +184,39 @@ mod tests {
 
         compiler.compile(&type_);
         compiler.compile(&type_);
+    }
+
+    #[test]
+    fn compile_algebraic_with_one_constructor() {
+        let context = inkwell::context::Context::create();
+        TypeCompiler::new(&context, &context.create_module("")).compile(
+            &ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![
+                ssf::types::Value::Number.into(),
+            ])])
+            .into(),
+        );
+    }
+
+    #[test]
+    fn compile_algebraic_with_two_constructors() {
+        let context = inkwell::context::Context::create();
+        TypeCompiler::new(&context, &context.create_module("")).compile(
+            &ssf::types::Algebraic::new(vec![
+                ssf::types::Constructor::new(vec![ssf::types::Value::Number.into()]),
+                ssf::types::Constructor::new(vec![ssf::types::Value::Number.into()]),
+            ])
+            .into(),
+        );
+    }
+
+    #[test]
+    fn compile_recursive_algebraic() {
+        let context = inkwell::context::Context::create();
+        TypeCompiler::new(&context, &context.create_module("")).compile(
+            &ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![
+                ssf::types::Value::Index(0).into(),
+            ])])
+            .into(),
+        );
     }
 }
