@@ -136,6 +136,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
                     .get_type()
                     .get_element_type(),
             )
+            .unwrap()
             .as_ref(),
         );
 
