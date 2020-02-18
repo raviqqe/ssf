@@ -14,17 +14,24 @@ impl AlgebraicAlternative {
     pub fn new(
         constructor: Constructor,
         element_names: Vec<String>,
-        expression: Expression,
+        expression: impl Into<Expression>,
     ) -> Self {
         Self {
             constructor,
             element_names,
-            expression,
+            expression: expression.into(),
         }
     }
 
     pub fn constructor(&self) -> &Constructor {
         &self.constructor
+    }
+
+    pub fn elements(&self) -> impl IntoIterator<Item = (&str, &Type)> {
+        self.element_names
+            .iter()
+            .map(|name| name.as_str())
+            .zip(self.constructor.element_types())
     }
 
     pub fn expression(&self) -> &Expression {

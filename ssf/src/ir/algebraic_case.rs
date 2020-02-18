@@ -13,12 +13,12 @@ pub struct AlgebraicCase {
 
 impl AlgebraicCase {
     pub fn new(
-        argument: Expression,
+        argument: impl Into<Expression>,
         alternatives: Vec<AlgebraicAlternative>,
         default_alternative: Option<DefaultAlternative>,
     ) -> Self {
         Self {
-            argument: argument.into(),
+            argument: Box::new(argument.into()),
             alternatives,
             default_alternative,
         }

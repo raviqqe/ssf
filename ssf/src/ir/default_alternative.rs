@@ -9,10 +9,10 @@ pub struct DefaultAlternative {
 }
 
 impl DefaultAlternative {
-    pub fn new(variable: String, expression: Expression) -> Self {
+    pub fn new(variable: impl Into<String>, expression: impl Into<Expression>) -> Self {
         Self {
-            variable,
-            expression: expression.into(),
+            variable: variable.into(),
+            expression: Box::new(expression.into()),
         }
     }
 

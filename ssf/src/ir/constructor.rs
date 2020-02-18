@@ -19,6 +19,10 @@ impl Constructor {
         self.index
     }
 
+    pub fn element_types(&self) -> &[Type] {
+        self.type_.constructors()[self.index].elements()
+    }
+
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         Self {
             type_: convert(&self.type_.clone().into())

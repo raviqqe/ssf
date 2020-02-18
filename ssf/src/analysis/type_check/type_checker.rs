@@ -115,7 +115,7 @@ impl TypeChecker {
                     Type::Value(_) => Err(TypeCheckError),
                 }
             }
-            Expression::Case(_) => unimplemented!(),
+            Expression::Case(case) => self.check_case(case, variables),
             Expression::LetFunctions(let_functions) => {
                 let mut variables = variables.clone();
 
@@ -149,6 +149,67 @@ impl TypeChecker {
                 Ok(types::Value::Number.into())
             }
             Expression::Variable(variable) => self.check_variable(variable, variables),
+        }
+    }
+
+    fn check_case(
+        &mut self,
+        case: &Case,
+        variables: &HashMap<&str, Type>,
+    ) -> Result<Type, TypeCheckError> {
+        match case {
+            Case::Algebraic(algebraic_case) => {
+                let argument_type = self
+                    .check_expression(algebraic_case.argument(), variables)?
+                    .into_value()
+                    .and_then(|value_type| value_type.into_algebraic())
+                    .ok_or(TypeCheckError)?;
+                let mut expression_type = None;
+
+                for alternative in algebraic_case.alternatives() {
+                    if alternative.constructor().type_() != &argument_type {
+                        return Err(TypeCheckError);
+                    }
+
+                    let mut variables = variables.clone();
+
+                    for (name, type_) in alternative.elements() {
+                        variables.insert(name, type_.clone());
+                    }
+
+                    let alternative_type =
+                        self.check_expression(alternative.expression(), &variables)?;
+
+                    match &expression_type {
+                        Some(expression_type) => {
+                            if &alternative_type != expression_type {
+                                return Err(TypeCheckError);
+                            }
+                        }
+                        None => expression_type = Some(alternative_type),
+                    }
+                }
+
+                if let Some(default_alternative) = algebraic_case.default_alternative() {
+                    let mut variables = variables.clone();
+
+                    variables.insert(default_alternative.variable(), argument_type.into());
+
+                    let alternative_type =
+                        self.check_expression(default_alternative.expression(), &variables)?;
+
+                    match &expression_type {
+                        Some(expression_type) => {
+                            if &alternative_type != expression_type {
+                                return Err(TypeCheckError);
+                            }
+                        }
+                        None => expression_type = Some(alternative_type),
+                    }
+                }
+
+                expression_type.ok_or(TypeCheckError)
+            }
         }
     }
 

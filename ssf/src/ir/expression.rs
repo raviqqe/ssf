@@ -97,9 +97,9 @@ impl From<Application> for Expression {
     }
 }
 
-impl From<Case> for Expression {
-    fn from(case: Case) -> Expression {
-        Self::Case(case)
+impl<T: Into<Case>> From<T> for Expression {
+    fn from(case: T) -> Expression {
+        Self::Case(case.into())
     }
 }
 
