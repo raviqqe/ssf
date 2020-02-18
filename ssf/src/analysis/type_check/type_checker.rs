@@ -115,6 +115,7 @@ impl TypeChecker {
                     Type::Value(_) => Err(TypeCheckError),
                 }
             }
+            Expression::Case(_) => unimplemented!(),
             Expression::LetFunctions(let_functions) => {
                 let mut variables = variables.clone();
 

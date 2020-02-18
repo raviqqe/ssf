@@ -80,6 +80,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     .left()
                     .unwrap())
             }
+            ssf::ir::Expression::Case(_) => unimplemented!(),
             ssf::ir::Expression::LetFunctions(let_functions) => {
                 let mut variables = variables.clone();
                 let mut closures = HashMap::<&str, inkwell::values::PointerValue>::new();
