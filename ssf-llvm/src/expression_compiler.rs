@@ -236,7 +236,11 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         .build_load(
                             self.builder
                                 .build_bitcast(
-                                    self.builder.build_extract_value(argument, 1, "").unwrap(),
+                                    if alternative.constructor().algebraic_type().is_singleton() {
+                                        self.builder.build_extract_value(argument, 0, "").unwrap()
+                                    } else {
+                                        self.builder.build_extract_value(argument, 1, "").unwrap()
+                                    },
                                     self.type_compiler.compile_constructor(
                                         alternative.constructor().constructor_type(),
                                     ),
@@ -429,6 +433,71 @@ mod tests {
                         ssf::ir::Variable::new("y"),
                     ),
                 ],
+                Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
+            ),
+        ] {
+            let context = inkwell::context::Context::create();
+            let type_compiler = TypeCompiler::new(&context);
+            let module = context.create_module("");
+            let function = module.add_function("", context.void_type().fn_type(&[], false), None);
+            let builder = context.create_builder();
+            builder.position_at_end(&context.append_basic_block(function, "entry"));
+
+            ExpressionCompiler::new(
+                &context,
+                &module,
+                &builder,
+                &FunctionCompiler::new(&context, &module, &type_compiler, &HashMap::new()),
+                &type_compiler,
+            )
+            .compile(
+                &algebraic_case.into(),
+                &vec![(
+                    "x".into(),
+                    type_compiler
+                        .compile_value(&algebraic_type.clone().into())
+                        .into_struct_type()
+                        .get_undef()
+                        .into(),
+                )]
+                .drain(..)
+                .collect(),
+            )
+            .unwrap();
+
+            builder.build_return(None);
+
+            assert!(function.verify(true));
+            assert!(module.verify().is_ok());
+        }
+    }
+
+    #[test]
+    fn compile_algebraic_case_expression_with_single_constructors() {
+        let algebraic_type = ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![])]);
+
+        for algebraic_case in vec![
+            ssf::ir::AlgebraicCase::new(
+                ssf::ir::Variable::new("x"),
+                vec![],
+                Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
+            ),
+            ssf::ir::AlgebraicCase::new(
+                ssf::ir::Variable::new("x"),
+                vec![ssf::ir::AlgebraicAlternative::new(
+                    ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                    vec![],
+                    42.0,
+                )],
+                None,
+            ),
+            ssf::ir::AlgebraicCase::new(
+                ssf::ir::Variable::new("x"),
+                vec![ssf::ir::AlgebraicAlternative::new(
+                    ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                    vec![],
+                    42.0,
+                )],
                 Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
             ),
         ] {
