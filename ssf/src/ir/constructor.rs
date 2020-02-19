@@ -11,7 +11,7 @@ impl Constructor {
         Self { type_, index }
     }
 
-    pub fn type_(&self) -> &Algebraic {
+    pub fn algebraic_type(&self) -> &Algebraic {
         &self.type_
     }
 

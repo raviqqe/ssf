@@ -212,7 +212,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 let tag = if algebraic_case.alternatives().is_empty()
                     || algebraic_case.alternatives()[0]
                         .constructor()
-                        .type_()
+                        .algebraic_type()
                         .constructors()
                         .len()
                         == 1

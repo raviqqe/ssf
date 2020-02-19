@@ -167,7 +167,7 @@ impl TypeChecker {
                 let mut expression_type = None;
 
                 for alternative in algebraic_case.alternatives() {
-                    if alternative.constructor().type_() != &argument_type {
+                    if alternative.constructor().algebraic_type() != &argument_type {
                         return Err(TypeCheckError);
                     }
 
