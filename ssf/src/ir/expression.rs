@@ -1,5 +1,5 @@
-use super::function_application::FunctionApplication;
 use super::case::Case;
+use super::function_application::FunctionApplication;
 use super::let_functions::LetFunctions;
 use super::let_values::LetValues;
 use super::operation::Operation;
@@ -28,7 +28,9 @@ impl Expression {
 
     pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
         match self {
-            Self::FunctionApplication(function_application) => function_application.rename_variables(names).into(),
+            Self::FunctionApplication(function_application) => {
+                function_application.rename_variables(names).into()
+            }
             Self::Case(case) => case.rename_variables(names).into(),
             Self::LetFunctions(let_functions) => let_functions.rename_variables(names).into(),
             Self::LetValues(let_values) => let_values.rename_variables(names).into(),
@@ -40,7 +42,9 @@ impl Expression {
 
     pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
         match self {
-            Self::FunctionApplication(function_application) => function_application.find_variables(excluded_variables),
+            Self::FunctionApplication(function_application) => {
+                function_application.find_variables(excluded_variables)
+            }
             Self::Case(case) => case.find_variables(excluded_variables),
             Self::LetFunctions(let_functions) => let_functions.find_variables(excluded_variables),
             Self::LetValues(let_values) => let_values.find_variables(excluded_variables),
@@ -75,7 +79,9 @@ impl Expression {
 
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         match self {
-            Self::FunctionApplication(function_application) => function_application.convert_types(convert).into(),
+            Self::FunctionApplication(function_application) => {
+                function_application.convert_types(convert).into()
+            }
             Self::Case(case) => case.convert_types(convert).into(),
             Self::LetFunctions(let_functions) => let_functions.convert_types(convert).into(),
             Self::LetValues(let_values) => let_values.convert_types(convert).into(),
