@@ -4,12 +4,12 @@ use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Application {
+pub struct FunctionApplication {
     function: Variable,
     arguments: Vec<Expression>,
 }
 
-impl Application {
+impl FunctionApplication {
     pub fn new(function: Variable, arguments: Vec<Expression>) -> Self {
         Self {
             function,

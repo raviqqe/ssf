@@ -93,14 +93,14 @@ impl TypeChecker {
         variables: &HashMap<&str, Type>,
     ) -> Result<Type, TypeCheckError> {
         match expression {
-            Expression::Application(application) => {
-                match self.check_variable(application.function(), variables)? {
+            Expression::FunctionApplication(function_application) => {
+                match self.check_variable(function_application.function(), variables)? {
                     Type::Function(function_type) => {
-                        if function_type.arguments().len() != application.arguments().len() {
+                        if function_type.arguments().len() != function_application.arguments().len() {
                             return Err(TypeCheckError);
                         }
 
-                        for (argument, expected_type) in application
+                        for (argument, expected_type) in function_application
                             .arguments()
                             .iter()
                             .zip(function_type.arguments())

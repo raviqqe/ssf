@@ -1,4 +1,4 @@
-use super::application::Application;
+use super::function_application::FunctionApplication;
 use super::case::Case;
 use super::let_functions::LetFunctions;
 use super::let_values::LetValues;
@@ -9,7 +9,7 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expression {
-    Application(Application),
+    FunctionApplication(FunctionApplication),
     Case(Case),
     LetFunctions(LetFunctions),
     LetValues(LetValues),
@@ -28,7 +28,7 @@ impl Expression {
 
     pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
         match self {
-            Self::Application(application) => application.rename_variables(names).into(),
+            Self::FunctionApplication(function_application) => function_application.rename_variables(names).into(),
             Self::Case(case) => case.rename_variables(names).into(),
             Self::LetFunctions(let_functions) => let_functions.rename_variables(names).into(),
             Self::LetValues(let_values) => let_values.rename_variables(names).into(),
@@ -40,7 +40,7 @@ impl Expression {
 
     pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
         match self {
-            Self::Application(application) => application.find_variables(excluded_variables),
+            Self::FunctionApplication(function_application) => function_application.find_variables(excluded_variables),
             Self::Case(case) => case.find_variables(excluded_variables),
             Self::LetFunctions(let_functions) => let_functions.find_variables(excluded_variables),
             Self::LetValues(let_values) => let_values.find_variables(excluded_variables),
@@ -56,7 +56,7 @@ impl Expression {
         global_variables: &HashSet<String>,
     ) -> Self {
         match self {
-            Self::Application(application) => application
+            Self::FunctionApplication(function_application) => function_application
                 .infer_environment(variables, global_variables)
                 .into(),
             Self::Case(case) => case.infer_environment(variables, global_variables).into(),
@@ -75,7 +75,7 @@ impl Expression {
 
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         match self {
-            Self::Application(application) => application.convert_types(convert).into(),
+            Self::FunctionApplication(function_application) => function_application.convert_types(convert).into(),
             Self::Case(case) => case.convert_types(convert).into(),
             Self::LetFunctions(let_functions) => let_functions.convert_types(convert).into(),
             Self::LetValues(let_values) => let_values.convert_types(convert).into(),
@@ -91,9 +91,9 @@ impl From<f64> for Expression {
     }
 }
 
-impl From<Application> for Expression {
-    fn from(application: Application) -> Expression {
-        Self::Application(application)
+impl From<FunctionApplication> for Expression {
+    fn from(function_application: FunctionApplication) -> Expression {
+        Self::FunctionApplication(function_application)
     }
 }
 

@@ -1,6 +1,6 @@
 mod algebraic_alternative;
 mod algebraic_case;
-mod application;
+mod function_application;
 mod argument;
 mod case;
 mod constructor;
@@ -19,7 +19,7 @@ mod variable;
 
 pub use algebraic_alternative::*;
 pub use algebraic_case::*;
-pub use application::*;
+pub use function_application::*;
 pub use argument::*;
 pub use case::*;
 pub use constructor::*;

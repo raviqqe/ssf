@@ -107,7 +107,7 @@ mod tests {
                 vec![
                     ir::ValueDefinition::new(
                         "y",
-                        ir::Application::new(
+                        ir::FunctionApplication::new(
                             ir::Variable::new("f"),
                             vec![ir::Expression::Number(42.0)]
                         ),
@@ -137,7 +137,7 @@ mod tests {
                 vec![
                     ir::ValueDefinition::new(
                         "y",
-                        ir::Application::new(
+                        ir::FunctionApplication::new(
                             ir::Variable::new("f"),
                             vec![ir::Expression::Number(42.0)]
                         ),
@@ -147,7 +147,7 @@ mod tests {
                     ir::FunctionDefinition::new(
                         "f",
                         vec![ir::Argument::new("a", types::Value::Number)],
-                        ir::Application::new(
+                        ir::FunctionApplication::new(
                             ir::Variable::new("g"),
                             vec![ir::Variable::new("x").into()]
                         ),
@@ -157,7 +157,7 @@ mod tests {
                     ir::FunctionDefinition::new(
                         "g",
                         vec![ir::Argument::new("a", types::Value::Number)],
-                        ir::Application::new(
+                        ir::FunctionApplication::new(
                             ir::Variable::new("f"),
                             vec![ir::Variable::new("x").into()]
                         ),

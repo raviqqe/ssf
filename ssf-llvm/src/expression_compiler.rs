@@ -34,9 +34,9 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         match expression {
-            ssf::ir::Expression::Application(application) => {
+            ssf::ir::Expression::FunctionApplication(function_application) => {
                 let closure = self
-                    .compile_variable(application.function(), variables)?
+                    .compile_variable(function_application.function(), variables)?
                     .into_pointer_value();
 
                 let mut arguments = vec![unsafe {
@@ -51,7 +51,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 }
                 .into()];
 
-                for argument in application.arguments() {
+                for argument in function_application.arguments() {
                     arguments.push(self.compile(argument, variables)?);
                 }
 

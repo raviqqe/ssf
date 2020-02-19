@@ -98,7 +98,7 @@ mod tests {
     }
 
     #[test]
-    fn check_types_of_applications() {
+    fn check_types_of_function_applications() {
         let module = Module::without_validation(
             vec![],
             vec![
@@ -111,7 +111,7 @@ mod tests {
                 .into(),
                 ValueDefinition::new(
                     "x",
-                    Application::new(Variable::new("f"), vec![Expression::Number(42.0)]),
+                    FunctionApplication::new(Variable::new("f"), vec![Expression::Number(42.0)]),
                     types::Value::Number,
                 )
                 .into(),
@@ -123,7 +123,7 @@ mod tests {
     }
 
     #[test]
-    fn fail_to_check_types_of_applications() {
+    fn fail_to_check_types_of_function_applications() {
         let module = Module::without_validation(
             vec![],
             vec![
@@ -136,7 +136,7 @@ mod tests {
                 .into(),
                 ValueDefinition::new(
                     "x",
-                    Application::new(
+                    FunctionApplication::new(
                         Variable::new("f"),
                         vec![Expression::Number(42.0), Expression::Number(42.0)],
                     ),
