@@ -35,7 +35,7 @@ impl AlgebraicAlternative {
         self.element_names
             .iter()
             .map(|name| name.as_str())
-            .zip(self.constructor.element_types())
+            .zip(self.constructor.constructor_type().elements())
     }
 
     pub fn expression(&self) -> &Expression {
