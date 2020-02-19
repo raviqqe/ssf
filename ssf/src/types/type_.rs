@@ -49,8 +49,8 @@ mod tests {
     #[test]
     fn to_id() {
         assert_eq!(
-            &Type::from(Function::new(vec![Value::Number.into()], Value::Number)).to_id(),
-            "(Number->Number)"
+            &Type::from(Function::new(vec![Value::Float64.into()], Value::Float64)).to_id(),
+            "(Float64->Float64)"
         );
     }
 }

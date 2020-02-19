@@ -44,40 +44,40 @@ mod tests {
     #[test]
     fn to_id() {
         assert_eq!(
-            &Function::new(vec![Value::Number.into()], Value::Number).to_id(),
-            "(Number->Number)"
+            &Function::new(vec![Value::Float64.into()], Value::Float64).to_id(),
+            "(Float64->Float64)"
         );
         assert_eq!(
             &Function::new(
-                vec![Value::Number.into(), Value::Number.into()],
-                Value::Number
+                vec![Value::Float64.into(), Value::Float64.into()],
+                Value::Float64
             )
             .to_id(),
-            "(Number->Number->Number)"
+            "(Float64->Float64->Float64)"
         );
         assert_eq!(
             &Function::new(
-                vec![Function::new(vec![Value::Number.into()], Value::Number).into()],
-                Value::Number
+                vec![Function::new(vec![Value::Float64.into()], Value::Float64).into()],
+                Value::Float64
             )
             .to_id(),
-            "((Number->Number)->Number)"
+            "((Float64->Float64)->Float64)"
         );
     }
 
     #[test]
     fn arguments() {
         assert_eq!(
-            Function::new(vec![Value::Number.into()], Value::Number).arguments(),
-            &[Value::Number.into()]
+            Function::new(vec![Value::Float64.into()], Value::Float64).arguments(),
+            &[Value::Float64.into()]
         );
     }
 
     #[test]
     fn result() {
         assert_eq!(
-            Function::new(vec![Value::Number.into()], Value::Number).result(),
-            &Value::Number
+            Function::new(vec![Value::Float64.into()], Value::Float64).result(),
+            &Value::Float64
         );
     }
 }

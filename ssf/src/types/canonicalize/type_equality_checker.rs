@@ -28,7 +28,7 @@ impl<'a> TypeEqualityChecker<'a> {
 
     fn equal_values(&self, one: &Value, other: &Value) -> bool {
         match (one, other) {
-            (Value::Number, Value::Number) => true,
+            (Value::Float64, Value::Float64) => true,
             (Value::Algebraic(one), Value::Algebraic(other)) => self.equal_algebraics(one, other),
             (Value::Index(index), Value::Algebraic(other)) => {
                 self.equal_algebraics(self.pairs[*index].0, other)
@@ -87,14 +87,14 @@ mod tests {
     #[test]
     fn equal() {
         for (one, other) in &[
-            (Value::Number.into(), Value::Number.into()),
+            (Value::Float64.into(), Value::Float64.into()),
             (
-                Function::new(vec![Value::Number.into()], Value::Number.into()).into(),
-                Function::new(vec![Value::Number.into()], Value::Number.into()).into(),
+                Function::new(vec![Value::Float64.into()], Value::Float64.into()).into(),
+                Function::new(vec![Value::Float64.into()], Value::Float64.into()).into(),
             ),
             (
-                Algebraic::new(vec![Constructor::new(vec![Value::Number.into()])]).into(),
-                Algebraic::new(vec![Constructor::new(vec![Value::Number.into()])]).into(),
+                Algebraic::new(vec![Constructor::new(vec![Value::Float64.into()])]).into(),
+                Algebraic::new(vec![Constructor::new(vec![Value::Float64.into()])]).into(),
             ),
             (
                 Algebraic::new(vec![Constructor::new(vec![Value::Index(0).into()])]).into(),
@@ -126,15 +126,15 @@ mod tests {
             ),
             (
                 Algebraic::new(vec![Constructor::new(vec![Function::new(
-                    vec![Value::Number.into()],
+                    vec![Value::Float64.into()],
                     Value::Index(0).into(),
                 )
                 .into()])])
                 .into(),
                 Algebraic::new(vec![Constructor::new(vec![Function::new(
-                    vec![Value::Number.into()],
+                    vec![Value::Float64.into()],
                     Algebraic::new(vec![Constructor::new(vec![Function::new(
-                        vec![Value::Number.into()],
+                        vec![Value::Float64.into()],
                         Value::Index(0).into(),
                     )
                     .into()])])
@@ -145,15 +145,15 @@ mod tests {
             ),
             (
                 Algebraic::new(vec![Constructor::new(vec![Function::new(
-                    vec![Value::Number.into()],
+                    vec![Value::Float64.into()],
                     Value::Index(0).into(),
                 )
                 .into()])])
                 .into(),
                 Algebraic::new(vec![Constructor::new(vec![Function::new(
-                    vec![Value::Number.into()],
+                    vec![Value::Float64.into()],
                     Algebraic::new(vec![Constructor::new(vec![Function::new(
-                        vec![Value::Number.into()],
+                        vec![Value::Float64.into()],
                         Value::Index(1).into(),
                     )
                     .into()])])
@@ -171,22 +171,22 @@ mod tests {
     fn not_equal() {
         for (one, other) in &[
             (
-                Value::Number.into(),
-                Function::new(vec![Value::Number.into()], Value::Number.into()).into(),
+                Value::Float64.into(),
+                Function::new(vec![Value::Float64.into()], Value::Float64.into()).into(),
             ),
             (
                 Function::new(
-                    vec![Value::Number.into(), Value::Number.into()],
-                    Value::Number.into(),
+                    vec![Value::Float64.into(), Value::Float64.into()],
+                    Value::Float64.into(),
                 )
                 .into(),
-                Function::new(vec![Value::Number.into()], Value::Number.into()).into(),
+                Function::new(vec![Value::Float64.into()], Value::Float64.into()).into(),
             ),
             (
-                Algebraic::new(vec![Constructor::new(vec![Value::Number.into()])]).into(),
+                Algebraic::new(vec![Constructor::new(vec![Value::Float64.into()])]).into(),
                 Algebraic::new(vec![Constructor::new(vec![
-                    Value::Number.into(),
-                    Value::Number.into(),
+                    Value::Float64.into(),
+                    Value::Float64.into(),
                 ])])
                 .into(),
             ),

@@ -184,17 +184,17 @@ mod tests {
         assert_eq!(
             FunctionDefinition::new(
                 "f",
-                vec![Argument::new("x", types::Value::Number)],
-                Expression::Number(42.0),
-                types::Value::Number
+                vec![Argument::new("x", types::Value::Float64)],
+                Expression::Float64(42.0),
+                types::Value::Float64
             )
             .infer_environment(&Default::default(), &Default::default()),
             FunctionDefinition::with_environment(
                 "f",
                 vec![],
-                vec![Argument::new("x", types::Value::Number)],
-                Expression::Number(42.0),
-                types::Value::Number
+                vec![Argument::new("x", types::Value::Float64)],
+                Expression::Float64(42.0),
+                types::Value::Float64
             )
         );
     }
@@ -204,47 +204,47 @@ mod tests {
         assert_eq!(
             FunctionDefinition::new(
                 "f",
-                vec![Argument::new("x", types::Value::Number)],
+                vec![Argument::new("x", types::Value::Float64)],
                 Variable::new("y"),
-                types::Value::Number
+                types::Value::Float64
             )
             .infer_environment(
-                &vec![("y".into(), types::Value::Number.into())]
+                &vec![("y".into(), types::Value::Float64.into())]
                     .drain(..)
                     .collect(),
                 &Default::default()
             ),
             FunctionDefinition::with_environment(
                 "f",
-                vec![Argument::new("y", types::Value::Number)],
-                vec![Argument::new("x", types::Value::Number)],
+                vec![Argument::new("y", types::Value::Float64)],
+                vec![Argument::new("x", types::Value::Float64)],
                 Variable::new("y"),
-                types::Value::Number
+                types::Value::Float64
             )
         );
     }
 
     #[test]
     fn infer_environment_idempotently() {
-        let variables = vec![("y".into(), types::Value::Number.into())]
+        let variables = vec![("y".into(), types::Value::Float64.into())]
             .drain(..)
             .collect();
 
         assert_eq!(
             FunctionDefinition::new(
                 "f",
-                vec![Argument::new("x", types::Value::Number)],
+                vec![Argument::new("x", types::Value::Float64)],
                 Variable::new("y"),
-                types::Value::Number
+                types::Value::Float64
             )
             .infer_environment(&variables, &Default::default())
             .infer_environment(&variables, &Default::default()),
             FunctionDefinition::with_environment(
                 "f",
-                vec![Argument::new("y", types::Value::Number)],
-                vec![Argument::new("x", types::Value::Number)],
+                vec![Argument::new("y", types::Value::Float64)],
+                vec![Argument::new("x", types::Value::Float64)],
                 Variable::new("y"),
-                types::Value::Number
+                types::Value::Float64
             )
         );
     }

@@ -35,12 +35,12 @@ mod tests {
     fn to_id() {
         assert_eq!(&Constructor::new(vec![]).to_id(), "{}");
         assert_eq!(
-            &Constructor::new(vec![Value::Number.into()]).to_id(),
-            "{Number}"
+            &Constructor::new(vec![Value::Float64.into()]).to_id(),
+            "{Float64}"
         );
         assert_eq!(
-            &Constructor::new(vec![Value::Number.into(), Value::Number.into()]).to_id(),
-            "{Number,Number}"
+            &Constructor::new(vec![Value::Float64.into(), Value::Float64.into()]).to_id(),
+            "{Float64,Float64}"
         );
     }
 }

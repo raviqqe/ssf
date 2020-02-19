@@ -16,14 +16,14 @@ mod tests {
     #[test]
     fn canonicalize_() {
         for (type_, canonical_type) in &[
-            (Value::Number.into(), Value::Number.into()),
+            (Value::Float64.into(), Value::Float64.into()),
             (
-                Function::new(vec![Value::Number.into()], Value::Number.into()).into(),
-                Function::new(vec![Value::Number.into()], Value::Number.into()).into(),
+                Function::new(vec![Value::Float64.into()], Value::Float64.into()).into(),
+                Function::new(vec![Value::Float64.into()], Value::Float64.into()).into(),
             ),
             (
-                Algebraic::new(vec![Constructor::new(vec![Value::Number.into()])]).into(),
-                Algebraic::new(vec![Constructor::new(vec![Value::Number.into()])]).into(),
+                Algebraic::new(vec![Constructor::new(vec![Value::Float64.into()])]).into(),
+                Algebraic::new(vec![Constructor::new(vec![Value::Float64.into()])]).into(),
             ),
             (
                 Algebraic::new(vec![Constructor::new(vec![Algebraic::new(vec![
@@ -43,9 +43,9 @@ mod tests {
             ),
             (
                 Algebraic::new(vec![Constructor::new(vec![Function::new(
-                    vec![Value::Number.into()],
+                    vec![Value::Float64.into()],
                     Algebraic::new(vec![Constructor::new(vec![Function::new(
-                        vec![Value::Number.into()],
+                        vec![Value::Float64.into()],
                         Value::Index(0).into(),
                     )
                     .into()])])
@@ -54,7 +54,7 @@ mod tests {
                 .into()])])
                 .into(),
                 Algebraic::new(vec![Constructor::new(vec![Function::new(
-                    vec![Value::Number.into()],
+                    vec![Value::Float64.into()],
                     Value::Index(0).into(),
                 )
                 .into()])])
@@ -62,9 +62,9 @@ mod tests {
             ),
             (
                 Algebraic::new(vec![Constructor::new(vec![Function::new(
-                    vec![Value::Number.into()],
+                    vec![Value::Float64.into()],
                     Algebraic::new(vec![Constructor::new(vec![Function::new(
-                        vec![Value::Number.into()],
+                        vec![Value::Float64.into()],
                         Value::Index(1).into(),
                     )
                     .into()])])
@@ -73,7 +73,7 @@ mod tests {
                 .into()])])
                 .into(),
                 Algebraic::new(vec![Constructor::new(vec![Function::new(
-                    vec![Value::Number.into()],
+                    vec![Value::Float64.into()],
                     Value::Index(0).into(),
                 )
                 .into()])])

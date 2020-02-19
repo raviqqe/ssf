@@ -39,7 +39,7 @@ impl<'c> TypeCompiler<'c> {
                 }
             }
             ssf::types::Value::Index(_) => self.compile_unsized_constructor().into(),
-            ssf::types::Value::Number => self.context.f64_type().into(),
+            ssf::types::Value::Float64 => self.context.f64_type().into(),
         }
     }
 
@@ -142,7 +142,7 @@ mod tests {
     #[test]
     fn compile_number() {
         let context = inkwell::context::Context::create();
-        TypeCompiler::new(&context).compile(&ssf::types::Value::Number.into());
+        TypeCompiler::new(&context).compile(&ssf::types::Value::Float64.into());
     }
 
     #[test]
@@ -150,8 +150,8 @@ mod tests {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile(
             &ssf::types::Function::new(
-                vec![ssf::types::Value::Number.into()],
-                ssf::types::Value::Number,
+                vec![ssf::types::Value::Float64.into()],
+                ssf::types::Value::Float64,
             )
             .into(),
         );
@@ -162,8 +162,8 @@ mod tests {
         let context = inkwell::context::Context::create();
         let compiler = TypeCompiler::new(&context);
         let type_ = ssf::types::Function::new(
-            vec![ssf::types::Value::Number.into()],
-            ssf::types::Value::Number,
+            vec![ssf::types::Value::Float64.into()],
+            ssf::types::Value::Float64,
         )
         .into();
 
@@ -175,7 +175,7 @@ mod tests {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile(
             &ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![
-                ssf::types::Value::Number.into(),
+                ssf::types::Value::Float64.into(),
             ])])
             .into(),
         );
@@ -186,8 +186,8 @@ mod tests {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile(
             &ssf::types::Algebraic::new(vec![
-                ssf::types::Constructor::new(vec![ssf::types::Value::Number.into()]),
-                ssf::types::Constructor::new(vec![ssf::types::Value::Number.into()]),
+                ssf::types::Constructor::new(vec![ssf::types::Value::Float64.into()]),
+                ssf::types::Constructor::new(vec![ssf::types::Value::Float64.into()]),
             ])
             .into(),
         );

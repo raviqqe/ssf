@@ -140,14 +140,15 @@ impl TypeChecker {
 
                 self.check_expression(let_values.expression(), &variables)
             }
-            Expression::Number(_) => Ok(types::Value::Number.into()),
+            Expression::Float64(_) => Ok(types::Value::Float64.into()),
             Expression::Operation(operation) => {
-                if self.check_expression(operation.lhs(), variables)? != types::Value::Number.into()
+                if self.check_expression(operation.lhs(), variables)?
+                    != types::Value::Float64.into()
                 {
                     return Err(TypeCheckError);
                 }
 
-                Ok(types::Value::Number.into())
+                Ok(types::Value::Float64.into())
             }
             Expression::Variable(variable) => self.check_variable(variable, variables),
         }

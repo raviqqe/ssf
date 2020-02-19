@@ -9,11 +9,11 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expression {
-    FunctionApplication(FunctionApplication),
     Case(Case),
+    Float64(f64),
+    FunctionApplication(FunctionApplication),
     LetFunctions(LetFunctions),
     LetValues(LetValues),
-    Number(f64),
     Operation(Operation),
     Variable(Variable),
 }
@@ -73,7 +73,7 @@ impl Expression {
             Self::Operation(operation) => operation
                 .infer_environment(variables, global_variables)
                 .into(),
-            Self::Number(_) | Self::Variable(_) => self.clone(),
+            Self::Float64(_) | Self::Variable(_) => self.clone(),
         }
     }
 
@@ -93,7 +93,7 @@ impl Expression {
 
 impl From<f64> for Expression {
     fn from(number: f64) -> Expression {
-        Self::Number(number)
+        Self::Float64(number)
     }
 }
 

@@ -180,7 +180,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
                 self.compile(let_values.expression(), &variables)
             }
-            ssf::ir::Expression::Number(number) => {
+            ssf::ir::Expression::Float64(number) => {
                 Ok(self.context.f64_type().const_float(*number).into())
             }
             ssf::ir::Expression::Operation(operation) => {
@@ -376,7 +376,7 @@ mod tests {
     fn compile_algebraic_case_expression_with_multiple_constructors() {
         let algebraic_type = ssf::types::Algebraic::new(vec![
             ssf::types::Constructor::new(vec![]),
-            ssf::types::Constructor::new(vec![ssf::types::Value::Number.into()]),
+            ssf::types::Constructor::new(vec![ssf::types::Value::Float64.into()]),
         ]);
 
         for algebraic_case in vec![

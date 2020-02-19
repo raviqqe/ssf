@@ -60,7 +60,7 @@ mod tests {
         assert_eq!(
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
-                vec![ir::ValueDefinition::new("x", 42.0, types::Value::Number).into()],
+                vec![ir::ValueDefinition::new("x", 42.0, types::Value::Float64).into()],
                 vec![]
             )),
             Ok(vec!["x".into()])
@@ -73,8 +73,8 @@ mod tests {
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ir::ValueDefinition::new("x", 42.0, types::Value::Number).into(),
-                    ir::ValueDefinition::new("y", ir::Variable::new("x"), types::Value::Number)
+                    ir::ValueDefinition::new("x", 42.0, types::Value::Float64).into(),
+                    ir::ValueDefinition::new("y", ir::Variable::new("x"), types::Value::Float64)
                         .into()
                 ],
                 vec![]
@@ -89,9 +89,9 @@ mod tests {
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ir::ValueDefinition::new("y", ir::Variable::new("x"), types::Value::Number)
+                    ir::ValueDefinition::new("y", ir::Variable::new("x"), types::Value::Float64)
                         .into(),
-                    ir::ValueDefinition::new("x", 42.0, types::Value::Number).into(),
+                    ir::ValueDefinition::new("x", 42.0, types::Value::Float64).into(),
                 ],
                 vec![]
             )),
@@ -109,19 +109,19 @@ mod tests {
                         "y",
                         ir::FunctionApplication::new(
                             ir::Variable::new("f"),
-                            vec![ir::Expression::Number(42.0)]
+                            vec![ir::Expression::Float64(42.0)]
                         ),
-                        types::Value::Number
+                        types::Value::Float64
                     )
                     .into(),
                     ir::FunctionDefinition::new(
                         "f",
-                        vec![ir::Argument::new("a", types::Value::Number)],
+                        vec![ir::Argument::new("a", types::Value::Float64)],
                         ir::Variable::new("x"),
-                        types::Value::Number
+                        types::Value::Float64
                     )
                     .into(),
-                    ir::ValueDefinition::new("x", 42.0, types::Value::Number).into(),
+                    ir::ValueDefinition::new("x", 42.0, types::Value::Float64).into(),
                 ],
                 vec![]
             )),
@@ -139,32 +139,32 @@ mod tests {
                         "y",
                         ir::FunctionApplication::new(
                             ir::Variable::new("f"),
-                            vec![ir::Expression::Number(42.0)]
+                            vec![ir::Expression::Float64(42.0)]
                         ),
-                        types::Value::Number
+                        types::Value::Float64
                     )
                     .into(),
                     ir::FunctionDefinition::new(
                         "f",
-                        vec![ir::Argument::new("a", types::Value::Number)],
+                        vec![ir::Argument::new("a", types::Value::Float64)],
                         ir::FunctionApplication::new(
                             ir::Variable::new("g"),
                             vec![ir::Variable::new("x").into()]
                         ),
-                        types::Value::Number
+                        types::Value::Float64
                     )
                     .into(),
                     ir::FunctionDefinition::new(
                         "g",
-                        vec![ir::Argument::new("a", types::Value::Number)],
+                        vec![ir::Argument::new("a", types::Value::Float64)],
                         ir::FunctionApplication::new(
                             ir::Variable::new("f"),
                             vec![ir::Variable::new("x").into()]
                         ),
-                        types::Value::Number
+                        types::Value::Float64
                     )
                     .into(),
-                    ir::ValueDefinition::new("x", 42.0, types::Value::Number).into(),
+                    ir::ValueDefinition::new("x", 42.0, types::Value::Float64).into(),
                 ],
                 vec![]
             )),
@@ -178,7 +178,7 @@ mod tests {
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ir::ValueDefinition::new("x", ir::Variable::new("x"), types::Value::Number)
+                    ir::ValueDefinition::new("x", ir::Variable::new("x"), types::Value::Float64)
                         .into()
                 ],
                 vec![]
@@ -193,9 +193,9 @@ mod tests {
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ir::ValueDefinition::new("x", ir::Variable::new("y"), types::Value::Number)
+                    ir::ValueDefinition::new("x", ir::Variable::new("y"), types::Value::Float64)
                         .into(),
-                    ir::ValueDefinition::new("y", ir::Variable::new("x"), types::Value::Number)
+                    ir::ValueDefinition::new("y", ir::Variable::new("x"), types::Value::Float64)
                         .into(),
                 ],
                 vec![]
