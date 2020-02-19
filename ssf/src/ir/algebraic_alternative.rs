@@ -27,6 +27,10 @@ impl AlgebraicAlternative {
         &self.constructor
     }
 
+    pub fn element_names(&self) -> &[String] {
+        &self.element_names
+    }
+
     pub fn elements(&self) -> impl IntoIterator<Item = (&str, &Type)> {
         self.element_names
             .iter()

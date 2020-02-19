@@ -1,4 +1,4 @@
-use crate::types::{Algebraic, Type};
+use crate::types::{self, Algebraic, Type};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Constructor {
@@ -13,6 +13,10 @@ impl Constructor {
 
     pub fn type_(&self) -> &Algebraic {
         &self.type_
+    }
+
+    pub fn constructor_type(&self) -> &types::Constructor {
+        &self.type_.constructors()[self.index]
     }
 
     pub fn index(&self) -> usize {

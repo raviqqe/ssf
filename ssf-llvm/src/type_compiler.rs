@@ -111,7 +111,7 @@ impl<'c> TypeCompiler<'c> {
             .fn_type(&arguments, false)
     }
 
-    fn compile_constructor(
+    pub fn compile_constructor(
         &self,
         constructor: &ssf::types::Constructor,
     ) -> inkwell::types::PointerType<'c> {
