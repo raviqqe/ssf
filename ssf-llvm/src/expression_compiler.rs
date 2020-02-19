@@ -80,6 +80,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     .left()
                     .unwrap())
             }
+            ssf::ir::Expression::Case(case) => self.compile_case(case, variables),
             ssf::ir::Expression::LetFunctions(let_functions) => {
                 let mut variables = variables.clone();
                 let mut closures = HashMap::<&str, inkwell::values::PointerValue>::new();
@@ -198,6 +199,137 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         }
     }
 
+    fn compile_case(
+        &self,
+        case: &ssf::ir::Case,
+        variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
+    ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
+        match case {
+            ssf::ir::Case::Algebraic(algebraic_case) => {
+                let argument = self
+                    .compile(algebraic_case.argument(), variables)?
+                    .into_struct_value();
+                let tag = if algebraic_case.alternatives().is_empty()
+                    || algebraic_case.alternatives()[0]
+                        .constructor()
+                        .algebraic_type()
+                        .constructors()
+                        .len()
+                        == 1
+                {
+                    self.context.i64_type().const_int(0, false).into()
+                } else {
+                    self.builder.build_extract_value(argument, 0, "").unwrap()
+                }
+                .into_int_value();
+
+                let switch_block = self.builder.get_insert_block().unwrap();
+                let phi_block = self.append_basic_block("phi");
+                let mut cases = vec![];
+
+                for (index, alternative) in algebraic_case.alternatives().iter().enumerate() {
+                    let block = self.append_basic_block(&format!("case.{}", index));
+                    self.builder.position_at_end(&block);
+
+                    let elements = self
+                        .builder
+                        .build_load(
+                            self.builder
+                                .build_bitcast(
+                                    if alternative.constructor().algebraic_type().is_singleton() {
+                                        self.builder.build_extract_value(argument, 0, "").unwrap()
+                                    } else {
+                                        self.builder.build_extract_value(argument, 1, "").unwrap()
+                                    },
+                                    self.type_compiler.compile_constructor(
+                                        alternative.constructor().constructor_type(),
+                                    ),
+                                    "",
+                                )
+                                .into_pointer_value(),
+                            "",
+                        )
+                        .into_struct_value();
+
+                    let mut variables = variables.clone();
+
+                    for (index, name) in alternative.element_names().iter().enumerate() {
+                        variables.insert(
+                            name.into(),
+                            self.builder
+                                .build_extract_value(elements, index as u32, "")
+                                .unwrap(),
+                        );
+                    }
+
+                    cases.push((
+                        self.context
+                            .i64_type()
+                            .const_int(alternative.constructor().index() as u64, false),
+                        block,
+                        self.compile(alternative.expression(), &variables)?,
+                    ));
+
+                    self.builder.build_unconditional_branch(&phi_block);
+                }
+
+                let default_block = self.append_basic_block("default");
+                self.builder.position_at_end(&default_block);
+                let default_value = match algebraic_case.default_alternative() {
+                    None => {
+                        self.builder.build_unreachable();
+                        None
+                    }
+                    Some(default_alternative) => {
+                        let mut variables = variables.clone();
+
+                        variables.insert(default_alternative.variable().into(), argument.into());
+
+                        let value = self.compile(default_alternative.expression(), &variables)?;
+                        self.builder.build_unconditional_branch(&phi_block);
+                        Some(value)
+                    }
+                };
+
+                self.builder.position_at_end(&switch_block);
+                self.builder.build_switch(
+                    tag,
+                    &default_block,
+                    &cases
+                        .iter()
+                        .map(|(tag, block, _)| (*tag, block))
+                        .collect::<Vec<_>>(),
+                );
+
+                self.builder.position_at_end(&phi_block);
+                let phi = self.builder.build_phi(
+                    cases
+                        .get(0)
+                        .map(|(_, _, value)| value.get_type())
+                        .unwrap_or_else(|| default_value.unwrap().get_type()),
+                    "",
+                );
+                phi.add_incoming(
+                    &cases
+                        .iter()
+                        .map(|(_, block, value)| {
+                            (value as &dyn inkwell::values::BasicValue<'c>, block)
+                        })
+                        .chain(match &default_value {
+                            Some(default_value) => vec![(
+                                default_value as &dyn inkwell::values::BasicValue<'c>,
+                                &default_block,
+                            )],
+                            None => vec![],
+                        })
+                        .collect::<Vec<_>>(),
+                );
+
+                Ok(phi.as_basic_value())
+            }
+        }
+    }
+
     fn compile_variable(
         &self,
         variable: &ssf::ir::Variable,
@@ -221,6 +353,187 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 }
             }
             _ => value,
+        }
+    }
+
+    fn append_basic_block(&self, name: &str) -> inkwell::basic_block::BasicBlock {
+        self.context.append_basic_block(
+            self.builder
+                .get_insert_block()
+                .unwrap()
+                .get_parent()
+                .unwrap(),
+            name,
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn compile_algebraic_case_expression_with_multiple_constructors() {
+        let algebraic_type = ssf::types::Algebraic::new(vec![
+            ssf::types::Constructor::new(vec![]),
+            ssf::types::Constructor::new(vec![ssf::types::Value::Number.into()]),
+        ]);
+
+        for algebraic_case in vec![
+            ssf::ir::AlgebraicCase::new(
+                ssf::ir::Variable::new("x"),
+                vec![],
+                Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
+            ),
+            ssf::ir::AlgebraicCase::new(
+                ssf::ir::Variable::new("x"),
+                vec![ssf::ir::AlgebraicAlternative::new(
+                    ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                    vec![],
+                    42.0,
+                )],
+                None,
+            ),
+            ssf::ir::AlgebraicCase::new(
+                ssf::ir::Variable::new("x"),
+                vec![ssf::ir::AlgebraicAlternative::new(
+                    ssf::ir::Constructor::new(algebraic_type.clone(), 1),
+                    vec!["y".into()],
+                    ssf::ir::Variable::new("y"),
+                )],
+                None,
+            ),
+            ssf::ir::AlgebraicCase::new(
+                ssf::ir::Variable::new("x"),
+                vec![
+                    ssf::ir::AlgebraicAlternative::new(
+                        ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                        vec![],
+                        42.0,
+                    ),
+                    ssf::ir::AlgebraicAlternative::new(
+                        ssf::ir::Constructor::new(algebraic_type.clone(), 1),
+                        vec!["y".into()],
+                        ssf::ir::Variable::new("y"),
+                    ),
+                ],
+                None,
+            ),
+            ssf::ir::AlgebraicCase::new(
+                ssf::ir::Variable::new("x"),
+                vec![
+                    ssf::ir::AlgebraicAlternative::new(
+                        ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                        vec![],
+                        42.0,
+                    ),
+                    ssf::ir::AlgebraicAlternative::new(
+                        ssf::ir::Constructor::new(algebraic_type.clone(), 1),
+                        vec!["y".into()],
+                        ssf::ir::Variable::new("y"),
+                    ),
+                ],
+                Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
+            ),
+        ] {
+            let context = inkwell::context::Context::create();
+            let type_compiler = TypeCompiler::new(&context);
+            let module = context.create_module("");
+            let function = module.add_function("", context.void_type().fn_type(&[], false), None);
+            let builder = context.create_builder();
+            builder.position_at_end(&context.append_basic_block(function, "entry"));
+
+            ExpressionCompiler::new(
+                &context,
+                &module,
+                &builder,
+                &FunctionCompiler::new(&context, &module, &type_compiler, &HashMap::new()),
+                &type_compiler,
+            )
+            .compile(
+                &algebraic_case.into(),
+                &vec![(
+                    "x".into(),
+                    type_compiler
+                        .compile_value(&algebraic_type.clone().into())
+                        .into_struct_type()
+                        .get_undef()
+                        .into(),
+                )]
+                .drain(..)
+                .collect(),
+            )
+            .unwrap();
+
+            builder.build_return(None);
+
+            assert!(function.verify(true));
+            assert!(module.verify().is_ok());
+        }
+    }
+
+    #[test]
+    fn compile_algebraic_case_expression_with_single_constructors() {
+        let algebraic_type = ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![])]);
+
+        for algebraic_case in vec![
+            ssf::ir::AlgebraicCase::new(
+                ssf::ir::Variable::new("x"),
+                vec![],
+                Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
+            ),
+            ssf::ir::AlgebraicCase::new(
+                ssf::ir::Variable::new("x"),
+                vec![ssf::ir::AlgebraicAlternative::new(
+                    ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                    vec![],
+                    42.0,
+                )],
+                None,
+            ),
+            ssf::ir::AlgebraicCase::new(
+                ssf::ir::Variable::new("x"),
+                vec![ssf::ir::AlgebraicAlternative::new(
+                    ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                    vec![],
+                    42.0,
+                )],
+                Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
+            ),
+        ] {
+            let context = inkwell::context::Context::create();
+            let type_compiler = TypeCompiler::new(&context);
+            let module = context.create_module("");
+            let function = module.add_function("", context.void_type().fn_type(&[], false), None);
+            let builder = context.create_builder();
+            builder.position_at_end(&context.append_basic_block(function, "entry"));
+
+            ExpressionCompiler::new(
+                &context,
+                &module,
+                &builder,
+                &FunctionCompiler::new(&context, &module, &type_compiler, &HashMap::new()),
+                &type_compiler,
+            )
+            .compile(
+                &algebraic_case.into(),
+                &vec![(
+                    "x".into(),
+                    type_compiler
+                        .compile_value(&algebraic_type.clone().into())
+                        .into_struct_type()
+                        .get_undef()
+                        .into(),
+                )]
+                .drain(..)
+                .collect(),
+            )
+            .unwrap();
+
+            builder.build_return(None);
+
+            assert!(function.verify(true));
+            assert!(module.verify().is_ok());
         }
     }
 }

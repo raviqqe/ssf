@@ -237,4 +237,174 @@ mod tests {
         );
         assert_eq!(check_types(&module), Err(TypeCheckError));
     }
+
+    mod case_expressions {
+        use super::*;
+
+        #[test]
+        fn check_case_expressions_only_with_default_alternative() {
+            assert_eq!(
+                check_types(&Module::without_validation(
+                    vec![],
+                    vec![FunctionDefinition::new(
+                        "f",
+                        vec![Argument::new(
+                            "x",
+                            types::Algebraic::new(vec![types::Constructor::new(vec![])]),
+                        )],
+                        AlgebraicCase::new(
+                            Variable::new("x"),
+                            vec![],
+                            Some(DefaultAlternative::new("x", 42.0)),
+                        ),
+                        types::Value::Number,
+                    )
+                    .into()],
+                    vec![],
+                )),
+                Ok(())
+            );
+        }
+
+        #[test]
+        fn check_case_expressions_only_with_default_alternative_and_bound_variable() {
+            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![])]);
+
+            assert_eq!(
+                check_types(&Module::without_validation(
+                    vec![],
+                    vec![FunctionDefinition::new(
+                        "f",
+                        vec![Argument::new("x", algebraic_type.clone())],
+                        AlgebraicCase::new(
+                            Variable::new("x"),
+                            vec![],
+                            Some(DefaultAlternative::new("y", Variable::new("y"))),
+                        ),
+                        algebraic_type,
+                    )
+                    .into()],
+                    vec![],
+                )),
+                Ok(())
+            );
+        }
+
+        #[test]
+        fn check_case_expressions_with_one_alternative() {
+            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![])]);
+
+            assert_eq!(
+                check_types(&Module::without_validation(
+                    vec![],
+                    vec![FunctionDefinition::new(
+                        "f",
+                        vec![Argument::new("x", algebraic_type.clone())],
+                        AlgebraicCase::new(
+                            Variable::new("x"),
+                            vec![AlgebraicAlternative::new(
+                                Constructor::new(algebraic_type, 0),
+                                vec![],
+                                42.0
+                            )],
+                            None
+                        ),
+                        types::Value::Number,
+                    )
+                    .into()],
+                    vec![],
+                )),
+                Ok(())
+            );
+        }
+
+        #[test]
+        fn check_case_expressions_with_deconstruction() {
+            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![
+                types::Value::Number.into(),
+            ])]);
+
+            assert_eq!(
+                check_types(&Module::without_validation(
+                    vec![],
+                    vec![FunctionDefinition::new(
+                        "f",
+                        vec![Argument::new("x", algebraic_type.clone())],
+                        AlgebraicCase::new(
+                            Variable::new("x"),
+                            vec![AlgebraicAlternative::new(
+                                Constructor::new(algebraic_type, 0),
+                                vec!["y".into()],
+                                Variable::new("y")
+                            )],
+                            None
+                        ),
+                        types::Value::Number,
+                    )
+                    .into()],
+                    vec![],
+                )),
+                Ok(())
+            );
+        }
+
+        #[test]
+        fn fail_to_check_case_expressions_without_alternatives() {
+            assert_eq!(
+                check_types(&Module::without_validation(
+                    vec![],
+                    vec![FunctionDefinition::new(
+                        "f",
+                        vec![Argument::new(
+                            "x",
+                            types::Algebraic::new(vec![types::Constructor::new(vec![])]),
+                        )],
+                        AlgebraicCase::new(Variable::new("x"), vec![], None),
+                        types::Value::Number,
+                    )
+                    .into()],
+                    vec![],
+                )),
+                Err(TypeCheckError)
+            );
+        }
+
+        #[test]
+        fn fail_to_check_case_expressions_with_inconsistent_alternative_types() {
+            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![])]);
+
+            assert_eq!(
+                check_types(&Module::without_validation(
+                    vec![],
+                    vec![FunctionDefinition::new(
+                        "f",
+                        vec![Argument::new(
+                            "x",
+                            types::Algebraic::new(vec![types::Constructor::new(vec![])]),
+                        )],
+                        AlgebraicCase::new(
+                            Variable::new("x"),
+                            vec![
+                                AlgebraicAlternative::new(
+                                    Constructor::new(algebraic_type.clone(), 0),
+                                    vec![],
+                                    Variable::new("x")
+                                ),
+                                AlgebraicAlternative::new(
+                                    Constructor::new(algebraic_type, 0),
+                                    vec![],
+                                    42.0
+                                )
+                            ],
+                            None
+                        ),
+                        types::Value::Number,
+                    )
+                    .into()],
+                    vec![],
+                )),
+                Err(TypeCheckError)
+            );
+        }
+    }
 }

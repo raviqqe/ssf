@@ -130,14 +130,13 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
     ) -> Result<(), CompileError> {
         let global_variable = self.global_variables[value_definition.name()];
         global_variable.set_initializer(
-            utilities::get_any_type_enum_undef(
+            &utilities::get_any_type_undef(
                 &global_variable
                     .as_pointer_value()
                     .get_type()
                     .get_element_type(),
             )
-            .unwrap()
-            .as_ref(),
+            .unwrap(),
         );
 
         let initializer = self.module.add_function(

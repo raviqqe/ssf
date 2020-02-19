@@ -22,8 +22,9 @@ impl<'c> TypeCompiler<'c> {
     pub fn compile_value(&self, value: &ssf::types::Value) -> inkwell::types::BasicTypeEnum<'c> {
         match value {
             ssf::types::Value::Algebraic(algebraic) => {
-                if algebraic.constructors().len() == 1 {
-                    self.compile_constructor(&algebraic.constructors()[0])
+                if algebraic.is_singleton() {
+                    self.context
+                        .struct_type(&[self.compile_unsized_constructor().into()], false)
                         .into()
                 } else {
                     self.context
@@ -111,7 +112,7 @@ impl<'c> TypeCompiler<'c> {
             .fn_type(&arguments, false)
     }
 
-    fn compile_constructor(
+    pub fn compile_constructor(
         &self,
         constructor: &ssf::types::Constructor,
     ) -> inkwell::types::PointerType<'c> {

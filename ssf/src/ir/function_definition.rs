@@ -21,7 +21,7 @@ impl FunctionDefinition {
         name: impl Into<String>,
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
-        result_type: types::Value,
+        result_type: impl Into<types::Value> + Clone,
     ) -> Self {
         Self {
             type_: types::canonicalize(
@@ -30,7 +30,7 @@ impl FunctionDefinition {
                         .iter()
                         .map(|argument| argument.type_().clone())
                         .collect(),
-                    result_type.clone(),
+                    result_type.clone().into(),
                 )
                 .into(),
             )
@@ -40,7 +40,7 @@ impl FunctionDefinition {
             environment: vec![],
             arguments,
             body: body.into(),
-            result_type,
+            result_type: result_type.into(),
         }
     }
 

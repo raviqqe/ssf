@@ -15,6 +15,10 @@ impl Algebraic {
         &self.constructors
     }
 
+    pub fn is_singleton(&self) -> bool {
+        self.constructors.len() == 1
+    }
+
     pub fn to_id(&self) -> String {
         format!(
             "{{{}}}",

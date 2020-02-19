@@ -15,6 +15,13 @@ impl Value {
             Self::Number => "Number".into(),
         }
     }
+
+    pub fn into_algebraic(self) -> Option<Algebraic> {
+        match self {
+            Self::Algebraic(algebraic) => Some(algebraic),
+            _ => None,
+        }
+    }
 }
 
 impl From<Algebraic> for Value {
