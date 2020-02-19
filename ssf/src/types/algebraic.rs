@@ -48,13 +48,13 @@ mod tests {
         );
         assert_eq!(
             &Algebraic::new(vec![
-                Constructor::new(vec![Value::Number.into()]),
+                Constructor::new(vec![Value::Float64.into()]),
                 Constructor::new(vec![])
             ])
             .to_id(),
             &Algebraic::new(vec![
                 Constructor::new(vec![]),
-                Constructor::new(vec![Value::Number.into()])
+                Constructor::new(vec![Value::Float64.into()])
             ])
             .to_id()
         );

@@ -164,8 +164,8 @@ mod tests {
                 vec![],
                 vec![ValueDefinition::new(
                     "foo",
-                    Expression::Number(42.0),
-                    types::Value::Number.into()
+                    Expression::Float64(42.0),
+                    types::Value::Float64.into()
                 )
                 .into()]
             )
@@ -175,19 +175,19 @@ mod tests {
                 vec![],
                 vec![ValueDefinition::new(
                     "bar",
-                    Expression::Number(42.0),
-                    types::Value::Number.into()
+                    Expression::Float64(42.0),
+                    types::Value::Float64.into()
                 )
                 .into()],
                 vec!["bar".into()]
             )
         );
         assert_eq!(
-            Module::new(vec![Declaration::new("foo", types::Value::Number)], vec![])
+            Module::new(vec![Declaration::new("foo", types::Value::Float64)], vec![])
                 .unwrap()
                 .rename_global_variables(&vec![("foo".into(), "bar".into())].drain(..).collect()),
             Module::without_validation(
-                vec![Declaration::new("bar", types::Value::Number)],
+                vec![Declaration::new("bar", types::Value::Float64)],
                 vec![],
                 vec![]
             )
@@ -200,21 +200,21 @@ mod tests {
             Module::new(
                 vec![],
                 vec![
-                    ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
+                    ValueDefinition::new("y", Expression::Float64(42.0), types::Value::Float64)
                         .into(),
                     FunctionDefinition::new(
                         "f",
-                        vec![Argument::new("x", types::Value::Number)],
+                        vec![Argument::new("x", types::Value::Float64)],
                         LetFunctions::new(
                             vec![FunctionDefinition::new(
                                 "g",
-                                vec![Argument::new("y", types::Value::Number)],
+                                vec![Argument::new("y", types::Value::Float64)],
                                 Variable::new("x"),
-                                types::Value::Number
+                                types::Value::Float64
                             )],
-                            Expression::Number(42.0)
+                            Expression::Float64(42.0)
                         ),
-                        types::Value::Number
+                        types::Value::Float64
                     )
                     .into()
                 ]
@@ -224,23 +224,23 @@ mod tests {
             Module::without_validation(
                 vec![],
                 vec![
-                    ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
+                    ValueDefinition::new("y", Expression::Float64(42.0), types::Value::Float64)
                         .into(),
                     FunctionDefinition::with_environment(
                         "f",
                         vec![],
-                        vec![Argument::new("x", types::Value::Number)],
+                        vec![Argument::new("x", types::Value::Float64)],
                         LetFunctions::new(
                             vec![FunctionDefinition::with_environment(
                                 "g",
-                                vec![Argument::new("x", types::Value::Number)],
-                                vec![Argument::new("y", types::Value::Number)],
+                                vec![Argument::new("x", types::Value::Float64)],
+                                vec![Argument::new("y", types::Value::Float64)],
                                 Variable::new("x"),
-                                types::Value::Number
+                                types::Value::Float64
                             )],
-                            Expression::Number(42.0)
+                            Expression::Float64(42.0)
                         ),
-                        types::Value::Number
+                        types::Value::Float64
                     )
                     .into()
                 ],
@@ -256,9 +256,9 @@ mod tests {
                 vec![],
                 vec![FunctionDefinition::new(
                     "f",
-                    vec![Argument::new("x", types::Value::Number)],
-                    Expression::Number(42.0),
-                    types::Value::Number
+                    vec![Argument::new("x", types::Value::Float64)],
+                    Expression::Float64(42.0),
+                    types::Value::Float64
                 )
                 .into()]
             ),
@@ -267,9 +267,9 @@ mod tests {
                 vec![FunctionDefinition::with_environment(
                     "f",
                     vec![],
-                    vec![Argument::new("x", types::Value::Number)],
-                    Expression::Number(42.0),
-                    types::Value::Number
+                    vec![Argument::new("x", types::Value::Float64)],
+                    Expression::Float64(42.0),
+                    types::Value::Float64
                 )
                 .into()],
                 vec![]
@@ -279,13 +279,13 @@ mod tests {
             Module::new(
                 vec![],
                 vec![
-                    ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
+                    ValueDefinition::new("y", Expression::Float64(42.0), types::Value::Float64)
                         .into(),
                     FunctionDefinition::new(
                         "f",
-                        vec![Argument::new("x", types::Value::Number)],
+                        vec![Argument::new("x", types::Value::Float64)],
                         Variable::new("y"),
-                        types::Value::Number
+                        types::Value::Float64
                     )
                     .into()
                 ]
@@ -293,14 +293,14 @@ mod tests {
             Ok(Module::without_validation(
                 vec![],
                 vec![
-                    ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
+                    ValueDefinition::new("y", Expression::Float64(42.0), types::Value::Float64)
                         .into(),
                     FunctionDefinition::with_environment(
                         "f",
                         vec![],
-                        vec![Argument::new("x", types::Value::Number)],
+                        vec![Argument::new("x", types::Value::Float64)],
                         Variable::new("y"),
-                        types::Value::Number
+                        types::Value::Float64
                     )
                     .into()
                 ],
@@ -311,21 +311,21 @@ mod tests {
             Module::new(
                 vec![],
                 vec![
-                    ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
+                    ValueDefinition::new("y", Expression::Float64(42.0), types::Value::Float64)
                         .into(),
                     FunctionDefinition::new(
                         "f",
-                        vec![Argument::new("x", types::Value::Number)],
+                        vec![Argument::new("x", types::Value::Float64)],
                         LetFunctions::new(
                             vec![FunctionDefinition::new(
                                 "g",
-                                vec![Argument::new("y", types::Value::Number)],
+                                vec![Argument::new("y", types::Value::Float64)],
                                 Variable::new("x"),
-                                types::Value::Number
+                                types::Value::Float64
                             )],
-                            Expression::Number(42.0)
+                            Expression::Float64(42.0)
                         ),
-                        types::Value::Number
+                        types::Value::Float64
                     )
                     .into()
                 ],
@@ -333,23 +333,23 @@ mod tests {
             Ok(Module::without_validation(
                 vec![],
                 vec![
-                    ValueDefinition::new("y", Expression::Number(42.0), types::Value::Number)
+                    ValueDefinition::new("y", Expression::Float64(42.0), types::Value::Float64)
                         .into(),
                     FunctionDefinition::with_environment(
                         "f",
                         vec![],
-                        vec![Argument::new("x", types::Value::Number)],
+                        vec![Argument::new("x", types::Value::Float64)],
                         LetFunctions::new(
                             vec![FunctionDefinition::with_environment(
                                 "g",
-                                vec![Argument::new("x", types::Value::Number)],
-                                vec![Argument::new("y", types::Value::Number)],
+                                vec![Argument::new("x", types::Value::Float64)],
+                                vec![Argument::new("y", types::Value::Float64)],
                                 Variable::new("x"),
-                                types::Value::Number
+                                types::Value::Float64
                             )],
-                            Expression::Number(42.0)
+                            Expression::Float64(42.0)
                         ),
-                        types::Value::Number
+                        types::Value::Float64
                     )
                     .into()
                 ],

@@ -93,14 +93,15 @@ impl TypeChecker {
         variables: &HashMap<&str, Type>,
     ) -> Result<Type, TypeCheckError> {
         match expression {
-            Expression::Application(application) => {
-                match self.check_variable(application.function(), variables)? {
+            Expression::FunctionApplication(function_application) => {
+                match self.check_variable(function_application.function(), variables)? {
                     Type::Function(function_type) => {
-                        if function_type.arguments().len() != application.arguments().len() {
+                        if function_type.arguments().len() != function_application.arguments().len()
+                        {
                             return Err(TypeCheckError);
                         }
 
-                        for (argument, expected_type) in application
+                        for (argument, expected_type) in function_application
                             .arguments()
                             .iter()
                             .zip(function_type.arguments())
@@ -139,14 +140,15 @@ impl TypeChecker {
 
                 self.check_expression(let_values.expression(), &variables)
             }
-            Expression::Number(_) => Ok(types::Value::Number.into()),
+            Expression::Float64(_) => Ok(types::Value::Float64.into()),
             Expression::Operation(operation) => {
-                if self.check_expression(operation.lhs(), variables)? != types::Value::Number.into()
+                if self.check_expression(operation.lhs(), variables)?
+                    != types::Value::Float64.into()
                 {
                     return Err(TypeCheckError);
                 }
 
-                Ok(types::Value::Number.into())
+                Ok(types::Value::Float64.into())
             }
             Expression::Variable(variable) => self.check_variable(variable, variables),
         }

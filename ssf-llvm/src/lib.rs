@@ -47,8 +47,8 @@ mod tests {
                 vec![],
                 vec![ssf::ir::ValueDefinition::new(
                     "foo",
-                    ssf::ir::Expression::Number(42.0),
-                    ssf::types::Value::Number,
+                    ssf::ir::Expression::Float64(42.0),
+                    ssf::types::Value::Float64,
                 )
                 .into()],
             )
