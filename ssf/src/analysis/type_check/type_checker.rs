@@ -94,7 +94,34 @@ impl TypeChecker {
     ) -> Result<Type, TypeCheckError> {
         match expression {
             Expression::Case(case) => self.check_case(case, variables),
-            Expression::ConstructorApplication(_) => unimplemented!(),
+            Expression::ConstructorApplication(constructor_application) => {
+                if constructor_application.arguments().len()
+                    != constructor_application
+                        .constructor()
+                        .constructor_type()
+                        .elements()
+                        .len()
+                {
+                    return Err(TypeCheckError);
+                }
+
+                for (argument, element_type) in constructor_application.arguments().iter().zip(
+                    constructor_application
+                        .constructor()
+                        .constructor_type()
+                        .elements(),
+                ) {
+                    if &self.check_expression(argument, variables)? != element_type {
+                        return Err(TypeCheckError);
+                    }
+                }
+
+                Ok(constructor_application
+                    .constructor()
+                    .algebraic_type()
+                    .clone()
+                    .into())
+            }
             Expression::FunctionApplication(function_application) => {
                 match self.check_variable(function_application.function(), variables)? {
                     Type::Function(function_type) => {

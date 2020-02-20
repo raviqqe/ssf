@@ -407,4 +407,106 @@ mod tests {
             );
         }
     }
+
+    mod constructor_applications {
+        use super::*;
+
+        #[test]
+        fn check_constructor_applications_with_no_arguments() {
+            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![])]);
+
+            assert_eq!(
+                check_types(&Module::without_validation(
+                    vec![],
+                    vec![ValueDefinition::new(
+                        "x",
+                        ConstructorApplication::new(
+                            Constructor::new(algebraic_type.clone(), 0),
+                            vec![],
+                        ),
+                        algebraic_type.into(),
+                    )
+                    .into()],
+                    vec![],
+                )),
+                Ok(())
+            );
+        }
+
+        #[test]
+        fn check_constructor_applications_with_arguments() {
+            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![
+                types::Value::Float64.into(),
+            ])]);
+
+            assert_eq!(
+                check_types(&Module::without_validation(
+                    vec![],
+                    vec![ValueDefinition::new(
+                        "x",
+                        ConstructorApplication::new(
+                            Constructor::new(algebraic_type.clone(), 0),
+                            vec![42.0.into()],
+                        ),
+                        algebraic_type.into(),
+                    )
+                    .into()],
+                    vec![],
+                )),
+                Ok(())
+            );
+        }
+
+        #[test]
+        fn fail_to_check_constructor_applications_with_wrong_number_of_arguments() {
+            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![
+                types::Value::Float64.into(),
+            ])]);
+
+            assert_eq!(
+                check_types(&Module::without_validation(
+                    vec![],
+                    vec![ValueDefinition::new(
+                        "x",
+                        ConstructorApplication::new(
+                            Constructor::new(algebraic_type.clone(), 0),
+                            vec![42.0.into(), 42.0.into()],
+                        ),
+                        algebraic_type.into(),
+                    )
+                    .into()],
+                    vec![],
+                )),
+                Err(TypeCheckError)
+            );
+        }
+
+        #[test]
+        fn fail_to_check_constructor_applications_with_wrong_argument_type() {
+            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![
+                types::Value::Float64.into(),
+            ])]);
+
+            assert_eq!(
+                check_types(&Module::without_validation(
+                    vec![],
+                    vec![ValueDefinition::new(
+                        "x",
+                        ConstructorApplication::new(
+                            Constructor::new(algebraic_type.clone(), 0),
+                            vec![ConstructorApplication::new(
+                                Constructor::new(algebraic_type.clone(), 0),
+                                vec![42.0.into()],
+                            )
+                            .into()],
+                        ),
+                        algebraic_type.into(),
+                    )
+                    .into()],
+                    vec![],
+                )),
+                Err(TypeCheckError)
+            );
+        }
+    }
 }
