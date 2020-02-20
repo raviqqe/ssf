@@ -34,6 +34,8 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         match expression {
+            ssf::ir::Expression::Case(case) => self.compile_case(case, variables),
+            ssf::ir::Expression::ConstructorApplication(_) => unimplemented!(),
             ssf::ir::Expression::FunctionApplication(function_application) => {
                 let closure = self
                     .compile_variable(function_application.function(), variables)?
@@ -80,7 +82,6 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     .left()
                     .unwrap())
             }
-            ssf::ir::Expression::Case(case) => self.compile_case(case, variables),
             ssf::ir::Expression::LetFunctions(let_functions) => {
                 let mut variables = variables.clone();
                 let mut closures = HashMap::<&str, inkwell::values::PointerValue>::new();

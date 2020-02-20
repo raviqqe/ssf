@@ -93,6 +93,8 @@ impl TypeChecker {
         variables: &HashMap<&str, Type>,
     ) -> Result<Type, TypeCheckError> {
         match expression {
+            Expression::Case(case) => self.check_case(case, variables),
+            Expression::ConstructorApplication(_) => unimplemented!(),
             Expression::FunctionApplication(function_application) => {
                 match self.check_variable(function_application.function(), variables)? {
                     Type::Function(function_type) => {
@@ -116,7 +118,6 @@ impl TypeChecker {
                     Type::Value(_) => Err(TypeCheckError),
                 }
             }
-            Expression::Case(case) => self.check_case(case, variables),
             Expression::LetFunctions(let_functions) => {
                 let mut variables = variables.clone();
 

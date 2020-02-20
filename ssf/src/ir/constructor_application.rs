@@ -1,24 +1,24 @@
+use super::constructor::Constructor;
 use super::expression::Expression;
-use super::variable::Variable;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct FunctionApplication {
-    function: Variable,
+pub struct ConstructorApplication {
+    constructor: Constructor,
     arguments: Vec<Expression>,
 }
 
-impl FunctionApplication {
-    pub fn new(function: Variable, arguments: Vec<Expression>) -> Self {
+impl ConstructorApplication {
+    pub fn new(constructor: Constructor, arguments: Vec<Expression>) -> Self {
         Self {
-            function,
+            constructor,
             arguments,
         }
     }
 
-    pub fn function(&self) -> &Variable {
-        &self.function
+    pub fn constructor(&self) -> &Constructor {
+        &self.constructor
     }
 
     pub fn arguments(&self) -> &[Expression] {
@@ -27,7 +27,7 @@ impl FunctionApplication {
 
     pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
         Self::new(
-            self.function.rename_variables(names),
+            self.constructor.clone(),
             self.arguments
                 .iter()
                 .map(|argument| argument.rename_variables(names))
@@ -36,7 +36,7 @@ impl FunctionApplication {
     }
 
     pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
-        let mut variables = self.function.find_variables(excluded_variables);
+        let mut variables = HashSet::new();
 
         for argument in &self.arguments {
             variables.extend(argument.find_variables(excluded_variables));
@@ -51,7 +51,7 @@ impl FunctionApplication {
         global_variables: &HashSet<String>,
     ) -> Self {
         Self::new(
-            self.function.clone(),
+            self.constructor.clone(),
             self.arguments
                 .iter()
                 .map(|argument| argument.infer_environment(variables, global_variables))
@@ -60,13 +60,12 @@ impl FunctionApplication {
     }
 
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
-        Self {
-            function: self.function.clone(),
-            arguments: self
-                .arguments
+        Self::new(
+            self.constructor.convert_types(convert),
+            self.arguments
                 .iter()
                 .map(|argument| argument.convert_types(convert))
                 .collect(),
-        }
+        )
     }
 }
