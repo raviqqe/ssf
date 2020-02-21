@@ -23,7 +23,16 @@ impl<'c> TypeCompiler<'c> {
         match value {
             ssf::types::Value::Algebraic(algebraic) => self.compile_algebraic(algebraic).into(),
             ssf::types::Value::Index(_) => self.compile_unsized_constructor().into(),
-            ssf::types::Value::Float64 => self.context.f64_type().into(),
+            ssf::types::Value::Primitive(primitive) => self.compile_primitive(primitive),
+        }
+    }
+
+    pub fn compile_primitive(
+        &self,
+        primitive: &ssf::types::Primitive,
+    ) -> inkwell::types::BasicTypeEnum<'c> {
+        match primitive {
+            ssf::types::Primitive::Float64 => self.context.f64_type().into(),
         }
     }
 
@@ -144,7 +153,7 @@ mod tests {
     #[test]
     fn compile_number() {
         let context = inkwell::context::Context::create();
-        TypeCompiler::new(&context).compile(&ssf::types::Value::Float64.into());
+        TypeCompiler::new(&context).compile(&ssf::types::Primitive::Float64.into());
     }
 
     #[test]
@@ -152,8 +161,8 @@ mod tests {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile(
             &ssf::types::Function::new(
-                vec![ssf::types::Value::Float64.into()],
-                ssf::types::Value::Float64,
+                vec![ssf::types::Primitive::Float64.into()],
+                ssf::types::Primitive::Float64,
             )
             .into(),
         );
@@ -164,8 +173,8 @@ mod tests {
         let context = inkwell::context::Context::create();
         let compiler = TypeCompiler::new(&context);
         let type_ = ssf::types::Function::new(
-            vec![ssf::types::Value::Float64.into()],
-            ssf::types::Value::Float64,
+            vec![ssf::types::Primitive::Float64.into()],
+            ssf::types::Primitive::Float64,
         )
         .into();
 
@@ -177,7 +186,7 @@ mod tests {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile(
             &ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![
-                ssf::types::Value::Float64.into(),
+                ssf::types::Primitive::Float64.into(),
             ])])
             .into(),
         );
@@ -188,8 +197,8 @@ mod tests {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile(
             &ssf::types::Algebraic::new(vec![
-                ssf::types::Constructor::new(vec![ssf::types::Value::Float64.into()]),
-                ssf::types::Constructor::new(vec![ssf::types::Value::Float64.into()]),
+                ssf::types::Constructor::new(vec![ssf::types::Primitive::Float64.into()]),
+                ssf::types::Constructor::new(vec![ssf::types::Primitive::Float64.into()]),
             ])
             .into(),
         );

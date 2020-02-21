@@ -387,6 +387,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
                 Ok(phi.as_basic_value())
             }
+            ssf::ir::Case::Primitive(_) => unimplemented!(),
         }
     }
 
@@ -460,7 +461,7 @@ mod tests {
         fn compile_algebraic_case_expression_with_multiple_constructors() {
             let algebraic_type = ssf::types::Algebraic::new(vec![
                 ssf::types::Constructor::new(vec![]),
-                ssf::types::Constructor::new(vec![ssf::types::Value::Float64.into()]),
+                ssf::types::Constructor::new(vec![ssf::types::Primitive::Float64.into()]),
             ]);
 
             for algebraic_case in vec![
@@ -632,7 +633,7 @@ mod tests {
         fn compile_algebraic_case_expression_with_multiple_constructors() {
             let algebraic_type = ssf::types::Algebraic::new(vec![
                 ssf::types::Constructor::new(vec![]),
-                ssf::types::Constructor::new(vec![ssf::types::Value::Float64.into()]),
+                ssf::types::Constructor::new(vec![ssf::types::Primitive::Float64.into()]),
             ]);
 
             for constructor_application in vec![

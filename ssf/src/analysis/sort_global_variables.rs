@@ -74,8 +74,12 @@ mod tests {
                 vec![],
                 vec![
                     ir::ValueDefinition::new("x", 42.0, types::Primitive::Float64).into(),
-                    ir::ValueDefinition::new("y", ir::Variable::new("x"), types::Primitive::Float64)
-                        .into()
+                    ir::ValueDefinition::new(
+                        "y",
+                        ir::Variable::new("x"),
+                        types::Primitive::Float64
+                    )
+                    .into()
                 ],
                 vec![]
             )),
@@ -89,8 +93,12 @@ mod tests {
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ir::ValueDefinition::new("y", ir::Variable::new("x"), types::Primitive::Float64)
-                        .into(),
+                    ir::ValueDefinition::new(
+                        "y",
+                        ir::Variable::new("x"),
+                        types::Primitive::Float64
+                    )
+                    .into(),
                     ir::ValueDefinition::new("x", 42.0, types::Primitive::Float64).into(),
                 ],
                 vec![]
@@ -171,10 +179,12 @@ mod tests {
         assert_eq!(
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
-                vec![
-                    ir::ValueDefinition::new("x", ir::Variable::new("x"), types::Primitive::Float64)
-                        .into()
-                ],
+                vec![ir::ValueDefinition::new(
+                    "x",
+                    ir::Variable::new("x"),
+                    types::Primitive::Float64
+                )
+                .into()],
                 vec![]
             )),
             Err(AnalysisError::CircularInitialization)
@@ -187,10 +197,18 @@ mod tests {
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ir::ValueDefinition::new("x", ir::Variable::new("y"), types::Primitive::Float64)
-                        .into(),
-                    ir::ValueDefinition::new("y", ir::Variable::new("x"), types::Primitive::Float64)
-                        .into(),
+                    ir::ValueDefinition::new(
+                        "x",
+                        ir::Variable::new("y"),
+                        types::Primitive::Float64
+                    )
+                    .into(),
+                    ir::ValueDefinition::new(
+                        "y",
+                        ir::Variable::new("x"),
+                        types::Primitive::Float64
+                    )
+                    .into(),
                 ],
                 vec![]
             )),
