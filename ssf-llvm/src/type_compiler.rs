@@ -34,17 +34,14 @@ impl<'c> TypeCompiler<'c> {
         if algebraic.is_singleton() {
             self.context
                 .struct_type(&[self.compile_unsized_constructor().into()], false)
-                .into()
         } else {
-            self.context
-                .struct_type(
-                    &[
-                        self.context.i64_type().into(),
-                        self.compile_unsized_constructor().into(),
-                    ],
-                    false,
-                )
-                .into()
+            self.context.struct_type(
+                &[
+                    self.context.i64_type().into(),
+                    self.compile_unsized_constructor().into(),
+                ],
+                false,
+            )
         }
     }
 

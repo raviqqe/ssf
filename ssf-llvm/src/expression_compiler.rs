@@ -45,8 +45,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     .constructor()
                     .constructor_type()
                     .elements()
-                    .len()
-                    == 0
+                    .is_empty()
                 {
                     self.type_compiler
                         .compile_unsized_constructor()
