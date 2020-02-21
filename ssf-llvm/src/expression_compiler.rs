@@ -105,11 +105,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         algebraic_value,
                         self.builder.build_bitcast(
                             constructor_pointer,
-                            algebraic_value
-                                .into_struct_value()
-                                .get_type()
-                                .get_field_type_at_index(1)
-                                .unwrap(),
+                            self.type_compiler.compile_unsized_constructor(),
                             "",
                         ),
                         1,
