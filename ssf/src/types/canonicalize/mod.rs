@@ -11,19 +11,19 @@ pub(crate) fn canonicalize(type_: &Type) -> Type {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Algebraic, Constructor, Function, Value};
+    use crate::types::{Algebraic, Constructor, Function, Primitive, Value};
 
     #[test]
     fn canonicalize_() {
         for (type_, canonical_type) in &[
-            (Value::Float64.into(), Value::Float64.into()),
+            (Primitive::Float64.into(), Primitive::Float64.into()),
             (
-                Function::new(vec![Value::Float64.into()], Value::Float64.into()).into(),
-                Function::new(vec![Value::Float64.into()], Value::Float64.into()).into(),
+                Function::new(vec![Primitive::Float64.into()], Primitive::Float64).into(),
+                Function::new(vec![Primitive::Float64.into()], Primitive::Float64).into(),
             ),
             (
-                Algebraic::new(vec![Constructor::new(vec![Value::Float64.into()])]).into(),
-                Algebraic::new(vec![Constructor::new(vec![Value::Float64.into()])]).into(),
+                Algebraic::new(vec![Constructor::new(vec![Primitive::Float64.into()])]).into(),
+                Algebraic::new(vec![Constructor::new(vec![Primitive::Float64.into()])]).into(),
             ),
             (
                 Algebraic::new(vec![Constructor::new(vec![Algebraic::new(vec![
@@ -43,38 +43,36 @@ mod tests {
             ),
             (
                 Algebraic::new(vec![Constructor::new(vec![Function::new(
-                    vec![Value::Float64.into()],
+                    vec![Primitive::Float64.into()],
                     Algebraic::new(vec![Constructor::new(vec![Function::new(
-                        vec![Value::Float64.into()],
-                        Value::Index(0).into(),
+                        vec![Primitive::Float64.into()],
+                        Value::Index(0),
                     )
-                    .into()])])
-                    .into(),
+                    .into()])]),
                 )
                 .into()])])
                 .into(),
                 Algebraic::new(vec![Constructor::new(vec![Function::new(
-                    vec![Value::Float64.into()],
-                    Value::Index(0).into(),
+                    vec![Primitive::Float64.into()],
+                    Value::Index(0),
                 )
                 .into()])])
                 .into(),
             ),
             (
                 Algebraic::new(vec![Constructor::new(vec![Function::new(
-                    vec![Value::Float64.into()],
+                    vec![Primitive::Float64.into()],
                     Algebraic::new(vec![Constructor::new(vec![Function::new(
-                        vec![Value::Float64.into()],
-                        Value::Index(1).into(),
+                        vec![Primitive::Float64.into()],
+                        Value::Index(1),
                     )
-                    .into()])])
-                    .into(),
+                    .into()])]),
                 )
                 .into()])])
                 .into(),
                 Algebraic::new(vec![Constructor::new(vec![Function::new(
-                    vec![Value::Float64.into()],
-                    Value::Index(0).into(),
+                    vec![Primitive::Float64.into()],
+                    Value::Index(0),
                 )
                 .into()])])
                 .into(),

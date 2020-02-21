@@ -28,18 +28,18 @@ impl Constructor {
 
 #[cfg(test)]
 mod tests {
-    use super::super::value::Value;
+    use super::super::primitive::Primitive;
     use super::*;
 
     #[test]
     fn to_id() {
         assert_eq!(&Constructor::new(vec![]).to_id(), "{}");
         assert_eq!(
-            &Constructor::new(vec![Value::Float64.into()]).to_id(),
+            &Constructor::new(vec![Primitive::Float64.into()]).to_id(),
             "{Float64}"
         );
         assert_eq!(
-            &Constructor::new(vec![Value::Float64.into(), Value::Float64.into()]).to_id(),
+            &Constructor::new(vec![Primitive::Float64.into(), Primitive::Float64.into()]).to_id(),
             "{Float64,Float64}"
         );
     }

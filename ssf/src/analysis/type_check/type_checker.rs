@@ -168,15 +168,16 @@ impl TypeChecker {
 
                 self.check_expression(let_values.expression(), &variables)
             }
-            Expression::Primitive(Primitive::Float64(_)) => Ok(types::Value::Float64.into()),
+            Expression::Primitive(Primitive::Float64(_)) => Ok(types::Primitive::Float64.into()),
             Expression::Operation(operation) => {
-                if self.check_expression(operation.lhs(), variables)?
-                    != types::Value::Float64.into()
-                {
-                    return Err(TypeCheckError);
-                }
+                let lhs_type = self.check_expression(operation.lhs(), variables)?;
+                let rhs_type = self.check_expression(operation.rhs(), variables)?;
 
-                Ok(types::Value::Float64.into())
+                if lhs_type.is_primitive() && rhs_type.is_primitive() && lhs_type == rhs_type {
+                    Ok(lhs_type)
+                } else {
+                    Err(TypeCheckError)
+                }
             }
             Expression::Variable(variable) => self.check_variable(variable, variables),
         }
@@ -240,6 +241,7 @@ impl TypeChecker {
 
                 expression_type.ok_or(TypeCheckError)
             }
+            Case::Primitive(_) => unimplemented!(),
         }
     }
 

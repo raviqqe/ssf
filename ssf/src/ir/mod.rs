@@ -16,6 +16,8 @@ mod module;
 mod operation;
 mod operator;
 mod primitive;
+mod primitive_alternative;
+mod primitive_case;
 mod value_definition;
 mod variable;
 
@@ -37,5 +39,7 @@ pub use module::*;
 pub use operation::*;
 pub use operator::*;
 pub use primitive::*;
+pub use primitive_alternative::*;
+pub use primitive_case::*;
 pub use value_definition::*;
 pub use variable::*;

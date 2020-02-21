@@ -9,10 +9,10 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn new(arguments: Vec<Type>, result: Value) -> Self {
+    pub fn new(arguments: Vec<Type>, result: impl Into<Value>) -> Self {
         Self {
             arguments,
-            result: Rc::new(result),
+            result: Rc::new(result.into()),
         }
     }
 
@@ -39,26 +39,27 @@ impl Function {
 
 #[cfg(test)]
 mod tests {
+    use super::super::primitive::Primitive;
     use super::*;
 
     #[test]
     fn to_id() {
         assert_eq!(
-            &Function::new(vec![Value::Float64.into()], Value::Float64).to_id(),
+            &Function::new(vec![Primitive::Float64.into()], Primitive::Float64).to_id(),
             "(Float64->Float64)"
         );
         assert_eq!(
             &Function::new(
-                vec![Value::Float64.into(), Value::Float64.into()],
-                Value::Float64
+                vec![Primitive::Float64.into(), Primitive::Float64.into()],
+                Primitive::Float64
             )
             .to_id(),
             "(Float64->Float64->Float64)"
         );
         assert_eq!(
             &Function::new(
-                vec![Function::new(vec![Value::Float64.into()], Value::Float64).into()],
-                Value::Float64
+                vec![Function::new(vec![Primitive::Float64.into()], Primitive::Float64).into()],
+                Primitive::Float64
             )
             .to_id(),
             "((Float64->Float64)->Float64)"
@@ -68,16 +69,16 @@ mod tests {
     #[test]
     fn arguments() {
         assert_eq!(
-            Function::new(vec![Value::Float64.into()], Value::Float64).arguments(),
-            &[Value::Float64.into()]
+            Function::new(vec![Primitive::Float64.into()], Primitive::Float64).arguments(),
+            &[Primitive::Float64.into()]
         );
     }
 
     #[test]
     fn result() {
         assert_eq!(
-            Function::new(vec![Value::Float64.into()], Value::Float64).result(),
-            &Value::Float64
+            Function::new(vec![Primitive::Float64.into()], Primitive::Float64).result(),
+            &Primitive::Float64.into()
         );
     }
 }

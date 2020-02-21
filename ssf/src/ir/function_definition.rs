@@ -49,7 +49,7 @@ impl FunctionDefinition {
         environment: Vec<Argument>,
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
-        result_type: types::Value,
+        result_type: impl Into<types::Value> + Clone,
     ) -> Self {
         Self {
             type_: types::Function::new(
@@ -57,13 +57,13 @@ impl FunctionDefinition {
                     .iter()
                     .map(|argument| argument.type_().clone())
                     .collect(),
-                result_type.clone(),
+                result_type.clone().into(),
             ),
             name: name.into(),
             environment,
             arguments,
             body: body.into(),
-            result_type,
+            result_type: result_type.into(),
         }
     }
 
@@ -184,17 +184,17 @@ mod tests {
         assert_eq!(
             FunctionDefinition::new(
                 "f",
-                vec![Argument::new("x", types::Value::Float64)],
+                vec![Argument::new("x", types::Primitive::Float64)],
                 42.0,
-                types::Value::Float64
+                types::Primitive::Float64
             )
             .infer_environment(&Default::default(), &Default::default()),
             FunctionDefinition::with_environment(
                 "f",
                 vec![],
-                vec![Argument::new("x", types::Value::Float64)],
+                vec![Argument::new("x", types::Primitive::Float64)],
                 42.0,
-                types::Value::Float64
+                types::Primitive::Float64
             )
         );
     }
@@ -204,47 +204,47 @@ mod tests {
         assert_eq!(
             FunctionDefinition::new(
                 "f",
-                vec![Argument::new("x", types::Value::Float64)],
+                vec![Argument::new("x", types::Primitive::Float64)],
                 Variable::new("y"),
-                types::Value::Float64
+                types::Primitive::Float64
             )
             .infer_environment(
-                &vec![("y".into(), types::Value::Float64.into())]
+                &vec![("y".into(), types::Primitive::Float64.into())]
                     .drain(..)
                     .collect(),
                 &Default::default()
             ),
             FunctionDefinition::with_environment(
                 "f",
-                vec![Argument::new("y", types::Value::Float64)],
-                vec![Argument::new("x", types::Value::Float64)],
+                vec![Argument::new("y", types::Primitive::Float64)],
+                vec![Argument::new("x", types::Primitive::Float64)],
                 Variable::new("y"),
-                types::Value::Float64
+                types::Primitive::Float64
             )
         );
     }
 
     #[test]
     fn infer_environment_idempotently() {
-        let variables = vec![("y".into(), types::Value::Float64.into())]
+        let variables = vec![("y".into(), types::Primitive::Float64.into())]
             .drain(..)
             .collect();
 
         assert_eq!(
             FunctionDefinition::new(
                 "f",
-                vec![Argument::new("x", types::Value::Float64)],
+                vec![Argument::new("x", types::Primitive::Float64)],
                 Variable::new("y"),
-                types::Value::Float64
+                types::Primitive::Float64
             )
             .infer_environment(&variables, &Default::default())
             .infer_environment(&variables, &Default::default()),
             FunctionDefinition::with_environment(
                 "f",
-                vec![Argument::new("y", types::Value::Float64)],
-                vec![Argument::new("x", types::Value::Float64)],
+                vec![Argument::new("y", types::Primitive::Float64)],
+                vec![Argument::new("x", types::Primitive::Float64)],
                 Variable::new("y"),
-                types::Value::Float64
+                types::Primitive::Float64
             )
         );
     }

@@ -28,7 +28,7 @@ mod tests {
     fn check_types_of_variables() {
         let module = Module::without_validation(
             vec![],
-            vec![ValueDefinition::new("x", 42.0, types::Value::Float64).into()],
+            vec![ValueDefinition::new("x", 42.0, types::Primitive::Float64).into()],
             vec![],
         );
         assert_eq!(check_types(&module), Ok(()));
@@ -41,12 +41,12 @@ mod tests {
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![Argument::new("x", types::Value::Float64)],
+                    vec![Argument::new("x", types::Primitive::Float64)],
                     42.0,
-                    types::Value::Float64,
+                    types::Primitive::Float64,
                 )
                 .into(),
-                ValueDefinition::new("x", Variable::new("f"), types::Value::Float64).into(),
+                ValueDefinition::new("x", Variable::new("f"), types::Primitive::Float64).into(),
             ],
             vec![],
         );
@@ -60,9 +60,9 @@ mod tests {
             vec![],
             vec![FunctionDefinition::new(
                 "f",
-                vec![Argument::new("x", types::Value::Float64)],
+                vec![Argument::new("x", types::Primitive::Float64)],
                 42.0,
-                types::Value::Float64,
+                types::Primitive::Float64,
             )
             .into()],
             vec![],
@@ -78,16 +78,16 @@ mod tests {
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![Argument::new("x", types::Value::Float64)],
+                    vec![Argument::new("x", types::Primitive::Float64)],
                     42.0,
-                    types::Value::Float64,
+                    types::Primitive::Float64,
                 )
                 .into(),
                 FunctionDefinition::new(
                     "g",
-                    vec![Argument::new("x", types::Value::Float64)],
+                    vec![Argument::new("x", types::Primitive::Float64)],
                     Variable::new("f"),
-                    types::Value::Float64,
+                    types::Primitive::Float64,
                 )
                 .into(),
             ],
@@ -104,15 +104,15 @@ mod tests {
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![Argument::new("x", types::Value::Float64)],
+                    vec![Argument::new("x", types::Primitive::Float64)],
                     42.0,
-                    types::Value::Float64,
+                    types::Primitive::Float64,
                 )
                 .into(),
                 ValueDefinition::new(
                     "x",
                     FunctionApplication::new(Variable::new("f"), vec![42.0.into()]),
-                    types::Value::Float64,
+                    types::Primitive::Float64,
                 )
                 .into(),
             ],
@@ -129,15 +129,15 @@ mod tests {
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![Argument::new("x", types::Value::Float64)],
+                    vec![Argument::new("x", types::Primitive::Float64)],
                     42.0,
-                    types::Value::Float64,
+                    types::Primitive::Float64,
                 )
                 .into(),
                 ValueDefinition::new(
                     "x",
                     FunctionApplication::new(Variable::new("f"), vec![42.0.into(), 42.0.into()]),
-                    types::Value::Float64,
+                    types::Primitive::Float64,
                 )
                 .into(),
             ],
@@ -151,7 +151,7 @@ mod tests {
     fn fail_to_check_types_because_of_missing_variables() {
         let module = Module::without_validation(
             vec![],
-            vec![ValueDefinition::new("x", Variable::new("y"), types::Value::Float64).into()],
+            vec![ValueDefinition::new("x", Variable::new("y"), types::Primitive::Float64).into()],
             vec![],
         );
 
@@ -166,12 +166,12 @@ mod tests {
                 "x",
                 LetValues::new(
                     vec![
-                        ValueDefinition::new("y", 42.0, types::Value::Float64),
-                        ValueDefinition::new("z", Variable::new("y"), types::Value::Float64),
+                        ValueDefinition::new("y", 42.0, types::Primitive::Float64),
+                        ValueDefinition::new("z", Variable::new("y"), types::Primitive::Float64),
                     ],
                     Variable::new("z"),
                 ),
-                types::Value::Float64,
+                types::Primitive::Float64,
             )
             .into()],
             vec![],
@@ -187,9 +187,9 @@ mod tests {
             vec![
                 FunctionDefinition::new(
                     "f",
-                    vec![Argument::new("x", types::Value::Float64)],
+                    vec![Argument::new("x", types::Primitive::Float64)],
                     42.0,
-                    types::Value::Float64,
+                    types::Primitive::Float64,
                 )
                 .into(),
                 ValueDefinition::new(
@@ -198,11 +198,11 @@ mod tests {
                         vec![ValueDefinition::new(
                             "y",
                             Variable::new("f"),
-                            types::Value::Float64,
+                            types::Primitive::Float64,
                         )],
                         Variable::new("y"),
                     ),
-                    types::Value::Float64,
+                    types::Primitive::Float64,
                 )
                 .into(),
             ],
@@ -215,8 +215,8 @@ mod tests {
     #[test]
     fn check_types_of_declarations() {
         let module = Module::without_validation(
-            vec![Declaration::new("x", types::Value::Float64)],
-            vec![ValueDefinition::new("y", Variable::new("x"), types::Value::Float64).into()],
+            vec![Declaration::new("x", types::Primitive::Float64)],
+            vec![ValueDefinition::new("y", Variable::new("x"), types::Primitive::Float64).into()],
             vec![],
         );
         assert_eq!(check_types(&module), Ok(()));
@@ -227,9 +227,12 @@ mod tests {
         let module = Module::without_validation(
             vec![Declaration::new(
                 "x",
-                types::Function::new(vec![types::Value::Float64.into()], types::Value::Float64),
+                types::Function::new(
+                    vec![types::Primitive::Float64.into()],
+                    types::Primitive::Float64,
+                ),
             )],
-            vec![ValueDefinition::new("y", Variable::new("x"), types::Value::Float64).into()],
+            vec![ValueDefinition::new("y", Variable::new("x"), types::Primitive::Float64).into()],
             vec![],
         );
         assert_eq!(check_types(&module), Err(TypeCheckError));
@@ -254,7 +257,7 @@ mod tests {
                             vec![],
                             Some(DefaultAlternative::new("x", 42.0)),
                         ),
-                        types::Value::Float64,
+                        types::Primitive::Float64,
                     )
                     .into()],
                     vec![],
@@ -306,7 +309,7 @@ mod tests {
                             )],
                             None
                         ),
-                        types::Value::Float64,
+                        types::Primitive::Float64,
                     )
                     .into()],
                     vec![],
@@ -318,7 +321,7 @@ mod tests {
         #[test]
         fn check_case_expressions_with_deconstruction() {
             let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![
-                types::Value::Float64.into(),
+                types::Primitive::Float64.into(),
             ])]);
 
             assert_eq!(
@@ -336,7 +339,7 @@ mod tests {
                             )],
                             None
                         ),
-                        types::Value::Float64,
+                        types::Primitive::Float64,
                     )
                     .into()],
                     vec![],
@@ -357,7 +360,7 @@ mod tests {
                             types::Algebraic::new(vec![types::Constructor::new(vec![])]),
                         )],
                         AlgebraicCase::new(Variable::new("x"), vec![], None),
-                        types::Value::Float64,
+                        types::Primitive::Float64,
                     )
                     .into()],
                     vec![],
@@ -395,7 +398,7 @@ mod tests {
                             ],
                             None
                         ),
-                        types::Value::Float64,
+                        types::Primitive::Float64,
                     )
                     .into()],
                     vec![],
@@ -421,7 +424,7 @@ mod tests {
                             Constructor::new(algebraic_type.clone(), 0),
                             vec![],
                         ),
-                        algebraic_type.into(),
+                        algebraic_type,
                     )
                     .into()],
                     vec![],
@@ -433,7 +436,7 @@ mod tests {
         #[test]
         fn check_constructor_applications_with_arguments() {
             let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![
-                types::Value::Float64.into(),
+                types::Primitive::Float64.into(),
             ])]);
 
             assert_eq!(
@@ -445,7 +448,7 @@ mod tests {
                             Constructor::new(algebraic_type.clone(), 0),
                             vec![42.0.into()],
                         ),
-                        algebraic_type.into(),
+                        algebraic_type,
                     )
                     .into()],
                     vec![],
@@ -457,7 +460,7 @@ mod tests {
         #[test]
         fn fail_to_check_constructor_applications_with_wrong_number_of_arguments() {
             let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![
-                types::Value::Float64.into(),
+                types::Primitive::Float64.into(),
             ])]);
 
             assert_eq!(
@@ -469,7 +472,7 @@ mod tests {
                             Constructor::new(algebraic_type.clone(), 0),
                             vec![42.0.into(), 42.0.into()],
                         ),
-                        algebraic_type.into(),
+                        algebraic_type,
                     )
                     .into()],
                     vec![],
@@ -481,7 +484,7 @@ mod tests {
         #[test]
         fn fail_to_check_constructor_applications_with_wrong_argument_type() {
             let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![
-                types::Value::Float64.into(),
+                types::Primitive::Float64.into(),
             ])]);
 
             assert_eq!(
@@ -497,7 +500,7 @@ mod tests {
                             )
                             .into()],
                         ),
-                        algebraic_type.into(),
+                        algebraic_type,
                     )
                     .into()],
                     vec![],

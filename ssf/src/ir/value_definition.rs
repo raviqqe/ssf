@@ -10,11 +10,15 @@ pub struct ValueDefinition {
 }
 
 impl ValueDefinition {
-    pub fn new(name: impl Into<String>, body: impl Into<Expression>, type_: types::Value) -> Self {
+    pub fn new(
+        name: impl Into<String>,
+        body: impl Into<Expression>,
+        type_: impl Into<types::Value>,
+    ) -> Self {
         Self {
             name: name.into(),
             body: body.into(),
-            type_,
+            type_: type_.into(),
         }
     }
 

@@ -33,7 +33,7 @@ impl Algebraic {
 
 #[cfg(test)]
 mod tests {
-    use super::super::value::Value;
+    use super::super::primitive::Primitive;
     use super::*;
 
     #[test]
@@ -48,13 +48,13 @@ mod tests {
         );
         assert_eq!(
             &Algebraic::new(vec![
-                Constructor::new(vec![Value::Float64.into()]),
+                Constructor::new(vec![Primitive::Float64.into()]),
                 Constructor::new(vec![])
             ])
             .to_id(),
             &Algebraic::new(vec![
                 Constructor::new(vec![]),
-                Constructor::new(vec![Value::Float64.into()])
+                Constructor::new(vec![Primitive::Float64.into()])
             ])
             .to_id()
         );
