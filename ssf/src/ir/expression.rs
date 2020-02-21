@@ -108,37 +108,37 @@ impl Expression {
 }
 
 impl From<AlgebraicCase> for Expression {
-    fn from(algebraic_case: AlgebraicCase) -> Expression {
+    fn from(algebraic_case: AlgebraicCase) -> Self {
         Self::Case(algebraic_case.into())
     }
 }
 
 impl From<Case> for Expression {
-    fn from(case: Case) -> Expression {
+    fn from(case: Case) -> Self {
         Self::Case(case)
     }
 }
 
 impl From<ConstructorApplication> for Expression {
-    fn from(constructor_application: ConstructorApplication) -> Expression {
+    fn from(constructor_application: ConstructorApplication) -> Self {
         Self::ConstructorApplication(constructor_application)
     }
 }
 
 impl From<FunctionApplication> for Expression {
-    fn from(function_application: FunctionApplication) -> Expression {
+    fn from(function_application: FunctionApplication) -> Self {
         Self::FunctionApplication(function_application)
     }
 }
 
 impl From<LetFunctions> for Expression {
-    fn from(let_functions: LetFunctions) -> Expression {
+    fn from(let_functions: LetFunctions) -> Self {
         Self::LetFunctions(let_functions)
     }
 }
 
 impl From<LetValues> for Expression {
-    fn from(let_values: LetValues) -> Expression {
+    fn from(let_values: LetValues) -> Self {
         Self::LetValues(let_values)
     }
 }
@@ -150,13 +150,13 @@ impl<T: Into<Primitive>> From<T> for Expression {
 }
 
 impl From<Operation> for Expression {
-    fn from(operation: Operation) -> Expression {
+    fn from(operation: Operation) -> Self {
         Self::Operation(operation)
     }
 }
 
 impl From<Variable> for Expression {
-    fn from(variable: Variable) -> Expression {
+    fn from(variable: Variable) -> Self {
         Self::Variable(variable)
     }
 }
