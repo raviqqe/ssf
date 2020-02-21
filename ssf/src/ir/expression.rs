@@ -1,9 +1,11 @@
+use super::algebraic_case::AlgebraicCase;
 use super::case::Case;
 use super::constructor_application::ConstructorApplication;
 use super::function_application::FunctionApplication;
 use super::let_functions::LetFunctions;
 use super::let_values::LetValues;
 use super::operation::Operation;
+use super::primitive::Primitive;
 use super::variable::Variable;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
@@ -12,10 +14,10 @@ use std::collections::{HashMap, HashSet};
 pub enum Expression {
     Case(Case),
     ConstructorApplication(ConstructorApplication),
-    Float64(f64),
     FunctionApplication(FunctionApplication),
     LetFunctions(LetFunctions),
     LetValues(LetValues),
+    Primitive(Primitive),
     Operation(Operation),
     Variable(Variable),
 }
@@ -41,7 +43,7 @@ impl Expression {
             Self::LetValues(let_values) => let_values.rename_variables(names).into(),
             Self::Operation(operation) => operation.rename_variables(names).into(),
             Self::Variable(variable) => variable.rename_variables(names).into(),
-            Self::Float64(_) => self.clone(),
+            Self::Primitive(_) => self.clone(),
         }
     }
 
@@ -58,7 +60,7 @@ impl Expression {
             Self::LetValues(let_values) => let_values.find_variables(excluded_variables),
             Self::Operation(operation) => operation.find_variables(excluded_variables),
             Self::Variable(variable) => variable.find_variables(excluded_variables),
-            Self::Float64(_) => HashSet::new(),
+            Self::Primitive(_) => HashSet::new(),
         }
     }
 
@@ -84,7 +86,7 @@ impl Expression {
             Self::Operation(operation) => operation
                 .infer_environment(variables, global_variables)
                 .into(),
-            Self::Float64(_) | Self::Variable(_) => self.clone(),
+            Self::Primitive(_) | Self::Variable(_) => self.clone(),
         }
     }
 
@@ -100,55 +102,61 @@ impl Expression {
             Self::LetFunctions(let_functions) => let_functions.convert_types(convert).into(),
             Self::LetValues(let_values) => let_values.convert_types(convert).into(),
             Self::Operation(operation) => operation.convert_types(convert).into(),
-            Self::Float64(_) | Self::Variable(_) => self.clone(),
+            Self::Primitive(_) | Self::Variable(_) => self.clone(),
         }
     }
 }
 
-impl From<f64> for Expression {
-    fn from(number: f64) -> Expression {
-        Self::Float64(number)
+impl From<AlgebraicCase> for Expression {
+    fn from(algebraic_case: AlgebraicCase) -> Self {
+        Self::Case(algebraic_case.into())
     }
 }
 
-impl<T: Into<Case>> From<T> for Expression {
-    fn from(case: T) -> Expression {
-        Self::Case(case.into())
+impl From<Case> for Expression {
+    fn from(case: Case) -> Self {
+        Self::Case(case)
     }
 }
 
 impl From<ConstructorApplication> for Expression {
-    fn from(constructor_application: ConstructorApplication) -> Expression {
+    fn from(constructor_application: ConstructorApplication) -> Self {
         Self::ConstructorApplication(constructor_application)
     }
 }
 
 impl From<FunctionApplication> for Expression {
-    fn from(function_application: FunctionApplication) -> Expression {
+    fn from(function_application: FunctionApplication) -> Self {
         Self::FunctionApplication(function_application)
     }
 }
 
 impl From<LetFunctions> for Expression {
-    fn from(let_functions: LetFunctions) -> Expression {
+    fn from(let_functions: LetFunctions) -> Self {
         Self::LetFunctions(let_functions)
     }
 }
 
 impl From<LetValues> for Expression {
-    fn from(let_values: LetValues) -> Expression {
+    fn from(let_values: LetValues) -> Self {
         Self::LetValues(let_values)
     }
 }
 
+impl<T: Into<Primitive>> From<T> for Expression {
+    fn from(primitive: T) -> Self {
+        Self::Primitive(primitive.into())
+    }
+}
+
 impl From<Operation> for Expression {
-    fn from(operation: Operation) -> Expression {
+    fn from(operation: Operation) -> Self {
         Self::Operation(operation)
     }
 }
 
 impl From<Variable> for Expression {
-    fn from(variable: Variable) -> Expression {
+    fn from(variable: Variable) -> Self {
         Self::Variable(variable)
     }
 }

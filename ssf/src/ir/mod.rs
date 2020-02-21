@@ -15,6 +15,7 @@ mod let_values;
 mod module;
 mod operation;
 mod operator;
+mod primitive;
 mod value_definition;
 mod variable;
 
@@ -35,5 +36,6 @@ pub use let_values::*;
 pub use module::*;
 pub use operation::*;
 pub use operator::*;
+pub use primitive::*;
 pub use value_definition::*;
 pub use variable::*;

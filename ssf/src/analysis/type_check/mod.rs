@@ -111,7 +111,7 @@ mod tests {
                 .into(),
                 ValueDefinition::new(
                     "x",
-                    FunctionApplication::new(Variable::new("f"), vec![Expression::Float64(42.0)]),
+                    FunctionApplication::new(Variable::new("f"), vec![42.0.into()]),
                     types::Value::Float64,
                 )
                 .into(),
@@ -136,10 +136,7 @@ mod tests {
                 .into(),
                 ValueDefinition::new(
                     "x",
-                    FunctionApplication::new(
-                        Variable::new("f"),
-                        vec![Expression::Float64(42.0), Expression::Float64(42.0)],
-                    ),
+                    FunctionApplication::new(Variable::new("f"), vec![42.0.into(), 42.0.into()]),
                     types::Value::Float64,
                 )
                 .into(),

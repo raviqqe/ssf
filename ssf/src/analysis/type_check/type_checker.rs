@@ -168,7 +168,7 @@ impl TypeChecker {
 
                 self.check_expression(let_values.expression(), &variables)
             }
-            Expression::Float64(_) => Ok(types::Value::Float64.into()),
+            Expression::Primitive(Primitive::Float64(_)) => Ok(types::Value::Float64.into()),
             Expression::Operation(operation) => {
                 if self.check_expression(operation.lhs(), variables)?
                     != types::Value::Float64.into()
