@@ -51,13 +51,13 @@ impl LetFunctions {
                 .collect::<HashSet<_>>(),
         );
 
-        self.definitions.iter().fold(
-            self.expression.find_variables(&excluded_variables),
-            |mut variables, argument| {
-                variables.extend(argument.find_variables(&excluded_variables));
-                variables
-            },
-        )
+        let mut variables = self.expression.find_variables(&excluded_variables);
+
+        for definition in &self.definitions {
+            variables.extend(definition.find_variables(&excluded_variables));
+        }
+
+        variables
     }
 
     pub(crate) fn infer_environment(

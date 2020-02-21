@@ -21,25 +21,27 @@ impl<'c> TypeCompiler<'c> {
 
     pub fn compile_value(&self, value: &ssf::types::Value) -> inkwell::types::BasicTypeEnum<'c> {
         match value {
-            ssf::types::Value::Algebraic(algebraic) => {
-                if algebraic.is_singleton() {
-                    self.context
-                        .struct_type(&[self.compile_unsized_constructor().into()], false)
-                        .into()
-                } else {
-                    self.context
-                        .struct_type(
-                            &[
-                                self.context.i64_type().into(),
-                                self.compile_unsized_constructor().into(),
-                            ],
-                            false,
-                        )
-                        .into()
-                }
-            }
+            ssf::types::Value::Algebraic(algebraic) => self.compile_algebraic(algebraic).into(),
             ssf::types::Value::Index(_) => self.compile_unsized_constructor().into(),
             ssf::types::Value::Float64 => self.context.f64_type().into(),
+        }
+    }
+
+    pub fn compile_algebraic(
+        &self,
+        algebraic: &ssf::types::Algebraic,
+    ) -> inkwell::types::StructType<'c> {
+        if algebraic.is_singleton() {
+            self.context
+                .struct_type(&[self.compile_unsized_constructor().into()], false)
+        } else {
+            self.context.struct_type(
+                &[
+                    self.context.i64_type().into(),
+                    self.compile_unsized_constructor().into(),
+                ],
+                false,
+            )
         }
     }
 
@@ -128,7 +130,7 @@ impl<'c> TypeCompiler<'c> {
             .ptr_type(inkwell::AddressSpace::Generic)
     }
 
-    fn compile_unsized_constructor(&self) -> inkwell::types::PointerType<'c> {
+    pub fn compile_unsized_constructor(&self) -> inkwell::types::PointerType<'c> {
         self.context
             .struct_type(&[], false)
             .ptr_type(inkwell::AddressSpace::Generic)
