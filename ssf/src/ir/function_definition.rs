@@ -185,7 +185,7 @@ mod tests {
             FunctionDefinition::new(
                 "f",
                 vec![Argument::new("x", types::Value::Float64)],
-                Expression::Float64(42.0),
+                42.0,
                 types::Value::Float64
             )
             .infer_environment(&Default::default(), &Default::default()),
@@ -193,7 +193,7 @@ mod tests {
                 "f",
                 vec![],
                 vec![Argument::new("x", types::Value::Float64)],
-                Expression::Float64(42.0),
+                42.0,
                 types::Value::Float64
             )
         );

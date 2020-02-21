@@ -240,7 +240,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
                 self.compile(let_values.expression(), &variables)
             }
-            ssf::ir::Expression::Float64(number) => {
+            ssf::ir::Expression::Literal(ssf::ir::Literal::Float64(number)) => {
                 Ok(self.context.f64_type().const_float(*number).into())
             }
             ssf::ir::Expression::Operation(operation) => {

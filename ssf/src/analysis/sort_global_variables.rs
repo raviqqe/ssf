@@ -107,10 +107,7 @@ mod tests {
                 vec![
                     ir::ValueDefinition::new(
                         "y",
-                        ir::FunctionApplication::new(
-                            ir::Variable::new("f"),
-                            vec![ir::Expression::Float64(42.0)]
-                        ),
+                        ir::FunctionApplication::new(ir::Variable::new("f"), vec![42.0.into()]),
                         types::Value::Float64
                     )
                     .into(),
@@ -137,10 +134,7 @@ mod tests {
                 vec![
                     ir::ValueDefinition::new(
                         "y",
-                        ir::FunctionApplication::new(
-                            ir::Variable::new("f"),
-                            vec![ir::Expression::Float64(42.0)]
-                        ),
+                        ir::FunctionApplication::new(ir::Variable::new("f"), vec![42.0.into()]),
                         types::Value::Float64
                     )
                     .into(),

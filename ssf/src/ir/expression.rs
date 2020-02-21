@@ -1,8 +1,10 @@
+use super::algebraic_case::AlgebraicCase;
 use super::case::Case;
 use super::constructor_application::ConstructorApplication;
 use super::function_application::FunctionApplication;
 use super::let_functions::LetFunctions;
 use super::let_values::LetValues;
+use super::literal::Literal;
 use super::operation::Operation;
 use super::variable::Variable;
 use crate::types::Type;
@@ -12,10 +14,10 @@ use std::collections::{HashMap, HashSet};
 pub enum Expression {
     Case(Case),
     ConstructorApplication(ConstructorApplication),
-    Float64(f64),
     FunctionApplication(FunctionApplication),
     LetFunctions(LetFunctions),
     LetValues(LetValues),
+    Literal(Literal),
     Operation(Operation),
     Variable(Variable),
 }
@@ -41,7 +43,7 @@ impl Expression {
             Self::LetValues(let_values) => let_values.rename_variables(names).into(),
             Self::Operation(operation) => operation.rename_variables(names).into(),
             Self::Variable(variable) => variable.rename_variables(names).into(),
-            Self::Float64(_) => self.clone(),
+            Self::Literal(_) => self.clone(),
         }
     }
 
@@ -58,7 +60,7 @@ impl Expression {
             Self::LetValues(let_values) => let_values.find_variables(excluded_variables),
             Self::Operation(operation) => operation.find_variables(excluded_variables),
             Self::Variable(variable) => variable.find_variables(excluded_variables),
-            Self::Float64(_) => HashSet::new(),
+            Self::Literal(_) => HashSet::new(),
         }
     }
 
@@ -84,7 +86,7 @@ impl Expression {
             Self::Operation(operation) => operation
                 .infer_environment(variables, global_variables)
                 .into(),
-            Self::Float64(_) | Self::Variable(_) => self.clone(),
+            Self::Literal(_) | Self::Variable(_) => self.clone(),
         }
     }
 
@@ -100,20 +102,20 @@ impl Expression {
             Self::LetFunctions(let_functions) => let_functions.convert_types(convert).into(),
             Self::LetValues(let_values) => let_values.convert_types(convert).into(),
             Self::Operation(operation) => operation.convert_types(convert).into(),
-            Self::Float64(_) | Self::Variable(_) => self.clone(),
+            Self::Literal(_) | Self::Variable(_) => self.clone(),
         }
     }
 }
 
-impl From<f64> for Expression {
-    fn from(number: f64) -> Expression {
-        Self::Float64(number)
+impl From<AlgebraicCase> for Expression {
+    fn from(algebraic_case: AlgebraicCase) -> Expression {
+        Self::Case(algebraic_case.into())
     }
 }
 
-impl<T: Into<Case>> From<T> for Expression {
-    fn from(case: T) -> Expression {
-        Self::Case(case.into())
+impl From<Case> for Expression {
+    fn from(case: Case) -> Expression {
+        Self::Case(case)
     }
 }
 
@@ -138,6 +140,12 @@ impl From<LetFunctions> for Expression {
 impl From<LetValues> for Expression {
     fn from(let_values: LetValues) -> Expression {
         Self::LetValues(let_values)
+    }
+}
+
+impl<T: Into<Literal>> From<T> for Expression {
+    fn from(literal: T) -> Self {
+        Self::Literal(literal.into())
     }
 }
 
