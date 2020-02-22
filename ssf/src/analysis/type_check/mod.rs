@@ -241,170 +241,241 @@ mod tests {
     mod case_expressions {
         use super::*;
 
-        #[test]
-        fn check_case_expressions_only_with_default_alternative() {
-            assert_eq!(
-                check_types(&Module::without_validation(
-                    vec![],
-                    vec![FunctionDefinition::new(
-                        "f",
-                        vec![Argument::new(
-                            "x",
-                            types::Algebraic::new(vec![types::Constructor::new(vec![])]),
-                        )],
-                        AlgebraicCase::new(
-                            Variable::new("x"),
-                            vec![],
-                            Some(DefaultAlternative::new("x", 42.0)),
-                        ),
-                        types::Primitive::Float64,
-                    )
-                    .into()],
-                    vec![],
-                )),
-                Ok(())
-            );
-        }
+        mod algebraic {
+            use super::*;
 
-        #[test]
-        fn check_case_expressions_only_with_default_alternative_and_bound_variable() {
-            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![])]);
-
-            assert_eq!(
-                check_types(&Module::without_validation(
-                    vec![],
-                    vec![FunctionDefinition::new(
-                        "f",
-                        vec![Argument::new("x", algebraic_type.clone())],
-                        AlgebraicCase::new(
-                            Variable::new("x"),
-                            vec![],
-                            Some(DefaultAlternative::new("y", Variable::new("y"))),
-                        ),
-                        algebraic_type,
-                    )
-                    .into()],
-                    vec![],
-                )),
-                Ok(())
-            );
-        }
-
-        #[test]
-        fn check_case_expressions_with_one_alternative() {
-            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![])]);
-
-            assert_eq!(
-                check_types(&Module::without_validation(
-                    vec![],
-                    vec![FunctionDefinition::new(
-                        "f",
-                        vec![Argument::new("x", algebraic_type.clone())],
-                        AlgebraicCase::new(
-                            Variable::new("x"),
-                            vec![AlgebraicAlternative::new(
-                                Constructor::new(algebraic_type, 0),
+            #[test]
+            fn check_case_expressions_only_with_default_alternative() {
+                assert_eq!(
+                    check_types(&Module::without_validation(
+                        vec![],
+                        vec![FunctionDefinition::new(
+                            "f",
+                            vec![Argument::new(
+                                "x",
+                                types::Algebraic::new(vec![types::Constructor::new(vec![])]),
+                            )],
+                            AlgebraicCase::new(
+                                Variable::new("x"),
                                 vec![],
-                                42.0
-                            )],
-                            None
-                        ),
-                        types::Primitive::Float64,
-                    )
-                    .into()],
-                    vec![],
-                )),
-                Ok(())
-            );
-        }
+                                Some(DefaultAlternative::new("x", 42.0)),
+                            ),
+                            types::Primitive::Float64,
+                        )
+                        .into()],
+                        vec![],
+                    )),
+                    Ok(())
+                );
+            }
 
-        #[test]
-        fn check_case_expressions_with_deconstruction() {
-            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![
-                types::Primitive::Float64.into(),
-            ])]);
+            #[test]
+            fn check_case_expressions_only_with_default_alternative_and_bound_variable() {
+                let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![])]);
 
-            assert_eq!(
-                check_types(&Module::without_validation(
-                    vec![],
-                    vec![FunctionDefinition::new(
-                        "f",
-                        vec![Argument::new("x", algebraic_type.clone())],
-                        AlgebraicCase::new(
-                            Variable::new("x"),
-                            vec![AlgebraicAlternative::new(
-                                Constructor::new(algebraic_type, 0),
-                                vec!["y".into()],
-                                Variable::new("y")
-                            )],
-                            None
-                        ),
-                        types::Primitive::Float64,
-                    )
-                    .into()],
-                    vec![],
-                )),
-                Ok(())
-            );
-        }
+                assert_eq!(
+                    check_types(&Module::without_validation(
+                        vec![],
+                        vec![FunctionDefinition::new(
+                            "f",
+                            vec![Argument::new("x", algebraic_type.clone())],
+                            AlgebraicCase::new(
+                                Variable::new("x"),
+                                vec![],
+                                Some(DefaultAlternative::new("y", Variable::new("y"))),
+                            ),
+                            algebraic_type,
+                        )
+                        .into()],
+                        vec![],
+                    )),
+                    Ok(())
+                );
+            }
 
-        #[test]
-        fn fail_to_check_case_expressions_without_alternatives() {
-            assert_eq!(
-                check_types(&Module::without_validation(
-                    vec![],
-                    vec![FunctionDefinition::new(
-                        "f",
-                        vec![Argument::new(
-                            "x",
-                            types::Algebraic::new(vec![types::Constructor::new(vec![])]),
-                        )],
-                        AlgebraicCase::new(Variable::new("x"), vec![], None),
-                        types::Primitive::Float64,
-                    )
-                    .into()],
-                    vec![],
-                )),
-                Err(TypeCheckError)
-            );
-        }
+            #[test]
+            fn check_case_expressions_with_one_alternative() {
+                let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![])]);
 
-        #[test]
-        fn fail_to_check_case_expressions_with_inconsistent_alternative_types() {
-            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![])]);
-
-            assert_eq!(
-                check_types(&Module::without_validation(
-                    vec![],
-                    vec![FunctionDefinition::new(
-                        "f",
-                        vec![Argument::new(
-                            "x",
-                            types::Algebraic::new(vec![types::Constructor::new(vec![])]),
-                        )],
-                        AlgebraicCase::new(
-                            Variable::new("x"),
-                            vec![
-                                AlgebraicAlternative::new(
-                                    Constructor::new(algebraic_type.clone(), 0),
-                                    vec![],
-                                    Variable::new("x")
-                                ),
-                                AlgebraicAlternative::new(
+                assert_eq!(
+                    check_types(&Module::without_validation(
+                        vec![],
+                        vec![FunctionDefinition::new(
+                            "f",
+                            vec![Argument::new("x", algebraic_type.clone())],
+                            AlgebraicCase::new(
+                                Variable::new("x"),
+                                vec![AlgebraicAlternative::new(
                                     Constructor::new(algebraic_type, 0),
                                     vec![],
                                     42.0
-                                )
-                            ],
-                            None
-                        ),
-                        types::Primitive::Float64,
-                    )
-                    .into()],
-                    vec![],
-                )),
-                Err(TypeCheckError)
-            );
+                                )],
+                                None
+                            ),
+                            types::Primitive::Float64,
+                        )
+                        .into()],
+                        vec![],
+                    )),
+                    Ok(())
+                );
+            }
+
+            #[test]
+            fn check_case_expressions_with_deconstruction() {
+                let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![
+                    types::Primitive::Float64.into(),
+                ])]);
+
+                assert_eq!(
+                    check_types(&Module::without_validation(
+                        vec![],
+                        vec![FunctionDefinition::new(
+                            "f",
+                            vec![Argument::new("x", algebraic_type.clone())],
+                            AlgebraicCase::new(
+                                Variable::new("x"),
+                                vec![AlgebraicAlternative::new(
+                                    Constructor::new(algebraic_type, 0),
+                                    vec!["y".into()],
+                                    Variable::new("y")
+                                )],
+                                None
+                            ),
+                            types::Primitive::Float64,
+                        )
+                        .into()],
+                        vec![],
+                    )),
+                    Ok(())
+                );
+            }
+
+            #[test]
+            fn fail_to_check_case_expressions_without_alternatives() {
+                assert_eq!(
+                    check_types(&Module::without_validation(
+                        vec![],
+                        vec![FunctionDefinition::new(
+                            "f",
+                            vec![Argument::new(
+                                "x",
+                                types::Algebraic::new(vec![types::Constructor::new(vec![])]),
+                            )],
+                            AlgebraicCase::new(Variable::new("x"), vec![], None),
+                            types::Primitive::Float64,
+                        )
+                        .into()],
+                        vec![],
+                    )),
+                    Err(TypeCheckError)
+                );
+            }
+
+            #[test]
+            fn fail_to_check_case_expressions_with_inconsistent_alternative_types() {
+                let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![])]);
+
+                assert_eq!(
+                    check_types(&Module::without_validation(
+                        vec![],
+                        vec![FunctionDefinition::new(
+                            "f",
+                            vec![Argument::new(
+                                "x",
+                                types::Algebraic::new(vec![types::Constructor::new(vec![])]),
+                            )],
+                            AlgebraicCase::new(
+                                Variable::new("x"),
+                                vec![
+                                    AlgebraicAlternative::new(
+                                        Constructor::new(algebraic_type.clone(), 0),
+                                        vec![],
+                                        Variable::new("x")
+                                    ),
+                                    AlgebraicAlternative::new(
+                                        Constructor::new(algebraic_type, 0),
+                                        vec![],
+                                        42.0
+                                    )
+                                ],
+                                None
+                            ),
+                            types::Primitive::Float64,
+                        )
+                        .into()],
+                        vec![],
+                    )),
+                    Err(TypeCheckError)
+                );
+            }
+        }
+
+        mod primitive {
+            use super::*;
+
+            #[test]
+            fn check_case_expressions_only_with_default_alternative() {
+                assert_eq!(
+                    check_types(&Module::without_validation(
+                        vec![],
+                        vec![ValueDefinition::new(
+                            "x",
+                            PrimitiveCase::new(
+                                42.0,
+                                vec![],
+                                Some(DefaultAlternative::new("x", 42.0)),
+                            ),
+                            types::Primitive::Float64,
+                        )
+                        .into()],
+                        vec![],
+                    )),
+                    Ok(())
+                );
+            }
+
+            #[test]
+            fn check_case_expressions_with_one_alternative() {
+                assert_eq!(
+                    check_types(&Module::without_validation(
+                        vec![],
+                        vec![ValueDefinition::new(
+                            "x",
+                            PrimitiveCase::new(
+                                42.0,
+                                vec![PrimitiveAlternative::new(42.0, 42.0)],
+                                None
+                            ),
+                            types::Primitive::Float64,
+                        )
+                        .into()],
+                        vec![],
+                    )),
+                    Ok(())
+                );
+            }
+
+            #[test]
+            fn check_case_expressions_with_one_alternative_and_default_alternative() {
+                assert_eq!(
+                    check_types(&Module::without_validation(
+                        vec![],
+                        vec![ValueDefinition::new(
+                            "x",
+                            PrimitiveCase::new(
+                                42.0,
+                                vec![PrimitiveAlternative::new(42.0, 42.0)],
+                                Some(DefaultAlternative::new("x", 42.0))
+                            ),
+                            types::Primitive::Float64,
+                        )
+                        .into()],
+                        vec![],
+                    )),
+                    Ok(())
+                );
+            }
         }
     }
 

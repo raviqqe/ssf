@@ -11,7 +11,7 @@ impl TypeChecker {
         Self {}
     }
 
-    pub fn check(&mut self, module: &Module) -> Result<(), TypeCheckError> {
+    pub fn check(&self, module: &Module) -> Result<(), TypeCheckError> {
         let mut variables = HashMap::<&str, Type>::new();
 
         for declaration in module.declarations() {
@@ -50,7 +50,7 @@ impl TypeChecker {
     }
 
     fn check_function_definition(
-        &mut self,
+        &self,
         function_definition: &FunctionDefinition,
         variables: &HashMap<&str, Type>,
     ) -> Result<(), TypeCheckError> {
@@ -74,7 +74,7 @@ impl TypeChecker {
     }
 
     fn check_value_definition(
-        &mut self,
+        &self,
         value_definition: &ValueDefinition,
         variables: &HashMap<&str, Type>,
     ) -> Result<(), TypeCheckError> {
@@ -88,7 +88,7 @@ impl TypeChecker {
     }
 
     fn check_expression(
-        &mut self,
+        &self,
         expression: &Expression,
         variables: &HashMap<&str, Type>,
     ) -> Result<Type, TypeCheckError> {
@@ -168,7 +168,7 @@ impl TypeChecker {
 
                 self.check_expression(let_values.expression(), &variables)
             }
-            Expression::Primitive(Primitive::Float64(_)) => Ok(types::Primitive::Float64.into()),
+            Expression::Primitive(primitive) => Ok(self.check_primitive(primitive).into()),
             Expression::Operation(operation) => {
                 let lhs_type = self.check_expression(operation.lhs(), variables)?;
                 let rhs_type = self.check_expression(operation.rhs(), variables)?;
@@ -184,7 +184,7 @@ impl TypeChecker {
     }
 
     fn check_case(
-        &mut self,
+        &self,
         case: &Case,
         variables: &HashMap<&str, Type>,
     ) -> Result<Type, TypeCheckError> {
@@ -241,7 +241,58 @@ impl TypeChecker {
 
                 expression_type.ok_or(TypeCheckError)
             }
-            Case::Primitive(_) => unimplemented!(),
+            Case::Primitive(primitive_case) => {
+                let argument_type = self
+                    .check_expression(primitive_case.argument(), variables)?
+                    .into_value()
+                    .and_then(|value_type| value_type.into_primitive())
+                    .ok_or(TypeCheckError)?;
+                let mut expression_type = None;
+
+                for alternative in primitive_case.alternatives() {
+                    if &self.check_primitive(alternative.primitive()) != &argument_type {
+                        return Err(TypeCheckError);
+                    }
+
+                    let alternative_type =
+                        self.check_expression(alternative.expression(), variables)?;
+
+                    match &expression_type {
+                        Some(expression_type) => {
+                            if &alternative_type != expression_type {
+                                return Err(TypeCheckError);
+                            }
+                        }
+                        None => expression_type = Some(alternative_type),
+                    }
+                }
+
+                if let Some(default_alternative) = primitive_case.default_alternative() {
+                    let mut variables = variables.clone();
+
+                    variables.insert(default_alternative.variable(), argument_type.into());
+
+                    let alternative_type =
+                        self.check_expression(default_alternative.expression(), &variables)?;
+
+                    match &expression_type {
+                        Some(expression_type) => {
+                            if &alternative_type != expression_type {
+                                return Err(TypeCheckError);
+                            }
+                        }
+                        None => expression_type = Some(alternative_type),
+                    }
+                }
+
+                expression_type.ok_or(TypeCheckError)
+            }
+        }
+    }
+
+    fn check_primitive(&self, primitive: &Primitive) -> types::Primitive {
+        match primitive {
+            Primitive::Float64(_) => types::Primitive::Float64,
         }
     }
 
