@@ -15,6 +15,13 @@ impl Type {
         }
     }
 
+    pub fn is_primitive(&self) -> bool {
+        match self {
+            Self::Value(Value::Primitive(_)) => true,
+            _ => false,
+        }
+    }
+
     pub fn into_function(self) -> Option<Function> {
         match self {
             Self::Function(function) => Some(function),
@@ -44,12 +51,17 @@ impl<T: Into<Value>> From<T> for Type {
 
 #[cfg(test)]
 mod tests {
+    use super::super::primitive::Primitive;
     use super::*;
 
     #[test]
     fn to_id() {
         assert_eq!(
-            &Type::from(Function::new(vec![Value::Float64.into()], Value::Float64)).to_id(),
+            &Type::from(Function::new(
+                vec![Primitive::Float64.into()],
+                Primitive::Float64
+            ))
+            .to_id(),
             "(Float64->Float64)"
         );
     }

@@ -1,10 +1,11 @@
 use super::algebraic::Algebraic;
+use super::primitive::Primitive;
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Value {
     Algebraic(Algebraic),
-    Float64,
     Index(usize),
+    Primitive(Primitive),
 }
 
 impl Value {
@@ -12,7 +13,7 @@ impl Value {
         match self {
             Self::Algebraic(algebraic) => algebraic.to_id(),
             Self::Index(index) => format!("{}", index),
-            Self::Float64 => "Float64".into(),
+            Self::Primitive(primitive) => primitive.to_id(),
         }
     }
 
@@ -22,10 +23,23 @@ impl Value {
             _ => None,
         }
     }
+
+    pub fn into_primitive(self) -> Option<Primitive> {
+        match self {
+            Self::Primitive(primitive) => Some(primitive),
+            _ => None,
+        }
+    }
 }
 
 impl From<Algebraic> for Value {
     fn from(algebraic: Algebraic) -> Self {
         Self::Algebraic(algebraic)
+    }
+}
+
+impl From<Primitive> for Value {
+    fn from(primitive: Primitive) -> Self {
+        Self::Primitive(primitive)
     }
 }

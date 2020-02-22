@@ -6,6 +6,7 @@ use super::let_functions::LetFunctions;
 use super::let_values::LetValues;
 use super::operation::Operation;
 use super::primitive::Primitive;
+use super::primitive_case::PrimitiveCase;
 use super::variable::Variable;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
@@ -143,15 +144,21 @@ impl From<LetValues> for Expression {
     }
 }
 
+impl From<Operation> for Expression {
+    fn from(operation: Operation) -> Self {
+        Self::Operation(operation)
+    }
+}
+
 impl<T: Into<Primitive>> From<T> for Expression {
     fn from(primitive: T) -> Self {
         Self::Primitive(primitive.into())
     }
 }
 
-impl From<Operation> for Expression {
-    fn from(operation: Operation) -> Self {
-        Self::Operation(operation)
+impl From<PrimitiveCase> for Expression {
+    fn from(primitive_case: PrimitiveCase) -> Self {
+        Self::Case(primitive_case.into())
     }
 }
 

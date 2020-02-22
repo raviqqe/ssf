@@ -45,7 +45,10 @@ mod tests {
         compile(
             &ssf::ir::Module::new(
                 vec![],
-                vec![ssf::ir::ValueDefinition::new("foo", 42.0, ssf::types::Value::Float64).into()],
+                vec![
+                    ssf::ir::ValueDefinition::new("foo", 42.0, ssf::types::Primitive::Float64)
+                        .into(),
+                ],
             )
             .unwrap(),
             &InitializerConfiguration::new("foo", vec![]),
