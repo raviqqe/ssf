@@ -250,7 +250,7 @@ impl TypeChecker {
                 let mut expression_type = None;
 
                 for alternative in primitive_case.alternatives() {
-                    if &self.check_primitive(alternative.primitive()) != &argument_type {
+                    if self.check_primitive(alternative.primitive()) != argument_type {
                         return Err(TypeCheckError);
                     }
 
