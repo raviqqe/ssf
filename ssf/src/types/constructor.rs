@@ -14,6 +14,10 @@ impl Constructor {
         &self.elements
     }
 
+    pub fn is_enum(&self) -> bool {
+        self.elements.is_empty()
+    }
+
     pub fn to_id(&self) -> String {
         format!(
             "{{{}}}",
