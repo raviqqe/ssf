@@ -24,4 +24,4 @@ jobs:
       - image: raviqqe/ssf-ci
     steps:
       - run: cargo login $CARGO_TOKEN
-      - run: cargo release --dry-run
+      - run: cargo release --dry-run patch
