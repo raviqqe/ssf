@@ -19,6 +19,12 @@ impl Algebraic {
         self.constructors.len() == 1
     }
 
+    pub fn is_enum(&self) -> bool {
+        self.constructors
+            .iter()
+            .all(|constructor| constructor.is_enum())
+    }
+
     pub fn to_id(&self) -> String {
         format!(
             "{{{}}}",

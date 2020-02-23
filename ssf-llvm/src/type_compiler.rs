@@ -40,9 +40,14 @@ impl<'c> TypeCompiler<'c> {
         &self,
         algebraic: &ssf::types::Algebraic,
     ) -> inkwell::types::StructType<'c> {
-        if algebraic.is_singleton() {
+        if algebraic.is_singleton() && algebraic.is_enum() {
+            self.context.struct_type(&[], false)
+        } else if algebraic.is_singleton() {
             self.context
                 .struct_type(&[self.compile_unsized_constructor().into()], false)
+        } else if algebraic.is_enum() {
+            self.context
+                .struct_type(&[self.context.i64_type().into()], false)
         } else {
             self.context.struct_type(
                 &[

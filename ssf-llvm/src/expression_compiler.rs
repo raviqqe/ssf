@@ -37,29 +37,43 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         match expression {
             ssf::ir::Expression::Case(case) => self.compile_case(case, variables),
             ssf::ir::Expression::ConstructorApplication(constructor_application) => {
-                let constructor_type = self
-                    .type_compiler
-                    .compile_constructor(constructor_application.constructor().constructor_type());
+                let algebraic_type = constructor_application.constructor().algebraic_type();
 
-                let constructor_pointer = if constructor_application
+                let mut algebraic_value = self
+                    .type_compiler
+                    .compile_algebraic(algebraic_type)
+                    .const_zero()
+                    .into();
+
+                if !algebraic_type.is_singleton() {
+                    algebraic_value = self
+                        .builder
+                        .build_insert_value(
+                            algebraic_value,
+                            self.context.i64_type().const_int(
+                                constructor_application.constructor().index() as u64,
+                                false,
+                            ),
+                            0,
+                            "",
+                        )
+                        .unwrap();
+                }
+
+                if !constructor_application
                     .constructor()
                     .constructor_type()
-                    .elements()
-                    .is_empty()
+                    .is_enum()
                 {
-                    self.type_compiler
-                        .compile_unsized_constructor()
-                        .const_null()
-                } else {
-                    let constructor_pointer = self.compile_struct_malloc(
-                        constructor_type.get_element_type().into_struct_type(),
-                    );
-
-                    let mut constructor_value = constructor_type
+                    let constructor_type = self
+                        .type_compiler
+                        .compile_constructor(
+                            constructor_application.constructor().constructor_type(),
+                        )
                         .get_element_type()
-                        .into_struct_type()
-                        .const_zero()
-                        .into();
+                        .into_struct_type();
+
+                    let mut constructor_value = constructor_type.const_zero().into();
 
                     for (index, argument) in constructor_application.arguments().iter().enumerate()
                     {
@@ -74,44 +88,27 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                             .unwrap();
                     }
 
+                    let constructor_pointer = self.compile_struct_malloc(constructor_type);
+
                     self.builder
                         .build_store(constructor_pointer, constructor_value);
 
-                    constructor_pointer
-                };
-
-                let mut algebraic_value = self
-                    .type_compiler
-                    .compile_algebraic(constructor_application.constructor().algebraic_type())
-                    .const_zero()
-                    .into();
-
-                algebraic_value = self
-                    .builder
-                    .build_insert_value(
-                        algebraic_value,
-                        self.context
-                            .i64_type()
-                            .const_int(constructor_application.constructor().index() as u64, false),
-                        0,
-                        "",
-                    )
-                    .unwrap();
-
-                Ok(self
-                    .builder
-                    .build_insert_value(
-                        algebraic_value,
-                        self.builder.build_bitcast(
-                            constructor_pointer,
-                            self.type_compiler.compile_unsized_constructor(),
+                    algebraic_value = self
+                        .builder
+                        .build_insert_value(
+                            algebraic_value,
+                            self.builder.build_bitcast(
+                                constructor_pointer,
+                                self.type_compiler.compile_unsized_constructor(),
+                                "",
+                            ),
+                            if algebraic_type.is_singleton() { 0 } else { 1 },
                             "",
-                        ),
-                        1,
-                        "",
-                    )
-                    .unwrap()
-                    .as_basic_value_enum())
+                        )
+                        .unwrap();
+                }
+
+                Ok(algebraic_value.as_basic_value_enum())
             }
             ssf::ir::Expression::FunctionApplication(function_application) => {
                 let closure = self
@@ -271,9 +268,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     || algebraic_case.alternatives()[0]
                         .constructor()
                         .algebraic_type()
-                        .constructors()
-                        .len()
-                        == 1
+                        .is_singleton()
                 {
                     self.context.i64_type().const_int(0, false).into()
                 } else {
@@ -289,35 +284,42 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     let block = self.append_basic_block(&format!("case.{}", index));
                     self.builder.position_at_end(&block);
 
-                    let elements = self
-                        .builder
-                        .build_load(
-                            self.builder
-                                .build_bitcast(
-                                    if alternative.constructor().algebraic_type().is_singleton() {
-                                        self.builder.build_extract_value(argument, 0, "").unwrap()
-                                    } else {
-                                        self.builder.build_extract_value(argument, 1, "").unwrap()
-                                    },
-                                    self.type_compiler.compile_constructor(
-                                        alternative.constructor().constructor_type(),
-                                    ),
-                                    "",
-                                )
-                                .into_pointer_value(),
-                            "",
-                        )
-                        .into_struct_value();
-
                     let mut variables = variables.clone();
 
-                    for (index, name) in alternative.element_names().iter().enumerate() {
-                        variables.insert(
-                            name.into(),
-                            self.builder
-                                .build_extract_value(elements, index as u32, "")
-                                .unwrap(),
-                        );
+                    if !alternative.constructor().constructor_type().is_enum() {
+                        let elements = self
+                            .builder
+                            .build_load(
+                                self.builder
+                                    .build_bitcast(
+                                        if alternative.constructor().algebraic_type().is_singleton()
+                                        {
+                                            self.builder
+                                                .build_extract_value(argument, 0, "")
+                                                .unwrap()
+                                        } else {
+                                            self.builder
+                                                .build_extract_value(argument, 1, "")
+                                                .unwrap()
+                                        },
+                                        self.type_compiler.compile_constructor(
+                                            alternative.constructor().constructor_type(),
+                                        ),
+                                        "",
+                                    )
+                                    .into_pointer_value(),
+                                "",
+                            )
+                            .into_struct_value();
+
+                        for (index, name) in alternative.element_names().iter().enumerate() {
+                            variables.insert(
+                                name.into(),
+                                self.builder
+                                    .build_extract_value(elements, index as u32, "")
+                                    .unwrap(),
+                            );
+                        }
                     }
 
                     cases.push((
