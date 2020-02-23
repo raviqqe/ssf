@@ -27,4 +27,5 @@ jobs:
     docker:
       - image: raviqqe/ssf-ci
     steps:
+      - run: cargo login $CARGO_TOKEN
       - run: cargo release --dry-run
