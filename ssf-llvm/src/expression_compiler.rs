@@ -340,23 +340,21 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     self.builder.build_unconditional_branch(&phi_block);
                 }
 
+                let mut default_value = None;
                 let default_block = self.append_basic_block("default");
                 self.builder.position_at_end(&default_block);
-                let default_value = match algebraic_case.default_alternative() {
-                    None => {
-                        self.builder.build_unreachable();
-                        None
-                    }
-                    Some(default_alternative) => {
-                        let mut variables = variables.clone();
 
-                        variables.insert(default_alternative.variable().into(), argument.into());
+                if let Some(default_alternative) = algebraic_case.default_alternative() {
+                    let mut variables = variables.clone();
 
-                        let value = self.compile(default_alternative.expression(), &variables)?;
-                        self.builder.build_unconditional_branch(&phi_block);
-                        Some(value)
-                    }
-                };
+                    variables.insert(default_alternative.variable().into(), argument.into());
+
+                    default_value =
+                        Some(self.compile(default_alternative.expression(), &variables)?);
+                    self.builder.build_unconditional_branch(&phi_block);
+                } else {
+                    self.builder.build_unreachable();
+                }
 
                 self.builder.position_at_end(&switch_block);
                 self.builder.build_switch(
