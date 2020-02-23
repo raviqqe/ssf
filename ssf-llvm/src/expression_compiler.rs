@@ -270,11 +270,13 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         .algebraic_type()
                         .is_singleton()
                 {
-                    self.context.i64_type().const_int(0, false).into()
+                    self.context.i64_type().const_int(0, false)
                 } else {
-                    self.builder.build_extract_value(argument, 0, "").unwrap()
-                }
-                .into_int_value();
+                    self.builder
+                        .build_extract_value(argument, 0, "")
+                        .unwrap()
+                        .into_int_value()
+                };
 
                 let switch_block = self.builder.get_insert_block().unwrap();
                 let phi_block = self.append_basic_block("phi");
@@ -292,16 +294,21 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                             .build_load(
                                 self.builder
                                     .build_bitcast(
-                                        if alternative.constructor().algebraic_type().is_singleton()
-                                        {
-                                            self.builder
-                                                .build_extract_value(argument, 0, "")
-                                                .unwrap()
-                                        } else {
-                                            self.builder
-                                                .build_extract_value(argument, 1, "")
-                                                .unwrap()
-                                        },
+                                        self.builder
+                                            .build_extract_value(
+                                                argument,
+                                                if alternative
+                                                    .constructor()
+                                                    .algebraic_type()
+                                                    .is_singleton()
+                                                {
+                                                    0
+                                                } else {
+                                                    1
+                                                },
+                                                "",
+                                            )
+                                            .unwrap(),
                                         self.type_compiler.compile_constructor(
                                             alternative.constructor().constructor_type(),
                                         ),
