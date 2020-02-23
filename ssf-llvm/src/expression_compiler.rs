@@ -1,3 +1,4 @@
+use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::function_compiler::FunctionCompiler;
 use super::type_compiler::TypeCompiler;
@@ -10,6 +11,7 @@ pub struct ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
     builder: &'b inkwell::builder::Builder<'c>,
     function_compiler: &'f FunctionCompiler<'c, 'm, 't, 'v>,
     type_compiler: &'t TypeCompiler<'c>,
+    compile_configuration: &'m CompileConfiguration,
 }
 
 impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
@@ -19,6 +21,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         builder: &'b inkwell::builder::Builder<'c>,
         function_compiler: &'f FunctionCompiler<'c, 'm, 't, 'v>,
         type_compiler: &'t TypeCompiler<'c>,
+        compile_configuration: &'m CompileConfiguration,
     ) -> Self {
         Self {
             context,
@@ -26,6 +29,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
             builder,
             function_compiler,
             type_compiler,
+            compile_configuration,
         }
     }
 
@@ -353,7 +357,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         Some(self.compile(default_alternative.expression(), &variables)?);
                     self.builder.build_unconditional_branch(&phi_block);
                 } else {
-                    self.builder.build_unreachable();
+                    self.compile_unreachable();
                 }
 
                 self.builder.position_at_end(&switch_block);
@@ -435,7 +439,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     ));
                     self.builder.build_unconditional_branch(&phi_block);
                 } else {
-                    self.builder.build_unreachable();
+                    self.compile_unreachable();
                 }
 
                 self.builder.position_at_end(&phi_block);
@@ -510,7 +514,9 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
             .build_bitcast(
                 self.builder
                     .build_call(
-                        self.module.get_function("malloc").unwrap(),
+                        self.module
+                            .get_function(self.compile_configuration.malloc_function_name())
+                            .unwrap(),
                         &[type_.size_of().unwrap().into()],
                         "",
                     )
@@ -521,6 +527,18 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 "",
             )
             .into_pointer_value()
+    }
+
+    fn compile_unreachable(&self) {
+        if let Some(panic_function_name) = self.compile_configuration.panic_function_name() {
+            self.builder.build_call(
+                self.module.get_function(panic_function_name).unwrap(),
+                &[],
+                "",
+            );
+        }
+
+        self.builder.build_unreachable();
     }
 }
 
@@ -536,6 +554,7 @@ mod tests {
 
             #[test]
             fn compile_algebraic_case_expression_with_multiple_constructors() {
+                let compile_configuration = CompileConfiguration::new("", vec![], None, None);
                 let algebraic_type = ssf::types::Algebraic::new(vec![
                     ssf::types::Constructor::new(vec![]),
                     ssf::types::Constructor::new(vec![ssf::types::Primitive::Float64.into()]),
@@ -610,8 +629,15 @@ mod tests {
                         &context,
                         &module,
                         &builder,
-                        &FunctionCompiler::new(&context, &module, &type_compiler, &HashMap::new()),
+                        &FunctionCompiler::new(
+                            &context,
+                            &module,
+                            &type_compiler,
+                            &HashMap::new(),
+                            &compile_configuration,
+                        ),
                         &type_compiler,
+                        &compile_configuration,
                     )
                     .compile(
                         &algebraic_case.into(),
@@ -637,6 +663,7 @@ mod tests {
 
             #[test]
             fn compile_algebraic_case_expression_with_single_constructors() {
+                let compile_configuration = CompileConfiguration::new("", vec![], None, None);
                 let algebraic_type =
                     ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![])]);
 
@@ -677,8 +704,15 @@ mod tests {
                         &context,
                         &module,
                         &builder,
-                        &FunctionCompiler::new(&context, &module, &type_compiler, &HashMap::new()),
+                        &FunctionCompiler::new(
+                            &context,
+                            &module,
+                            &type_compiler,
+                            &HashMap::new(),
+                            &compile_configuration,
+                        ),
                         &type_compiler,
+                        &compile_configuration,
                     )
                     .compile(
                         &algebraic_case.into(),
@@ -708,6 +742,8 @@ mod tests {
 
             #[test]
             fn compile_primitive_case_expression() {
+                let compile_configuration = CompileConfiguration::new("", vec![], None, None);
+
                 for primitive_case in vec![
                     ssf::ir::PrimitiveCase::new(
                         ssf::ir::Variable::new("x"),
@@ -765,8 +801,10 @@ mod tests {
                                 &module,
                                 &type_compiler,
                                 &HashMap::new(),
+                                &compile_configuration,
                             ),
                             &type_compiler,
+                            &compile_configuration,
                         )
                         .compile(
                             &primitive_case.into(),
@@ -789,6 +827,7 @@ mod tests {
 
         #[test]
         fn compile_algebraic_case_expression_with_multiple_constructors() {
+            let compile_configuration = CompileConfiguration::new("", vec![], None, None);
             let algebraic_type = ssf::types::Algebraic::new(vec![
                 ssf::types::Constructor::new(vec![]),
                 ssf::types::Constructor::new(vec![ssf::types::Primitive::Float64.into()]),
@@ -809,7 +848,7 @@ mod tests {
                 let module = context.create_module("");
 
                 module.add_function(
-                    "malloc",
+                    compile_configuration.malloc_function_name(),
                     context
                         .i8_type()
                         .ptr_type(inkwell::AddressSpace::Generic)
@@ -832,8 +871,15 @@ mod tests {
                         &context,
                         &module,
                         &builder,
-                        &FunctionCompiler::new(&context, &module, &type_compiler, &HashMap::new()),
+                        &FunctionCompiler::new(
+                            &context,
+                            &module,
+                            &type_compiler,
+                            &HashMap::new(),
+                            &compile_configuration,
+                        ),
                         &type_compiler,
+                        &compile_configuration,
                     )
                     .compile(&constructor_application.into(), &HashMap::new())
                     .unwrap(),

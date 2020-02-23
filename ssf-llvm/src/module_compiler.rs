@@ -1,34 +1,34 @@
+use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::expression_compiler::ExpressionCompiler;
 use super::function_compiler::FunctionCompiler;
-use super::initializer_configuration::InitializerConfiguration;
 use super::type_compiler::TypeCompiler;
 use super::utilities;
 use std::collections::HashMap;
 
-pub struct ModuleCompiler<'c, 'm, 't, 'i> {
+pub struct ModuleCompiler<'c, 'm, 't> {
     context: &'c inkwell::context::Context,
     module: &'m inkwell::module::Module<'c>,
     type_compiler: &'t TypeCompiler<'c>,
     global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
     initializers: HashMap<String, inkwell::values::FunctionValue<'c>>,
-    initializer_configuration: &'i InitializerConfiguration,
+    compile_configuration: &'c CompileConfiguration,
 }
 
-impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
+impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
     pub fn new(
         context: &'c inkwell::context::Context,
         module: &'m inkwell::module::Module<'c>,
         type_compiler: &'t TypeCompiler<'c>,
-        initializer_configuration: &'i InitializerConfiguration,
-    ) -> ModuleCompiler<'c, 'm, 't, 'i> {
+        compile_configuration: &'c CompileConfiguration,
+    ) -> ModuleCompiler<'c, 'm, 't> {
         ModuleCompiler {
             context,
             module,
             type_compiler,
             global_variables: HashMap::new(),
             initializers: HashMap::new(),
-            initializer_configuration,
+            compile_configuration,
         }
     }
 
@@ -104,6 +104,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
                         self.module,
                         self.type_compiler,
                         &self.global_variables,
+                        self.compile_configuration,
                     )
                     .compile(function_definition)?
                     .as_global_value()
@@ -158,8 +159,10 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
                     self.module,
                     self.type_compiler,
                     &self.global_variables,
+                    self.compile_configuration,
                 ),
                 &self.type_compiler,
+                self.compile_configuration,
             )
             .compile(
                 &value_definition.body(),
@@ -186,12 +189,16 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
         let flag = self.module.add_global(
             self.context.bool_type(),
             None,
-            &[self.initializer_configuration.name(), "$initialized"].concat(),
+            &[
+                self.compile_configuration.initializer_name(),
+                "$initialized",
+            ]
+            .concat(),
         );
         flag.set_initializer(&self.context.bool_type().const_int(0, false));
 
         let initializer = self.module.add_function(
-            self.initializer_configuration.name(),
+            self.compile_configuration.initializer_name(),
             self.context.void_type().fn_type(&[], false),
             None,
         );
@@ -211,9 +218,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
         );
         builder.position_at_end(&initialize_block);
 
-        for dependent_initializer_name in
-            self.initializer_configuration.dependent_initializer_names()
-        {
+        for dependent_initializer_name in self.compile_configuration.dependent_initializer_names() {
             self.module.add_function(
                 dependent_initializer_name,
                 self.context.void_type().fn_type(&[], false),
@@ -251,12 +256,20 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
 
     fn declare_intrinsics(&self) {
         self.module.add_function(
-            "malloc",
+            self.compile_configuration.malloc_function_name(),
             self.context
                 .i8_type()
                 .ptr_type(inkwell::AddressSpace::Generic)
                 .fn_type(&[self.context.i64_type().into()], false),
             None,
         );
+
+        if let Some(panic_function_name) = self.compile_configuration.panic_function_name() {
+            self.module.add_function(
+                panic_function_name,
+                self.context.void_type().fn_type(&[], false),
+                None,
+            );
+        }
     }
 }
