@@ -2,20 +2,6 @@ name: test
 on:
   - push
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    container:
-      image: raviqqe/ssf-ci
-    env:
-      HOME: /root
-    steps:
-      - uses: actions/checkout@master
-      - run: npx cspell '**/*.{md,rs}'
-      - run: cargo build
-      - run: cargo fmt -- --check
-      - run: cargo clippy -- -D warnings
-      - run: cargo audit
-      - run: cargo test --lib
   code-coverage:
     runs-on: ubuntu-latest
     steps:
