@@ -29,4 +29,4 @@ jobs:
     steps:
       - checkout
       - run: cargo login $CARGO_TOKEN
-      - run: cargo release --dry-run patch
+      - run: cargo release patch
