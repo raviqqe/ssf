@@ -263,5 +263,13 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
                 .fn_type(&[self.context.i64_type().into()], false),
             None,
         );
+
+        if let Some(panic_function_name) = self.compile_configuration.panic_function_name() {
+            self.module.add_function(
+                panic_function_name,
+                self.context.void_type().fn_type(&[], false),
+                None,
+            );
+        }
     }
 }

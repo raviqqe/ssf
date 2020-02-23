@@ -35,7 +35,7 @@ mod tests {
     fn compile_() {
         compile(
             &ssf::ir::Module::new(vec![], vec![]).unwrap(),
-            &CompileConfiguration::new("foo", vec![], None, None),
+            &CompileConfiguration::new("", vec![], None, None),
         )
         .unwrap();
     }
@@ -51,7 +51,30 @@ mod tests {
                 ],
             )
             .unwrap(),
-            &CompileConfiguration::new("foo", vec![], None, None),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn compile_with_panic_function() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::FunctionDefinition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                    ssf::ir::PrimitiveCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::PrimitiveAlternative::new(42.0, 42.0)],
+                        None,
+                    ),
+                    ssf::types::Primitive::Float64,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, Some("panic".into())),
         )
         .unwrap();
     }

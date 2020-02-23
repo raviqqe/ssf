@@ -357,7 +357,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         Some(self.compile(default_alternative.expression(), &variables)?);
                     self.builder.build_unconditional_branch(&phi_block);
                 } else {
-                    self.builder.build_unreachable();
+                    self.compile_unreachable();
                 }
 
                 self.builder.position_at_end(&switch_block);
@@ -439,7 +439,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     ));
                     self.builder.build_unconditional_branch(&phi_block);
                 } else {
-                    self.builder.build_unreachable();
+                    self.compile_unreachable();
                 }
 
                 self.builder.position_at_end(&phi_block);
@@ -527,6 +527,18 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 "",
             )
             .into_pointer_value()
+    }
+
+    fn compile_unreachable(&self) {
+        if let Some(panic_function_name) = self.compile_configuration.panic_function_name() {
+            self.builder.build_call(
+                self.module.get_function(panic_function_name).unwrap(),
+                &[],
+                "",
+            );
+        }
+
+        self.builder.build_unreachable();
     }
 }
 
