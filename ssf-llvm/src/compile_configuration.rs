@@ -28,10 +28,11 @@ impl CompileConfiguration {
         &self.dependent_initializer_names
     }
 
-    pub fn malloc_function_name(&self) -> Option<&str> {
+    pub fn malloc_function_name(&self) -> &str {
         self.malloc_function_name
             .as_ref()
             .map(|string| string.as_ref())
+            .unwrap_or("malloc")
     }
 
     pub fn panic_function_name(&self) -> Option<&str> {

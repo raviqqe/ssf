@@ -6,22 +6,22 @@ use super::type_compiler::TypeCompiler;
 use super::utilities;
 use std::collections::HashMap;
 
-pub struct ModuleCompiler<'c, 'm, 't, 'i> {
+pub struct ModuleCompiler<'c, 'm, 't> {
     context: &'c inkwell::context::Context,
     module: &'m inkwell::module::Module<'c>,
     type_compiler: &'t TypeCompiler<'c>,
     global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
     initializers: HashMap<String, inkwell::values::FunctionValue<'c>>,
-    compile_configuration: &'i CompileConfiguration,
+    compile_configuration: &'c CompileConfiguration,
 }
 
-impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
+impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
     pub fn new(
         context: &'c inkwell::context::Context,
         module: &'m inkwell::module::Module<'c>,
         type_compiler: &'t TypeCompiler<'c>,
-        compile_configuration: &'i CompileConfiguration,
-    ) -> ModuleCompiler<'c, 'm, 't, 'i> {
+        compile_configuration: &'c CompileConfiguration,
+    ) -> ModuleCompiler<'c, 'm, 't> {
         ModuleCompiler {
             context,
             module,
@@ -104,6 +104,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
                         self.module,
                         self.type_compiler,
                         &self.global_variables,
+                        self.compile_configuration,
                     )
                     .compile(function_definition)?
                     .as_global_value()
@@ -158,8 +159,10 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
                     self.module,
                     self.type_compiler,
                     &self.global_variables,
+                    self.compile_configuration,
                 ),
                 &self.type_compiler,
+                self.compile_configuration,
             )
             .compile(
                 &value_definition.body(),
@@ -253,7 +256,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
 
     fn declare_intrinsics(&self) {
         self.module.add_function(
-            "malloc",
+            self.compile_configuration.malloc_function_name(),
             self.context
                 .i8_type()
                 .ptr_type(inkwell::AddressSpace::Generic)

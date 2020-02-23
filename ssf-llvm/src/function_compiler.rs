@@ -1,3 +1,4 @@
+use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::expression_compiler::ExpressionCompiler;
 use super::type_compiler::TypeCompiler;
@@ -8,6 +9,7 @@ pub struct FunctionCompiler<'c, 'm, 't, 'v> {
     module: &'m inkwell::module::Module<'c>,
     type_compiler: &'t TypeCompiler<'c>,
     global_variables: &'v HashMap<String, inkwell::values::GlobalValue<'c>>,
+    compile_configuration: &'c CompileConfiguration,
 }
 
 impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
@@ -16,12 +18,14 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         module: &'m inkwell::module::Module<'c>,
         type_compiler: &'t TypeCompiler<'c>,
         global_variables: &'v HashMap<String, inkwell::values::GlobalValue<'c>>,
+        compile_configuration: &'c CompileConfiguration,
     ) -> Self {
         Self {
             context,
             module,
             type_compiler,
             global_variables,
+            compile_configuration,
         }
     }
 
@@ -91,6 +95,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
             &builder,
             self,
             self.type_compiler,
+            self.compile_configuration,
         );
         builder.build_return(Some(
             &expression_compiler.compile(&function_definition.body(), &variables)?,
