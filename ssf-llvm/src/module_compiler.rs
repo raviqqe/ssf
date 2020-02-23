@@ -1,7 +1,7 @@
+use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::expression_compiler::ExpressionCompiler;
 use super::function_compiler::FunctionCompiler;
-use super::initializer_configuration::InitializerConfiguration;
 use super::type_compiler::TypeCompiler;
 use super::utilities;
 use std::collections::HashMap;
@@ -12,7 +12,7 @@ pub struct ModuleCompiler<'c, 'm, 't, 'i> {
     type_compiler: &'t TypeCompiler<'c>,
     global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
     initializers: HashMap<String, inkwell::values::FunctionValue<'c>>,
-    initializer_configuration: &'i InitializerConfiguration,
+    compile_configuration: &'i CompileConfiguration,
 }
 
 impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
@@ -20,7 +20,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
         context: &'c inkwell::context::Context,
         module: &'m inkwell::module::Module<'c>,
         type_compiler: &'t TypeCompiler<'c>,
-        initializer_configuration: &'i InitializerConfiguration,
+        compile_configuration: &'i CompileConfiguration,
     ) -> ModuleCompiler<'c, 'm, 't, 'i> {
         ModuleCompiler {
             context,
@@ -28,7 +28,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
             type_compiler,
             global_variables: HashMap::new(),
             initializers: HashMap::new(),
-            initializer_configuration,
+            compile_configuration,
         }
     }
 
@@ -186,12 +186,16 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
         let flag = self.module.add_global(
             self.context.bool_type(),
             None,
-            &[self.initializer_configuration.name(), "$initialized"].concat(),
+            &[
+                self.compile_configuration.initializer_name(),
+                "$initialized",
+            ]
+            .concat(),
         );
         flag.set_initializer(&self.context.bool_type().const_int(0, false));
 
         let initializer = self.module.add_function(
-            self.initializer_configuration.name(),
+            self.compile_configuration.initializer_name(),
             self.context.void_type().fn_type(&[], false),
             None,
         );
@@ -211,9 +215,7 @@ impl<'c, 'm, 't, 'i> ModuleCompiler<'c, 'm, 't, 'i> {
         );
         builder.position_at_end(&initialize_block);
 
-        for dependent_initializer_name in
-            self.initializer_configuration.dependent_initializer_names()
-        {
+        for dependent_initializer_name in self.compile_configuration.dependent_initializer_names() {
             self.module.add_function(
                 dependent_initializer_name,
                 self.context.void_type().fn_type(&[], false),
