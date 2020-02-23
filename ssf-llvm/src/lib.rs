@@ -35,7 +35,7 @@ mod tests {
     fn compile_() {
         compile(
             &ssf::ir::Module::new(vec![], vec![]).unwrap(),
-            &CompileConfiguration::new("foo", vec![]),
+            &CompileConfiguration::new("foo", vec![], None, None),
         )
         .unwrap();
     }
@@ -51,7 +51,7 @@ mod tests {
                 ],
             )
             .unwrap(),
-            &CompileConfiguration::new("foo", vec![]),
+            &CompileConfiguration::new("foo", vec![], None, None),
         )
         .unwrap();
     }
