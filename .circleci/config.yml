@@ -32,4 +32,4 @@ jobs:
           git config --global user.email 'raviqqe@gmail.com'
           git config --global user.name 'Yota Toyama'
       - run: cargo login $CARGO_TOKEN
-      - run: cargo release --no-confirm patch
+      - run: cargo release --no-confirm 0.2.0
