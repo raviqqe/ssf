@@ -1,0 +1,30 @@
+version: 2
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build
+      - release:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - master
+jobs:
+  build:
+    docker:
+      - image: raviqqe/ssf-ci
+    steps:
+      - checkout
+      - run: npx cspell '**/*.{md,rs}'
+      - run: cargo build
+      - run: cargo fmt -- --check
+      - run: cargo clippy -- -D warnings
+      - run: cargo audit
+      - run: cargo test
+  release:
+    docker:
+      - image: raviqqe/ssf-ci
+    steps:
+      - run: cargo release --dry-run
