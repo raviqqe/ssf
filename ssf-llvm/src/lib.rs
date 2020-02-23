@@ -57,6 +57,33 @@ mod tests {
     }
 
     #[test]
+    fn compile_with_custom_malloc_function() {
+        let algebraic_type = ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![
+            ssf::types::Primitive::Float64.into(),
+            ssf::types::Primitive::Float64.into(),
+        ])]);
+
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::FunctionDefinition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                    ssf::ir::ConstructorApplication::new(
+                        ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                        vec![42.0.into(), 42.0.into()],
+                    ),
+                    algebraic_type,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], Some("custom_malloc".into()), None),
+        )
+        .unwrap();
+    }
+
+    #[test]
     fn compile_with_panic_function() {
         compile(
             &ssf::ir::Module::new(
