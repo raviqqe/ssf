@@ -28,5 +28,8 @@ jobs:
       - image: raviqqe/ssf-ci
     steps:
       - checkout
+      - run: |
+          git config --global user.email 'raviqqe@gmail.com'
+          git config --global user.name 'Yota Toyama'
       - run: cargo login $CARGO_TOKEN
       - run: cargo release --no-confirm patch
