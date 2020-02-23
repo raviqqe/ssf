@@ -282,8 +282,8 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 let phi_block = self.append_basic_block("phi");
                 let mut cases = vec![];
 
-                for (index, alternative) in algebraic_case.alternatives().iter().enumerate() {
-                    let block = self.append_basic_block(&format!("case.{}", index));
+                for alternative in algebraic_case.alternatives() {
+                    let block = self.append_basic_block("case");
                     self.builder.position_at_end(&block);
 
                     let mut variables = variables.clone();
@@ -400,9 +400,9 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 let phi_block = self.append_basic_block("phi");
                 let mut cases = vec![];
 
-                for (index, alternative) in primitive_case.alternatives().iter().enumerate() {
-                    let then_block = self.append_basic_block(&format!("then.{}", index));
-                    let else_block = self.append_basic_block(&format!("else.{}", index));
+                for alternative in primitive_case.alternatives() {
+                    let then_block = self.append_basic_block("then");
+                    let else_block = self.append_basic_block("else");
 
                     self.builder.build_conditional_branch(
                         self.builder.build_float_compare(
