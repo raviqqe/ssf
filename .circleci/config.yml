@@ -7,10 +7,6 @@ workflows:
       - release:
           requires:
             - build
-          filters:
-            branches:
-              only:
-                - master
 jobs:
   build:
     docker:
