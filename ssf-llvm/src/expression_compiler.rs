@@ -407,13 +407,23 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     let else_block = self.append_basic_block("else");
 
                     self.builder.build_conditional_branch(
-                        self.builder.build_float_compare(
-                            inkwell::FloatPredicate::OEQ,
-                            argument.into_float_value(),
-                            self.compile_primitive(alternative.primitive())
-                                .into_float_value(),
-                            "",
-                        ),
+                        if argument.is_int_value() {
+                            self.builder.build_int_compare(
+                                inkwell::IntPredicate::EQ,
+                                argument.into_int_value(),
+                                self.compile_primitive(alternative.primitive())
+                                    .into_int_value(),
+                                "",
+                            )
+                        } else {
+                            self.builder.build_float_compare(
+                                inkwell::FloatPredicate::OEQ,
+                                argument.into_float_value(),
+                                self.compile_primitive(alternative.primitive())
+                                    .into_float_value(),
+                                "",
+                            )
+                        },
                         &then_block,
                         &else_block,
                     );
@@ -465,6 +475,9 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         match primitive {
             ssf::ir::Primitive::Float64(number) => {
                 self.context.f64_type().const_float(*number).into()
+            }
+            ssf::ir::Primitive::Integer64(number) => {
+                self.context.i64_type().const_int(*number, false).into()
             }
         }
     }
@@ -741,7 +754,88 @@ mod tests {
             use super::*;
 
             #[test]
-            fn compile_primitive_case_expression() {
+            fn compile_integer_case_expression() {
+                let compile_configuration = CompileConfiguration::new("", vec![], None, None);
+
+                for primitive_case in vec![
+                    ssf::ir::PrimitiveCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![],
+                        Some(ssf::ir::DefaultAlternative::new("x", 42)),
+                    ),
+                    ssf::ir::PrimitiveCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::PrimitiveAlternative::new(0, 42)],
+                        None,
+                    ),
+                    ssf::ir::PrimitiveCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::PrimitiveAlternative::new(0, 42)],
+                        Some(ssf::ir::DefaultAlternative::new("x", 42)),
+                    ),
+                    ssf::ir::PrimitiveCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![
+                            ssf::ir::PrimitiveAlternative::new(0, 42),
+                            ssf::ir::PrimitiveAlternative::new(1, 42),
+                        ],
+                        None,
+                    ),
+                    ssf::ir::PrimitiveCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![
+                            ssf::ir::PrimitiveAlternative::new(0, 42),
+                            ssf::ir::PrimitiveAlternative::new(1, 42),
+                        ],
+                        Some(ssf::ir::DefaultAlternative::new("x", 42)),
+                    ),
+                ] {
+                    let context = inkwell::context::Context::create();
+                    let type_compiler = TypeCompiler::new(&context);
+                    let module = context.create_module("");
+                    let function = module.add_function(
+                        "",
+                        context.i64_type().fn_type(
+                            &[type_compiler
+                                .compile_value(&ssf::types::Primitive::Integer64.into())],
+                            false,
+                        ),
+                        None,
+                    );
+                    let builder = context.create_builder();
+                    builder.position_at_end(&context.append_basic_block(function, "entry"));
+
+                    builder.build_return(Some(
+                        &ExpressionCompiler::new(
+                            &context,
+                            &module,
+                            &builder,
+                            &FunctionCompiler::new(
+                                &context,
+                                &module,
+                                &type_compiler,
+                                &HashMap::new(),
+                                &compile_configuration,
+                            ),
+                            &type_compiler,
+                            &compile_configuration,
+                        )
+                        .compile(
+                            &primitive_case.into(),
+                            &vec![("x".into(), function.get_params()[0])]
+                                .drain(..)
+                                .collect(),
+                        )
+                        .unwrap(),
+                    ));
+
+                    assert!(function.verify(true));
+                    assert!(module.verify().is_ok());
+                }
+            }
+
+            #[test]
+            fn compile_float_case_expression() {
                 let compile_configuration = CompileConfiguration::new("", vec![], None, None);
 
                 for primitive_case in vec![
