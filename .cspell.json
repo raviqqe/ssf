@@ -4,6 +4,7 @@
     "algo",
     "bitcast",
     "bitcode",
+    "bitcodes",
     "canonicalize",
     "canonicalizer",
     "codecov",

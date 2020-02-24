@@ -4,7 +4,67 @@
 [![Codecov](https://img.shields.io/codecov/c/github/raviqqe/ssf.svg?style=flat-square)](https://codecov.io/gh/raviqqe/ssf)
 [![License](https://img.shields.io/github/license/raviqqe/ssf.svg?style=flat-square)](LICENSE)
 
-Structurally-typed strict functional core language
+`ssf` is a structurally-typed strict functional core language supposed to be used as a target language for high-level strict functional programming languages.
+
+This repository consists of two crates of `ssf` and `ssf-llvm`. The former is to construct intermediate representation (IR) of `ssf` going through type check and other validation and the latter is to compile it into LLVM IR bitcodes.
+
+## Install
+
+In your `Cargo.toml`,
+
+```
+ssf = { git = "https://github.com/raviqqe/ssf", branch = "master" }
+ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
+```
+
+## Features
+
+- Inference of closure environment types
+- Implicit heap allocation
+  - For closures and algebraic data types
+  - Injectable `malloc` functions
+
+### Stuff not supported...
+
+- Type inference
+  - The IR needs to be fully-typed already.
+- Generics
+- Garbage collection
+  - Bring your own GC.
+
+## Type system
+
+- Functions
+- Algebraic data types
+- Primitives
+  - 64-bit integer
+  - 64-bit floating point number
+
+## Examples
+
+```rust
+let algebraic_type = ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![
+    ssf::types::Primitive::Float64.into(),
+])]);
+
+let bitcode = ssf_llvm::compile(
+    &ssf::ir::Module::new(
+        vec![],
+        vec![ssf::ir::FunctionDefinition::new(
+            "f",
+            vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+            ssf::ir::ConstructorApplication::new(
+                ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                vec![ssf::ir::Variable("x").into()],
+            ),
+            algebraic_type,
+        )
+        .into()],
+    )
+    .unwrap(),
+    &CompileConfiguration::new("init", vec![], None, None),
+)?;
+```
 
 ## License
 
