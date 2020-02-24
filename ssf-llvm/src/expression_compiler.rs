@@ -466,6 +466,9 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
             ssf::ir::Primitive::Float64(number) => {
                 self.context.f64_type().const_float(*number).into()
             }
+            ssf::ir::Primitive::Integer64(number) => {
+                self.context.i64_type().const_int(*number, false).into()
+            }
         }
     }
 

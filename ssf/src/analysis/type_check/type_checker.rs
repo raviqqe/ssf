@@ -293,6 +293,7 @@ impl TypeChecker {
     fn check_primitive(&self, primitive: &Primitive) -> types::Primitive {
         match primitive {
             Primitive::Float64(_) => types::Primitive::Float64,
+            Primitive::Integer64(_) => types::Primitive::Integer64,
         }
     }
 
