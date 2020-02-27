@@ -1,7 +1,7 @@
 use super::algebraic::Algebraic;
 use super::primitive::Primitive;
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Value {
     Algebraic(Algebraic),
     Index(usize),

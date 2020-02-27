@@ -1,6 +1,6 @@
 use super::type_::Type;
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Constructor {
     elements: Vec<Type>,
 }

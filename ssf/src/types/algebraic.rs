@@ -1,13 +1,12 @@
 use super::constructor::Constructor;
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Algebraic {
     constructors: Vec<Constructor>,
 }
 
 impl Algebraic {
-    pub fn new(mut constructors: Vec<Constructor>) -> Self {
-        constructors.sort();
+    pub fn new(constructors: Vec<Constructor>) -> Self {
         Self { constructors }
     }
 
@@ -54,15 +53,19 @@ mod tests {
         );
         assert_eq!(
             &Algebraic::new(vec![
+                Constructor::new(vec![]),
+                Constructor::new(vec![Primitive::Float64.into()])
+            ])
+            .to_id(),
+            "{{},{Float64}}"
+        );
+        assert_eq!(
+            &Algebraic::new(vec![
                 Constructor::new(vec![Primitive::Float64.into()]),
                 Constructor::new(vec![])
             ])
             .to_id(),
-            &Algebraic::new(vec![
-                Constructor::new(vec![]),
-                Constructor::new(vec![Primitive::Float64.into()])
-            ])
-            .to_id()
+            "{{Float64},{}}"
         );
     }
 }
