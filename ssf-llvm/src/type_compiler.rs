@@ -9,7 +9,7 @@ impl<'c> TypeCompiler<'c> {
         Self { context }
     }
 
-    fn compile(&self, type_: &ssf::types::Type) -> inkwell::types::BasicTypeEnum {
+    fn compile(&self, type_: &ssf::types::Type) -> inkwell::types::BasicTypeEnum<'c> {
         match type_ {
             ssf::types::Type::Function(function) => self
                 .compile_unsized_closure(function)
