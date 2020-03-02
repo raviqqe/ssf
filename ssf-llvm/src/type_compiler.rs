@@ -9,7 +9,7 @@ impl<'c> TypeCompiler<'c> {
         Self { context }
     }
 
-    fn compile(&self, type_: &ssf::types::Type) -> inkwell::types::BasicTypeEnum {
+    fn compile(&self, type_: &ssf::types::Type) -> inkwell::types::BasicTypeEnum<'c> {
         match type_ {
             ssf::types::Type::Function(function) => self
                 .compile_unsized_closure(function)
@@ -33,6 +33,7 @@ impl<'c> TypeCompiler<'c> {
     ) -> inkwell::types::BasicTypeEnum<'c> {
         match primitive {
             ssf::types::Primitive::Float64 => self.context.f64_type().into(),
+            ssf::types::Primitive::Integer8 => self.context.i8_type().into(),
             ssf::types::Primitive::Integer64 => self.context.i64_type().into(),
         }
     }
