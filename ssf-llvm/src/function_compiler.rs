@@ -45,7 +45,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         );
 
         let builder = self.context.create_builder();
-        builder.position_at_end(&self.context.append_basic_block(entry_function, "entry"));
+        builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
 
         let environment = builder
             .build_bitcast(

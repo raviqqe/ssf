@@ -288,7 +288,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
                 for alternative in algebraic_case.alternatives() {
                     let block = self.append_basic_block("case");
-                    self.builder.position_at_end(&block);
+                    self.builder.position_at_end(block);
 
                     let mut variables = variables.clone();
 
@@ -341,12 +341,12 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         self.compile(alternative.expression(), &variables)?,
                     ));
 
-                    self.builder.build_unconditional_branch(&phi_block);
+                    self.builder.build_unconditional_branch(phi_block);
                 }
 
                 let mut default_value = None;
                 let default_block = self.append_basic_block("default");
-                self.builder.position_at_end(&default_block);
+                self.builder.position_at_end(default_block);
 
                 if let Some(default_alternative) = algebraic_case.default_alternative() {
                     let mut variables = variables.clone();
@@ -355,22 +355,22 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
                     default_value =
                         Some(self.compile(default_alternative.expression(), &variables)?);
-                    self.builder.build_unconditional_branch(&phi_block);
+                    self.builder.build_unconditional_branch(phi_block);
                 } else {
                     self.compile_unreachable();
                 }
 
-                self.builder.position_at_end(&switch_block);
+                self.builder.position_at_end(switch_block);
                 self.builder.build_switch(
                     tag,
-                    &default_block,
+                    default_block,
                     &cases
                         .iter()
-                        .map(|(tag, block, _)| (*tag, block))
+                        .map(|(tag, block, _)| (*tag, *block))
                         .collect::<Vec<_>>(),
                 );
 
-                self.builder.position_at_end(&phi_block);
+                self.builder.position_at_end(phi_block);
                 let phi = self.builder.build_phi(
                     cases
                         .get(0)
@@ -382,12 +382,12 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     &cases
                         .iter()
                         .map(|(_, block, value)| {
-                            (value as &dyn inkwell::values::BasicValue<'c>, block)
+                            (value as &dyn inkwell::values::BasicValue<'c>, *block)
                         })
                         .chain(match &default_value {
                             Some(default_value) => vec![(
                                 default_value as &dyn inkwell::values::BasicValue<'c>,
-                                &default_block,
+                                default_block,
                             )],
                             None => vec![],
                         })
@@ -424,18 +424,18 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                                 "",
                             )
                         },
-                        &then_block,
-                        &else_block,
+                        then_block,
+                        else_block,
                     );
-                    self.builder.position_at_end(&then_block);
+                    self.builder.position_at_end(then_block);
 
                     cases.push((
-                        then_block,
                         self.compile(alternative.expression(), &variables)?,
+                        then_block,
                     ));
 
-                    self.builder.build_unconditional_branch(&phi_block);
-                    self.builder.position_at_end(&else_block);
+                    self.builder.build_unconditional_branch(phi_block);
+                    self.builder.position_at_end(else_block);
                 }
 
                 if let Some(default_alternative) = primitive_case.default_alternative() {
@@ -444,21 +444,21 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     variables.insert(default_alternative.variable().into(), argument);
 
                     cases.push((
-                        self.builder.get_insert_block().unwrap(),
                         self.compile(default_alternative.expression(), &variables)?,
+                        self.builder.get_insert_block().unwrap(),
                     ));
-                    self.builder.build_unconditional_branch(&phi_block);
+                    self.builder.build_unconditional_branch(phi_block);
                 } else {
                     self.compile_unreachable();
                 }
 
-                self.builder.position_at_end(&phi_block);
-                let phi = self.builder.build_phi(cases[0].1.get_type(), "");
+                self.builder.position_at_end(phi_block);
+                let phi = self.builder.build_phi(cases[0].0.get_type(), "");
                 phi.add_incoming(
                     &cases
                         .iter()
-                        .map(|(block, value)| {
-                            (value as &dyn inkwell::values::BasicValue<'c>, block)
+                        .map(|(value, block)| {
+                            (value as &dyn inkwell::values::BasicValue<'c>, *block)
                         })
                         .collect::<Vec<_>>(),
                 );
@@ -508,7 +508,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         }
     }
 
-    fn append_basic_block(&self, name: &str) -> inkwell::basic_block::BasicBlock {
+    fn append_basic_block(&self, name: &str) -> inkwell::basic_block::BasicBlock<'c> {
         self.context.append_basic_block(
             self.builder
                 .get_insert_block()
@@ -636,7 +636,7 @@ mod tests {
                     let function =
                         module.add_function("", context.void_type().fn_type(&[], false), None);
                     let builder = context.create_builder();
-                    builder.position_at_end(&context.append_basic_block(function, "entry"));
+                    builder.position_at_end(context.append_basic_block(function, "entry"));
 
                     ExpressionCompiler::new(
                         &context,
@@ -711,7 +711,7 @@ mod tests {
                     let function =
                         module.add_function("", context.void_type().fn_type(&[], false), None);
                     let builder = context.create_builder();
-                    builder.position_at_end(&context.append_basic_block(function, "entry"));
+                    builder.position_at_end(context.append_basic_block(function, "entry"));
 
                     ExpressionCompiler::new(
                         &context,
@@ -803,7 +803,7 @@ mod tests {
                         None,
                     );
                     let builder = context.create_builder();
-                    builder.position_at_end(&context.append_basic_block(function, "entry"));
+                    builder.position_at_end(context.append_basic_block(function, "entry"));
 
                     builder.build_return(Some(
                         &ExpressionCompiler::new(
@@ -883,7 +883,7 @@ mod tests {
                         None,
                     );
                     let builder = context.create_builder();
-                    builder.position_at_end(&context.append_basic_block(function, "entry"));
+                    builder.position_at_end(context.append_basic_block(function, "entry"));
 
                     builder.build_return(Some(
                         &ExpressionCompiler::new(
@@ -958,7 +958,7 @@ mod tests {
                     None,
                 );
                 let builder = context.create_builder();
-                builder.position_at_end(&context.append_basic_block(function, "entry"));
+                builder.position_at_end(context.append_basic_block(function, "entry"));
 
                 builder.build_return(Some(
                     &ExpressionCompiler::new(

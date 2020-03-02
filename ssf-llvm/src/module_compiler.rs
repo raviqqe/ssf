@@ -147,7 +147,7 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
         );
 
         let builder = self.context.create_builder();
-        builder.position_at_end(&self.context.append_basic_block(initializer, "entry"));
+        builder.position_at_end(self.context.append_basic_block(initializer, "entry"));
         builder.build_store(
             global_variable.as_pointer_value(),
             ExpressionCompiler::new(
@@ -205,7 +205,7 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
 
         let builder = self.context.create_builder();
 
-        builder.position_at_end(&self.context.append_basic_block(initializer, "entry"));
+        builder.position_at_end(self.context.append_basic_block(initializer, "entry"));
         let initialize_block = self.context.append_basic_block(initializer, "initialize");
         let end_block = self.context.append_basic_block(initializer, "end");
 
@@ -213,10 +213,10 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
             builder
                 .build_load(flag.as_pointer_value(), "")
                 .into_int_value(),
-            &end_block,
-            &initialize_block,
+            end_block,
+            initialize_block,
         );
-        builder.position_at_end(&initialize_block);
+        builder.position_at_end(initialize_block);
 
         for dependent_initializer_name in self.compile_configuration.dependent_initializer_names() {
             self.module.add_function(
@@ -242,8 +242,8 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
             self.context.bool_type().const_int(1, false),
         );
 
-        builder.build_unconditional_branch(&end_block);
-        builder.position_at_end(&end_block);
+        builder.build_unconditional_branch(end_block);
+        builder.position_at_end(end_block);
 
         builder.build_return(None);
 
