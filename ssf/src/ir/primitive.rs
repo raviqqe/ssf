@@ -1,6 +1,7 @@
 #[derive(Clone, Debug, PartialEq)]
 pub enum Primitive {
     Float64(f64),
+    Integer8(u8),
     Integer64(u64),
 }
 
