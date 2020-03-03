@@ -15,7 +15,7 @@ impl Constructor {
         &self.type_
     }
 
-    pub fn constructor_type(&self) -> &types::Constructor {
+    pub fn constructor_type(&self) -> &types::AlgebraicPayload {
         &self.type_.constructors()[self.index]
     }
 

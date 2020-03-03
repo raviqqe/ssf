@@ -130,20 +130,29 @@ impl<'c> TypeCompiler<'c> {
             .fn_type(&arguments, false)
     }
 
+    fn compile_boxed_constructor(
+        &self,
+        constructor: &ssf::types::BoxedConstructor,
+    ) -> inkwell::types::BasicTypeEnum<'c> {
+        match constructor {
+            ssf::types::BoxedConstructor(constructor) => self.compile_constructor(constructor),
+            ssf::types::UnboxedConstructor(constructor) => self.compile_constructor(constructor),
+        }
+        .ptr_type(inkwell::AddressSpace::Generic)
+    }
+
     pub fn compile_constructor(
         &self,
         constructor: &ssf::types::Constructor,
     ) -> inkwell::types::PointerType<'c> {
-        self.context
-            .struct_type(
-                &constructor
-                    .elements()
-                    .iter()
-                    .map(|element| self.compile(element))
-                    .collect::<Vec<_>>(),
-                false,
-            )
-            .ptr_type(inkwell::AddressSpace::Generic)
+        self.context.struct_type(
+            &constructor
+                .elements()
+                .iter()
+                .map(|element| self.compile(element))
+                .collect::<Vec<_>>(),
+            false,
+        )
     }
 
     pub fn compile_unsized_constructor(&self) -> inkwell::types::PointerType<'c> {

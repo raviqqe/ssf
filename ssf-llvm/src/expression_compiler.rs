@@ -69,13 +69,12 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     .constructor_type()
                     .is_enum()
                 {
-                    let constructor_type = self
-                        .type_compiler
-                        .compile_constructor(
-                            constructor_application.constructor().constructor_type(),
-                        )
-                        .get_element_type()
-                        .into_struct_type();
+                    let constructor_type = self.type_compiler.compile_constructor(
+                        constructor_application
+                            .constructor()
+                            .constructor_type()
+                            .constructor(),
+                    );
 
                     let mut constructor_value = constructor_type.const_zero().into();
 

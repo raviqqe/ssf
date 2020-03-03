@@ -1,4 +1,4 @@
-use crate::types::{Algebraic, Constructor, Type, Value};
+use crate::types::{Algebraic, AlgebraicPayload, Constructor, Type, Value};
 
 pub struct TypeEqualityChecker<'a> {
     pairs: Vec<(&'a Algebraic, &'a Algebraic)>,
@@ -23,7 +23,7 @@ impl<'a> TypeEqualityChecker<'a> {
         one.constructors()
             .iter()
             .zip(other.constructors())
-            .all(|(one, other)| checker.equal_constructors(one, other))
+            .all(|(one, other)| checker.equal_algebraic_payloads(one, other))
     }
 
     fn equal_values(&self, one: &Value, other: &Value) -> bool {
@@ -56,6 +56,18 @@ impl<'a> TypeEqualityChecker<'a> {
                     && self.equal_values(one.result(), other.result())
             }
             (_, _) => false,
+        }
+    }
+
+    fn equal_algebraic_payloads(&self, one: &AlgebraicPayload, other: &AlgebraicPayload) -> bool {
+        match (one, other) {
+            (AlgebraicPayload::Boxed(one), AlgebraicPayload::Boxed(other)) => {
+                self.equal_constructors(one, other)
+            }
+            (AlgebraicPayload::Unboxed(one), AlgebraicPayload::Unboxed(other)) => {
+                self.equal_constructors(one, other)
+            }
+            _ => false,
         }
     }
 

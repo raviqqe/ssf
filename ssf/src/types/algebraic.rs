@@ -1,16 +1,16 @@
-use super::constructor::Constructor;
+use super::algebraic_payload::AlgebraicPayload;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Algebraic {
-    constructors: Vec<Constructor>,
+    constructors: Vec<AlgebraicPayload>,
 }
 
 impl Algebraic {
-    pub fn new(constructors: Vec<Constructor>) -> Self {
+    pub fn new(constructors: Vec<AlgebraicPayload>) -> Self {
         Self { constructors }
     }
 
-    pub fn constructors(&self) -> &[Constructor] {
+    pub fn constructors(&self) -> &[AlgebraicPayload] {
         &self.constructors
     }
 

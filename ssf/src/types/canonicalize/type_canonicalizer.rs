@@ -1,5 +1,5 @@
 use super::type_equality_checker::TypeEqualityChecker;
-use crate::types::{Algebraic, Constructor, Function, Type, Value};
+use crate::types::{Algebraic, AlgebraicPayload, Constructor, Function, Type, Value};
 
 pub struct TypeCanonicalizer<'a> {
     types: Vec<&'a Algebraic>,
@@ -42,14 +42,21 @@ impl<'a> TypeCanonicalizer<'a> {
                     algebraic
                         .constructors()
                         .iter()
-                        .map(|constructor| {
-                            Constructor::new(
-                                constructor
+                        .map(|algebraic_payload| {
+                            let constructor = Constructor::new(
+                                algebraic_payload
                                     .elements()
                                     .iter()
                                     .map(|element| other.canonicalize(element))
                                     .collect(),
-                            )
+                            );
+
+                            match algebraic_payload {
+                                AlgebraicPayload::Boxed(_) => AlgebraicPayload::Boxed(constructor),
+                                AlgebraicPayload::Unboxed(_) => {
+                                    AlgebraicPayload::Unboxed(constructor)
+                                }
+                            }
                         })
                         .collect(),
                 )
