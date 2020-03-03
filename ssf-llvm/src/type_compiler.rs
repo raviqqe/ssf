@@ -192,7 +192,7 @@ mod tests {
     fn compile_algebraic_with_one_constructor() {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile(
-            &ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![
+            &ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
                 ssf::types::Primitive::Float64.into(),
             ])])
             .into(),
@@ -204,8 +204,8 @@ mod tests {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile(
             &ssf::types::Algebraic::new(vec![
-                ssf::types::Constructor::new(vec![ssf::types::Primitive::Float64.into()]),
-                ssf::types::Constructor::new(vec![ssf::types::Primitive::Float64.into()]),
+                ssf::types::Constructor::boxed(vec![ssf::types::Primitive::Float64.into()]),
+                ssf::types::Constructor::boxed(vec![ssf::types::Primitive::Float64.into()]),
             ])
             .into(),
         );
@@ -215,7 +215,7 @@ mod tests {
     fn compile_recursive_algebraic() {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile(
-            &ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![
+            &ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
                 ssf::types::Value::Index(0).into(),
             ])])
             .into(),
@@ -229,7 +229,7 @@ mod tests {
 
         let compile_type = || {
             compiler.compile(
-                &ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![
+                &ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
                     ssf::types::Value::Index(0).into(),
                 ])])
                 .into(),

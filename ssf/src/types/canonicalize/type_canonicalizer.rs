@@ -49,6 +49,7 @@ impl<'a> TypeCanonicalizer<'a> {
                                     .iter()
                                     .map(|element| other.canonicalize(element))
                                     .collect(),
+                                constructor.is_boxed(),
                             )
                         })
                         .collect(),

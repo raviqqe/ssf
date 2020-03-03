@@ -574,8 +574,8 @@ mod tests {
             fn compile_algebraic_case_expression_with_multiple_constructors() {
                 let compile_configuration = CompileConfiguration::new("", vec![], None, None);
                 let algebraic_type = ssf::types::Algebraic::new(vec![
-                    ssf::types::Constructor::new(vec![]),
-                    ssf::types::Constructor::new(vec![ssf::types::Primitive::Float64.into()]),
+                    ssf::types::Constructor::boxed(vec![]),
+                    ssf::types::Constructor::boxed(vec![ssf::types::Primitive::Float64.into()]),
                 ]);
 
                 for algebraic_case in vec![
@@ -683,7 +683,7 @@ mod tests {
             fn compile_algebraic_case_expression_with_single_constructors() {
                 let compile_configuration = CompileConfiguration::new("", vec![], None, None);
                 let algebraic_type =
-                    ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![])]);
+                    ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![])]);
 
                 for algebraic_case in vec![
                     ssf::ir::AlgebraicCase::new(
@@ -928,8 +928,8 @@ mod tests {
         fn compile_algebraic_case_expression_with_multiple_constructors() {
             let compile_configuration = CompileConfiguration::new("", vec![], None, None);
             let algebraic_type = ssf::types::Algebraic::new(vec![
-                ssf::types::Constructor::new(vec![]),
-                ssf::types::Constructor::new(vec![ssf::types::Primitive::Float64.into()]),
+                ssf::types::Constructor::boxed(vec![]),
+                ssf::types::Constructor::boxed(vec![ssf::types::Primitive::Float64.into()]),
             ]);
 
             for constructor_application in vec![

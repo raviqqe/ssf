@@ -253,7 +253,7 @@ mod tests {
                             "f",
                             vec![Argument::new(
                                 "x",
-                                types::Algebraic::new(vec![types::Constructor::new(vec![])]),
+                                types::Algebraic::new(vec![types::Constructor::boxed(vec![])]),
                             )],
                             AlgebraicCase::new(
                                 Variable::new("x"),
@@ -271,7 +271,7 @@ mod tests {
 
             #[test]
             fn check_case_expressions_only_with_default_alternative_and_bound_variable() {
-                let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![])]);
+                let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
 
                 assert_eq!(
                     check_types(&Module::without_validation(
@@ -295,7 +295,7 @@ mod tests {
 
             #[test]
             fn check_case_expressions_with_one_alternative() {
-                let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![])]);
+                let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
 
                 assert_eq!(
                     check_types(&Module::without_validation(
@@ -323,7 +323,7 @@ mod tests {
 
             #[test]
             fn check_case_expressions_with_deconstruction() {
-                let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![
+                let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![
                     types::Primitive::Float64.into(),
                 ])]);
 
@@ -360,7 +360,7 @@ mod tests {
                             "f",
                             vec![Argument::new(
                                 "x",
-                                types::Algebraic::new(vec![types::Constructor::new(vec![])]),
+                                types::Algebraic::new(vec![types::Constructor::boxed(vec![])]),
                             )],
                             AlgebraicCase::new(Variable::new("x"), vec![], None),
                             types::Primitive::Float64,
@@ -374,7 +374,7 @@ mod tests {
 
             #[test]
             fn fail_to_check_case_expressions_with_inconsistent_alternative_types() {
-                let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![])]);
+                let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
 
                 assert_eq!(
                     check_types(&Module::without_validation(
@@ -383,7 +383,7 @@ mod tests {
                             "f",
                             vec![Argument::new(
                                 "x",
-                                types::Algebraic::new(vec![types::Constructor::new(vec![])]),
+                                types::Algebraic::new(vec![types::Constructor::boxed(vec![])]),
                             )],
                             AlgebraicCase::new(
                                 Variable::new("x"),
@@ -484,7 +484,7 @@ mod tests {
 
         #[test]
         fn check_constructor_applications_with_no_arguments() {
-            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![])]);
+            let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
 
             assert_eq!(
                 check_types(&Module::without_validation(
@@ -506,7 +506,7 @@ mod tests {
 
         #[test]
         fn check_constructor_applications_with_arguments() {
-            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![
+            let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![
                 types::Primitive::Float64.into(),
             ])]);
 
@@ -530,7 +530,7 @@ mod tests {
 
         #[test]
         fn fail_to_check_constructor_applications_with_wrong_number_of_arguments() {
-            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![
+            let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![
                 types::Primitive::Float64.into(),
             ])]);
 
@@ -554,7 +554,7 @@ mod tests {
 
         #[test]
         fn fail_to_check_constructor_applications_with_wrong_argument_type() {
-            let algebraic_type = types::Algebraic::new(vec![types::Constructor::new(vec![
+            let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![
                 types::Primitive::Float64.into(),
             ])]);
 

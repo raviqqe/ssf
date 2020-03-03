@@ -58,10 +58,11 @@ mod tests {
 
     #[test]
     fn compile_with_custom_malloc_function() {
-        let algebraic_type = ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![
-            ssf::types::Primitive::Float64.into(),
-            ssf::types::Primitive::Float64.into(),
-        ])]);
+        let algebraic_type =
+            ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
+                ssf::types::Primitive::Float64.into(),
+                ssf::types::Primitive::Float64.into(),
+            ])]);
 
         compile(
             &ssf::ir::Module::new(
