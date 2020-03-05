@@ -151,7 +151,7 @@ impl<'c> TypeCompiler<'c> {
             .fn_type(&arguments, false)
     }
 
-    pub fn compile_constructor(
+    fn compile_constructor(
         &self,
         constructor: &ssf::types::Constructor,
     ) -> inkwell::types::BasicTypeEnum<'c> {
