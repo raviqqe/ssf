@@ -341,7 +341,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                             .builder
                             .build_extract_value(
                                 argument,
-                                if alternative.constructor().algebraic_type().is_singleton() {
+                                if constructor.algebraic_type().is_singleton() {
                                     0
                                 } else {
                                     1
@@ -350,25 +350,24 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                             )
                             .unwrap();
 
-                        let constructor_value =
-                            if alternative.constructor().constructor_type().is_boxed() {
-                                self.builder
-                                    .build_load(
-                                        self.builder
-                                            .build_bitcast(
-                                                constructor_value,
-                                                self.type_compiler.compile_constructor(
-                                                    alternative.constructor().constructor_type(),
-                                                ),
-                                                "",
-                                            )
-                                            .into_pointer_value(),
-                                        "",
-                                    )
-                                    .into_struct_value()
-                            } else {
-                                constructor_value.into_struct_value()
-                            };
+                        let constructor_value = if constructor.constructor_type().is_boxed() {
+                            self.builder
+                                .build_load(
+                                    self.builder
+                                        .build_bitcast(
+                                            constructor_value,
+                                            self.type_compiler.compile_constructor(
+                                                constructor.constructor_type(),
+                                            ),
+                                            "",
+                                        )
+                                        .into_pointer_value(),
+                                    "",
+                                )
+                                .into_struct_value()
+                        } else {
+                            constructor_value.into_struct_value()
+                        };
 
                         for (index, name) in alternative.element_names().iter().enumerate() {
                             variables.insert(
@@ -383,7 +382,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     cases.push((
                         self.context
                             .i64_type()
-                            .const_int(alternative.constructor().index() as u64, false),
+                            .const_int(constructor.index() as u64, false),
                         block,
                         self.compile(alternative.expression(), &variables)?,
                     ));
