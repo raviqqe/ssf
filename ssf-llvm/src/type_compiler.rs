@@ -2,11 +2,31 @@ use inkwell::types::BasicType;
 
 pub struct TypeCompiler<'c> {
     context: &'c inkwell::context::Context,
+    target_machine: inkwell::targets::TargetMachine,
 }
 
 impl<'c> TypeCompiler<'c> {
     pub fn new(context: &'c inkwell::context::Context) -> Self {
-        Self { context }
+        inkwell::targets::Target::initialize_all(&inkwell::targets::InitializationConfig::default());
+
+        Self {
+            context,
+            target_machine: inkwell::targets::Target::from_triple(
+                inkwell::targets::TargetMachine::get_default_triple()
+                    .to_str()
+                    .unwrap(),
+            )
+            .unwrap()
+            .create_target_machine(
+                "",
+                "",
+                "",
+                Default::default(),
+                inkwell::targets::RelocMode::Default,
+                inkwell::targets::CodeModel::Default,
+            )
+            .unwrap(),
+        }
     }
 
     fn compile(&self, type_: &ssf::types::Type) -> inkwell::types::BasicTypeEnum<'c> {
@@ -21,8 +41,10 @@ impl<'c> TypeCompiler<'c> {
 
     pub fn compile_value(&self, value: &ssf::types::Value) -> inkwell::types::BasicTypeEnum<'c> {
         match value {
-            ssf::types::Value::Algebraic(algebraic) => self.compile_algebraic(algebraic).into(),
-            ssf::types::Value::Index(_) => self.compile_unsized_constructor().into(),
+            ssf::types::Value::Algebraic(algebraic) => {
+                self.compile_algebraic(algebraic, None).into()
+            }
+            ssf::types::Value::Index(_) => unreachable!(),
             ssf::types::Value::Primitive(primitive) => self.compile_primitive(primitive),
         }
     }
@@ -41,24 +63,23 @@ impl<'c> TypeCompiler<'c> {
     pub fn compile_algebraic(
         &self,
         algebraic: &ssf::types::Algebraic,
+        index: Option<usize>,
     ) -> inkwell::types::StructType<'c> {
-        if algebraic.is_singleton() && algebraic.is_enum() {
-            self.context.struct_type(&[], false)
-        } else if algebraic.is_singleton() {
-            self.context
-                .struct_type(&[self.compile_unsized_constructor().into()], false)
-        } else if algebraic.is_enum() {
-            self.context
-                .struct_type(&[self.context.i64_type().into()], false)
-        } else {
-            self.context.struct_type(
-                &[
-                    self.context.i64_type().into(),
-                    self.compile_unsized_constructor().into(),
-                ],
-                false,
-            )
+        let mut elements = vec![];
+
+        if !algebraic.is_singleton() {
+            elements.push(self.context.i64_type().into());
         }
+
+        if !algebraic.is_enum() {
+            if let Some(index) = index {
+                elements.push(self.compile_constructor(&algebraic.constructors()[index]));
+            } else {
+                elements.push(self.compile_unsized_constructor(algebraic));
+            }
+        }
+
+        self.context.struct_type(&elements, false)
     }
 
     pub fn compile_closure(
@@ -133,23 +154,53 @@ impl<'c> TypeCompiler<'c> {
     pub fn compile_constructor(
         &self,
         constructor: &ssf::types::Constructor,
-    ) -> inkwell::types::PointerType<'c> {
-        self.context
-            .struct_type(
-                &constructor
-                    .elements()
-                    .iter()
-                    .map(|element| self.compile(element))
-                    .collect::<Vec<_>>(),
-                false,
-            )
-            .ptr_type(inkwell::AddressSpace::Generic)
+    ) -> inkwell::types::BasicTypeEnum<'c> {
+        let type_ = self.compile_unboxed_constructor(constructor);
+
+        if constructor.is_boxed() && !constructor.is_enum() {
+            type_.ptr_type(inkwell::AddressSpace::Generic).into()
+        } else {
+            type_.into()
+        }
     }
 
-    pub fn compile_unsized_constructor(&self) -> inkwell::types::PointerType<'c> {
+    pub fn compile_unboxed_constructor(
+        &self,
+        constructor: &ssf::types::Constructor,
+    ) -> inkwell::types::StructType<'c> {
+        self.context.struct_type(
+            &constructor
+                .elements()
+                .iter()
+                .map(|element| self.compile(element))
+                .collect::<Vec<_>>(),
+            false,
+        )
+    }
+
+    fn compile_unsized_constructor(
+        &self,
+        algebraic_type: &ssf::types::Algebraic,
+    ) -> inkwell::types::BasicTypeEnum<'c> {
         self.context
-            .struct_type(&[], false)
-            .ptr_type(inkwell::AddressSpace::Generic)
+            .i8_type()
+            .array_type(
+                algebraic_type
+                    .constructors()
+                    .iter()
+                    .map(|constructor| {
+                        self.target_machine
+                            .get_target_data()
+                            .get_store_size(&if constructor.is_boxed() {
+                                self.compile_constructor(&ssf::types::Constructor::boxed(vec![]))
+                            } else {
+                                self.compile_constructor(constructor)
+                            })
+                    })
+                    .max()
+                    .unwrap() as u32,
+            )
+            .into()
     }
 }
 

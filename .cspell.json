@@ -2,6 +2,7 @@
   "words": [
     "algebraics",
     "algo",
+    "alloca",
     "bitcast",
     "bitcode",
     "bitcodes",
@@ -14,6 +15,7 @@
     "llvm",
     "malloc",
     "petgraph",
+    "reloc",
     "toposort"
   ]
 }
