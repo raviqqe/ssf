@@ -788,6 +788,115 @@ mod tests {
                     assert!(module.verify().is_ok());
                 }
             }
+
+            #[test]
+            fn compile_algebraic_case_expression_with_unboxed_constructors() {
+                let compile_configuration = CompileConfiguration::new("", vec![], None, None);
+                let algebraic_type = ssf::types::Algebraic::new(vec![
+                    ssf::types::Constructor::unboxed(vec![]),
+                    ssf::types::Constructor::unboxed(vec![ssf::types::Primitive::Float64.into()]),
+                ]);
+
+                for algebraic_case in vec![
+                    ssf::ir::AlgebraicCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![],
+                        Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
+                    ),
+                    ssf::ir::AlgebraicCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::AlgebraicAlternative::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                            vec![],
+                            42.0,
+                        )],
+                        None,
+                    ),
+                    ssf::ir::AlgebraicCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::AlgebraicAlternative::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 1),
+                            vec!["y".into()],
+                            ssf::ir::Variable::new("y"),
+                        )],
+                        None,
+                    ),
+                    ssf::ir::AlgebraicCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![
+                            ssf::ir::AlgebraicAlternative::new(
+                                ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                                vec![],
+                                42.0,
+                            ),
+                            ssf::ir::AlgebraicAlternative::new(
+                                ssf::ir::Constructor::new(algebraic_type.clone(), 1),
+                                vec!["y".into()],
+                                ssf::ir::Variable::new("y"),
+                            ),
+                        ],
+                        None,
+                    ),
+                    ssf::ir::AlgebraicCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![
+                            ssf::ir::AlgebraicAlternative::new(
+                                ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                                vec![],
+                                42.0,
+                            ),
+                            ssf::ir::AlgebraicAlternative::new(
+                                ssf::ir::Constructor::new(algebraic_type.clone(), 1),
+                                vec!["y".into()],
+                                ssf::ir::Variable::new("y"),
+                            ),
+                        ],
+                        Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
+                    ),
+                ] {
+                    let context = inkwell::context::Context::create();
+                    let type_compiler = TypeCompiler::new(&context);
+                    let module = context.create_module("");
+                    let function =
+                        module.add_function("", context.void_type().fn_type(&[], false), None);
+                    let builder = context.create_builder();
+                    builder.position_at_end(context.append_basic_block(function, "entry"));
+
+                    ExpressionCompiler::new(
+                        &context,
+                        &module,
+                        &builder,
+                        &FunctionCompiler::new(
+                            &context,
+                            &module,
+                            &type_compiler,
+                            &HashMap::new(),
+                            &compile_configuration,
+                        ),
+                        &type_compiler,
+                        &compile_configuration,
+                    )
+                    .compile(
+                        &algebraic_case.into(),
+                        &vec![(
+                            "x".into(),
+                            type_compiler
+                                .compile_value(&algebraic_type.clone().into())
+                                .into_struct_type()
+                                .get_undef()
+                                .into(),
+                        )]
+                        .drain(..)
+                        .collect(),
+                    )
+                    .unwrap();
+
+                    builder.build_return(None);
+
+                    assert!(function.verify(true));
+                    assert!(module.verify().is_ok());
+                }
+            }
         }
 
         mod primitive {
