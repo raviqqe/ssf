@@ -44,25 +44,25 @@ mod tests {
     #[test]
     fn to_id() {
         assert_eq!(
-            &Algebraic::new(vec![Constructor::new(vec![])]).to_id(),
+            &Algebraic::new(vec![Constructor::boxed(vec![])]).to_id(),
             "{{}}"
         );
         assert_eq!(
-            &Algebraic::new(vec![Constructor::new(vec![]), Constructor::new(vec![])]).to_id(),
+            &Algebraic::new(vec![Constructor::boxed(vec![]), Constructor::boxed(vec![])]).to_id(),
             "{{},{}}"
         );
         assert_eq!(
             &Algebraic::new(vec![
-                Constructor::new(vec![]),
-                Constructor::new(vec![Primitive::Float64.into()])
+                Constructor::boxed(vec![]),
+                Constructor::boxed(vec![Primitive::Float64.into()])
             ])
             .to_id(),
             "{{},{Float64}}"
         );
         assert_eq!(
             &Algebraic::new(vec![
-                Constructor::new(vec![Primitive::Float64.into()]),
-                Constructor::new(vec![])
+                Constructor::boxed(vec![Primitive::Float64.into()]),
+                Constructor::boxed(vec![])
             ])
             .to_id(),
             "{{Float64},{}}"
