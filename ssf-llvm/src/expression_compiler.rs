@@ -960,7 +960,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn compile_algebraic_case_expression_with_multiple_constructors() {
+        fn compile_constructor_applications() {
             let compile_configuration = CompileConfiguration::new("", vec![], None, None);
             let algebraic_type = ssf::types::Algebraic::new(vec![
                 ssf::types::Constructor::boxed(vec![]),
