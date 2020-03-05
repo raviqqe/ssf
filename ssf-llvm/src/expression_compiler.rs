@@ -960,11 +960,76 @@ mod tests {
         use super::*;
 
         #[test]
-        fn compile_constructor_applications() {
+        fn compile_boxed_constructor_applications() {
             let compile_configuration = CompileConfiguration::new("", vec![], None, None);
             let algebraic_type = ssf::types::Algebraic::new(vec![
                 ssf::types::Constructor::boxed(vec![]),
                 ssf::types::Constructor::boxed(vec![ssf::types::Primitive::Float64.into()]),
+            ]);
+
+            for constructor_application in vec![
+                ssf::ir::ConstructorApplication::new(
+                    ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                    vec![],
+                ),
+                ssf::ir::ConstructorApplication::new(
+                    ssf::ir::Constructor::new(algebraic_type.clone(), 1),
+                    vec![42.0.into()],
+                ),
+            ] {
+                let context = inkwell::context::Context::create();
+                let type_compiler = TypeCompiler::new(&context);
+                let module = context.create_module("");
+
+                module.add_function(
+                    compile_configuration.malloc_function_name(),
+                    context
+                        .i8_type()
+                        .ptr_type(inkwell::AddressSpace::Generic)
+                        .fn_type(&[context.i64_type().into()], false),
+                    None,
+                );
+
+                let function = module.add_function(
+                    "",
+                    type_compiler
+                        .compile_algebraic(&algebraic_type, None)
+                        .fn_type(&[], false),
+                    None,
+                );
+                let builder = context.create_builder();
+                builder.position_at_end(context.append_basic_block(function, "entry"));
+
+                builder.build_return(Some(
+                    &ExpressionCompiler::new(
+                        &context,
+                        &module,
+                        &builder,
+                        &FunctionCompiler::new(
+                            &context,
+                            &module,
+                            &type_compiler,
+                            &HashMap::new(),
+                            &compile_configuration,
+                        ),
+                        &type_compiler,
+                        &compile_configuration,
+                    )
+                    .compile(&constructor_application.into(), &HashMap::new())
+                    .unwrap(),
+                ));
+
+                assert!(function.verify(true));
+                assert!(module.verify().is_ok());
+            }
+        }
+
+        #[test]
+        fn compile_unboxed_constructor_applications() {
+            let compile_configuration = CompileConfiguration::new("", vec![], None, None);
+            let algebraic_type = ssf::types::Algebraic::new(vec![
+                ssf::types::Constructor::unboxed(vec![]),
+                ssf::types::Constructor::unboxed(vec![ssf::types::Primitive::Float64.into()]),
             ]);
 
             for constructor_application in vec![
