@@ -352,18 +352,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
                         let constructor_value = if constructor.constructor_type().is_boxed() {
                             self.builder
-                                .build_load(
-                                    self.builder
-                                        .build_bitcast(
-                                            constructor_value,
-                                            self.type_compiler.compile_constructor(
-                                                constructor.constructor_type(),
-                                            ),
-                                            "",
-                                        )
-                                        .into_pointer_value(),
-                                    "",
-                                )
+                                .build_load(constructor_value.into_pointer_value(), "")
                                 .into_struct_value()
                         } else {
                             constructor_value.into_struct_value()
