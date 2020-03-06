@@ -261,4 +261,22 @@ mod tests {
         )
         .unwrap();
     }
+
+    #[test]
+    fn compile_bitcast() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::ValueDefinition::new(
+                    "x",
+                    ssf::ir::Bitcast::new(42, ssf::types::Primitive::Float64),
+                    ssf::types::Primitive::Float64,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
 }

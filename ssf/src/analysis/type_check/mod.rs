@@ -637,4 +637,19 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn check_bitcast() {
+        let module = Module::without_validation(
+            vec![],
+            vec![ValueDefinition::new(
+                "x",
+                Bitcast::new(42, types::Primitive::Float64),
+                types::Primitive::Float64,
+            )
+            .into()],
+            vec![],
+        );
+        assert_eq!(check_types(&module), Ok(()));
+    }
 }
