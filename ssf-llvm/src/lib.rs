@@ -236,4 +236,31 @@ mod tests {
         )
         .unwrap();
     }
+
+    #[test]
+    fn compile_constructor_applications_of_recursive_algebraic_types() {
+        let algebraic_type =
+            ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
+                ssf::types::Value::Index(0).into(),
+            ])]);
+
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::FunctionDefinition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", algebraic_type.clone())],
+                    ssf::ir::ConstructorApplication::new(
+                        ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                        vec![ssf::ir::Variable::new("x").into()],
+                    ),
+                    algebraic_type,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
 }

@@ -40,15 +40,14 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         match expression {
             ssf::ir::Expression::Case(case) => self.compile_case(case, variables),
             ssf::ir::Expression::ConstructorApplication(constructor_application) => {
-                let algebraic_type = constructor_application.constructor().algebraic_type();
-                let constructor_type = constructor_application.constructor().constructor_type();
+                let constructor = constructor_application.constructor();
+                let algebraic_type = constructor.algebraic_type();
+                let constructor_type =
+                    algebraic_type.unfold().constructors()[constructor.index()].clone();
 
                 let mut algebraic_value = self
                     .type_compiler
-                    .compile_algebraic(
-                        algebraic_type,
-                        Some(constructor_application.constructor().index()),
-                    )
+                    .compile_algebraic(algebraic_type, Some(constructor.index()))
                     .const_zero()
                     .into();
 
@@ -57,10 +56,9 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         .builder
                         .build_insert_value(
                             algebraic_value,
-                            self.context.i64_type().const_int(
-                                constructor_application.constructor().index() as u64,
-                                false,
-                            ),
+                            self.context
+                                .i64_type()
+                                .const_int(constructor.index() as u64, false),
                             0,
                             "",
                         )
@@ -70,7 +68,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 if !constructor_type.is_enum() {
                     let constructor_type = self
                         .type_compiler
-                        .compile_unboxed_constructor(constructor_type);
+                        .compile_unboxed_constructor(&constructor_type);
 
                     let mut constructor_value = constructor_type.const_zero().into();
 
@@ -88,11 +86,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     }
 
                     let constructor_value: inkwell::values::BasicValueEnum<'c> =
-                        if constructor_application
-                            .constructor()
-                            .constructor_type()
-                            .is_boxed()
-                        {
+                        if constructor.constructor_type().is_boxed() {
                             let constructor_pointer = self.compile_struct_malloc(constructor_type);
 
                             self.builder

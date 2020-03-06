@@ -609,5 +609,32 @@ mod tests {
                 Err(TypeCheckError)
             );
         }
+
+        #[test]
+        fn check_constructor_applications_of_recursive_algebraic_types() {
+            let algebraic_type =
+                types::Algebraic::new(vec![types::Constructor::boxed(vec![types::Value::Index(
+                    0,
+                )
+                .into()])]);
+
+            assert_eq!(
+                check_types(&Module::without_validation(
+                    vec![],
+                    vec![FunctionDefinition::new(
+                        "f",
+                        vec![Argument::new("x", algebraic_type.clone())],
+                        ConstructorApplication::new(
+                            Constructor::new(algebraic_type.clone(), 0),
+                            vec![Variable::new("x").into()],
+                        ),
+                        algebraic_type,
+                    )
+                    .into()],
+                    vec![]
+                ),),
+                Ok(())
+            );
+        }
     }
 }

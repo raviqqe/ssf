@@ -95,23 +95,22 @@ impl TypeChecker {
         match expression {
             Expression::Case(case) => self.check_case(case, variables),
             Expression::ConstructorApplication(constructor_application) => {
+                let constructor = constructor_application.constructor();
+
                 if constructor_application.arguments().len()
-                    != constructor_application
-                        .constructor()
-                        .constructor_type()
-                        .elements()
-                        .len()
+                    != constructor.constructor_type().elements().len()
                 {
                     return Err(TypeCheckError);
                 }
 
-                for (argument, element_type) in constructor_application.arguments().iter().zip(
-                    constructor_application
-                        .constructor()
-                        .constructor_type()
-                        .elements(),
-                ) {
-                    if &self.check_expression(argument, variables)? != element_type {
+                for (argument, element_type) in constructor_application
+                    .arguments()
+                    .iter()
+                    .zip(constructor.constructor_type().elements())
+                {
+                    if self.check_expression(argument, variables)?
+                        != element_type.unfold(constructor.algebraic_type())
+                    {
                         return Err(TypeCheckError);
                     }
                 }
