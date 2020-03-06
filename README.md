@@ -20,9 +20,9 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 ## Features
 
 - Inference of closure environment types
-- Implicit heap allocation
-  - For closures and algebraic data types
+- Implicit heap allocation for closures
   - Injectable `malloc` functions
+- Optimization of algebraic data types
 
 ### Stuff not supported...
 
@@ -36,6 +36,7 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 
 - Functions
 - Algebraic data types
+  - Explicit boxing
 - Primitives
   - 64-bit integer
   - 64-bit floating point number
@@ -54,7 +55,7 @@ let bitcode = ssf_llvm::compile(
             "f",
             vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
             ssf::ir::ConstructorApplication::new(
-                ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                ssf::ir::Constructor::boxed(algebraic_type.clone(), 0),
                 vec![ssf::ir::Variable("x").into()],
             ),
             algebraic_type,

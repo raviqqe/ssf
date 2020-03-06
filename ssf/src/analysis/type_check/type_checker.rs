@@ -95,23 +95,22 @@ impl TypeChecker {
         match expression {
             Expression::Case(case) => self.check_case(case, variables),
             Expression::ConstructorApplication(constructor_application) => {
+                let constructor = constructor_application.constructor();
+
                 if constructor_application.arguments().len()
-                    != constructor_application
-                        .constructor()
-                        .constructor_type()
-                        .elements()
-                        .len()
+                    != constructor.constructor_type().elements().len()
                 {
                     return Err(TypeCheckError);
                 }
 
-                for (argument, element_type) in constructor_application.arguments().iter().zip(
-                    constructor_application
-                        .constructor()
-                        .constructor_type()
-                        .elements(),
-                ) {
-                    if &self.check_expression(argument, variables)? != element_type {
+                for (argument, element_type) in constructor_application
+                    .arguments()
+                    .iter()
+                    .zip(constructor.constructor_type().elements())
+                {
+                    if self.check_expression(argument, variables)?
+                        != element_type.unfold(constructor.algebraic_type())
+                    {
                         return Err(TypeCheckError);
                     }
                 }
@@ -198,13 +197,20 @@ impl TypeChecker {
                 let mut expression_type = None;
 
                 for alternative in algebraic_case.alternatives() {
-                    if alternative.constructor().algebraic_type() != &argument_type {
+                    let constructor = alternative.constructor();
+
+                    if constructor.algebraic_type() != &argument_type {
                         return Err(TypeCheckError);
                     }
 
                     let mut variables = variables.clone();
 
-                    for (name, type_) in alternative.elements() {
+                    for (name, type_) in alternative.element_names().iter().zip(
+                        constructor
+                            .constructor_type()
+                            .unfold(constructor.algebraic_type())
+                            .elements(),
+                    ) {
                         variables.insert(name, type_.clone());
                     }
 

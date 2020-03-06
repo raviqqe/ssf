@@ -1,3 +1,4 @@
+use super::algebraic::Algebraic;
 use super::function::Function;
 use super::value::Value;
 
@@ -33,6 +34,13 @@ impl Type {
         match self {
             Self::Function(_) => None,
             Self::Value(value) => Some(value),
+        }
+    }
+
+    pub(crate) fn unfold(&self, algebraic_type: &Algebraic) -> Self {
+        match self {
+            Self::Function(function) => function.unfold(algebraic_type).into(),
+            Self::Value(value) => value.unfold(algebraic_type).into(),
         }
     }
 }

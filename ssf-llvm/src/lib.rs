@@ -22,9 +22,7 @@ pub fn compile(
     ModuleCompiler::new(&context, &module, &type_compiler, compile_configuration)
         .compile(ir_module)?;
 
-    let bitcode = module.write_bitcode_to_memory().as_slice().to_vec();
-
-    Ok(bitcode)
+    Ok(module.write_bitcode_to_memory().as_slice().to_vec())
 }
 
 #[cfg(test)]
@@ -198,6 +196,65 @@ mod tests {
                     ssf::ir::ValueDefinition::new("y", ssf::ir::Variable::new("x"), algebraic_type)
                         .into(),
                 ],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn compile_recursive_field_access_of_algebraic_types() {
+        let algebraic_type =
+            ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
+                ssf::types::Value::Index(0).into(),
+            ])]);
+
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::FunctionDefinition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", algebraic_type.clone())],
+                    ssf::ir::AlgebraicCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::AlgebraicAlternative::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                            vec!["y".into()],
+                            ssf::ir::Variable::new("y"),
+                        )],
+                        None,
+                    ),
+                    algebraic_type,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn compile_constructor_applications_of_recursive_algebraic_types() {
+        let algebraic_type =
+            ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
+                ssf::types::Value::Index(0).into(),
+            ])]);
+
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::FunctionDefinition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", algebraic_type.clone())],
+                    ssf::ir::ConstructorApplication::new(
+                        ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                        vec![ssf::ir::Variable::new("x").into()],
+                    ),
+                    algebraic_type,
+                )
+                .into()],
             )
             .unwrap(),
             &CompileConfiguration::new("", vec![], None, None),

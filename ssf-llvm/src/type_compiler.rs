@@ -73,7 +73,7 @@ impl<'c> TypeCompiler<'c> {
 
         if !algebraic.is_enum() {
             if let Some(index) = index {
-                elements.push(self.compile_constructor(&algebraic.constructors()[index]));
+                elements.push(self.compile_constructor(&algebraic.unfold().constructors()[index]));
             } else {
                 elements.push(self.compile_unsized_constructor(algebraic));
             }

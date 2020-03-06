@@ -31,13 +31,6 @@ impl AlgebraicAlternative {
         &self.element_names
     }
 
-    pub fn elements(&self) -> impl IntoIterator<Item = (&str, &Type)> {
-        self.element_names
-            .iter()
-            .map(|name| name.as_str())
-            .zip(self.constructor.constructor_type().elements())
-    }
-
     pub fn expression(&self) -> &Expression {
         &self.expression
     }
