@@ -22,9 +22,7 @@ pub fn compile(
     ModuleCompiler::new(&context, &module, &type_compiler, compile_configuration)
         .compile(ir_module)?;
 
-    let bitcode = module.write_bitcode_to_memory().as_slice().to_vec();
-
-    Ok(bitcode)
+    Ok(module.write_bitcode_to_memory().as_slice().to_vec())
 }
 
 #[cfg(test)]
