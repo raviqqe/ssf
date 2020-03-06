@@ -1,19 +1,18 @@
 use super::algebraic::Algebraic;
 use super::type_::Type;
 use super::value::Value;
-use std::rc::Rc;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Function {
     arguments: Vec<Type>,
-    result: Rc<Value>,
+    result: Value,
 }
 
 impl Function {
     pub fn new(arguments: Vec<Type>, result: impl Into<Value>) -> Self {
         Self {
             arguments,
-            result: Rc::new(result.into()),
+            result: result.into(),
         }
     }
 
@@ -44,7 +43,7 @@ impl Function {
                 .iter()
                 .map(|argument| argument.unfold(algebraic_type))
                 .collect(),
-            result: self.result.unfold(algebraic_type).into(),
+            result: self.result.unfold(algebraic_type),
         }
     }
 }
