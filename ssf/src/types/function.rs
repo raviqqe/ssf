@@ -1,3 +1,4 @@
+use super::algebraic::Algebraic;
 use super::type_::Type;
 use super::value::Value;
 use std::rc::Rc;
@@ -34,6 +35,17 @@ impl Function {
                 .join("->"),
             self.result.to_id()
         )
+    }
+
+    pub(crate) fn unfold(&self, algebraic_type: &Algebraic) -> Self {
+        Self {
+            arguments: self
+                .arguments
+                .iter()
+                .map(|argument| argument.unfold(algebraic_type))
+                .collect(),
+            result: self.result.unfold(algebraic_type).into(),
+        }
     }
 }
 

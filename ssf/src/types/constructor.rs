@@ -1,3 +1,4 @@
+use super::algebraic::Algebraic;
 use super::type_::Type;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -40,6 +41,17 @@ impl Constructor {
                 .collect::<Vec<_>>()
                 .join(","),
         )
+    }
+
+    pub(crate) fn unfold(&self, algebraic_type: &Algebraic) -> Self {
+        Self {
+            elements: self
+                .elements
+                .iter()
+                .map(|element| element.unfold(algebraic_type))
+                .collect(),
+            boxed: self.boxed,
+        }
     }
 }
 

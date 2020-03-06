@@ -30,6 +30,20 @@ impl Value {
             _ => None,
         }
     }
+
+    pub(crate) fn unfold(&self, algebraic_type: &Algebraic) -> Self {
+        match self {
+            Self::Algebraic(other) => other.unfold_with(algebraic_type).into(),
+            Self::Index(index) => {
+                if *index == 0 {
+                    algebraic_type.clone().into()
+                } else {
+                    Self::Index(index - 1)
+                }
+            }
+            Self::Primitive(primitive) => primitive.clone().into(),
+        }
+    }
 }
 
 impl From<Algebraic> for Value {

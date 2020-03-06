@@ -34,6 +34,26 @@ impl Algebraic {
                 .join(","),
         )
     }
+
+    pub fn unfold(&self) -> Self {
+        Self {
+            constructors: self
+                .constructors
+                .iter()
+                .map(|constructor| constructor.unfold(self))
+                .collect(),
+        }
+    }
+
+    pub(crate) fn unfold_with(&self, algebraic_type: &Self) -> Self {
+        Self {
+            constructors: self
+                .constructors
+                .iter()
+                .map(|constructor| constructor.unfold(algebraic_type))
+                .collect(),
+        }
+    }
 }
 
 #[cfg(test)]

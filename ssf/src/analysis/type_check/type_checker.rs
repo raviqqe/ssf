@@ -198,13 +198,20 @@ impl TypeChecker {
                 let mut expression_type = None;
 
                 for alternative in algebraic_case.alternatives() {
-                    if alternative.constructor().algebraic_type() != &argument_type {
+                    let constructor = alternative.constructor();
+
+                    if constructor.algebraic_type() != &argument_type {
                         return Err(TypeCheckError);
                     }
 
                     let mut variables = variables.clone();
 
-                    for (name, type_) in alternative.elements() {
+                    for (name, type_) in alternative.element_names().iter().zip(
+                        constructor
+                            .constructor_type()
+                            .unfold(constructor.algebraic_type())
+                            .elements(),
+                    ) {
                         variables.insert(name, type_.clone());
                     }
 
