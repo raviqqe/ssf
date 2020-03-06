@@ -541,6 +541,10 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
             inkwell::values::BasicValueEnum::PointerValue(value) => {
                 match value.get_type().get_element_type() {
                     inkwell::types::AnyTypeEnum::FloatType(_) => self.builder.build_load(value, ""),
+                    inkwell::types::AnyTypeEnum::IntType(_) => self.builder.build_load(value, ""),
+                    inkwell::types::AnyTypeEnum::StructType(_) => {
+                        self.builder.build_load(value, "")
+                    }
                     _ => value.into(),
                 }
             }

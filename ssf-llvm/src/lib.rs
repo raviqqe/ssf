@@ -134,4 +134,74 @@ mod tests {
         )
         .unwrap();
     }
+
+    #[test]
+    fn compile_float_global_variable_reference() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![
+                    ssf::ir::ValueDefinition::new("x", 42.0, ssf::types::Primitive::Float64).into(),
+                    ssf::ir::ValueDefinition::new(
+                        "y",
+                        ssf::ir::Variable::new("x"),
+                        ssf::types::Primitive::Float64,
+                    )
+                    .into(),
+                ],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn compile_integer_global_variable_reference() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![
+                    ssf::ir::ValueDefinition::new("x", 42, ssf::types::Primitive::Integer64).into(),
+                    ssf::ir::ValueDefinition::new(
+                        "y",
+                        ssf::ir::Variable::new("x"),
+                        ssf::types::Primitive::Integer64,
+                    )
+                    .into(),
+                ],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn compile_algebraic_global_variable_reference() {
+        let algebraic_type =
+            ssf::types::Algebraic::new(vec![ssf::types::Constructor::unboxed(vec![])]);
+
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![
+                    ssf::ir::ValueDefinition::new(
+                        "x",
+                        ssf::ir::ConstructorApplication::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                            vec![],
+                        ),
+                        algebraic_type.clone(),
+                    )
+                    .into(),
+                    ssf::ir::ValueDefinition::new("y", ssf::ir::Variable::new("x"), algebraic_type)
+                        .into(),
+                ],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
 }
