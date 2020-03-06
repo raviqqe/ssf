@@ -1,6 +1,7 @@
 mod algebraic_alternative;
 mod algebraic_case;
 mod argument;
+mod bitcast;
 mod case;
 mod constructor;
 mod constructor_application;
@@ -24,6 +25,7 @@ mod variable;
 pub use algebraic_alternative::*;
 pub use algebraic_case::*;
 pub use argument::*;
+pub use bitcast::*;
 pub use case::*;
 pub use constructor::*;
 pub use constructor_application::*;

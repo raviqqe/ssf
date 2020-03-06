@@ -1,4 +1,5 @@
 use super::algebraic_case::AlgebraicCase;
+use super::bitcast::Bitcast;
 use super::case::Case;
 use super::constructor_application::ConstructorApplication;
 use super::function_application::FunctionApplication;
@@ -13,6 +14,7 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expression {
+    Bitcast(Bitcast),
     Case(Case),
     ConstructorApplication(ConstructorApplication),
     FunctionApplication(FunctionApplication),
@@ -33,6 +35,7 @@ impl Expression {
 
     pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
         match self {
+            Self::Bitcast(bitcast) => bitcast.rename_variables(names).into(),
             Self::Case(case) => case.rename_variables(names).into(),
             Self::ConstructorApplication(constructor_application) => {
                 constructor_application.rename_variables(names).into()
@@ -50,6 +53,7 @@ impl Expression {
 
     pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
         match self {
+            Self::Bitcast(bitcast) => bitcast.find_variables(excluded_variables),
             Self::Case(case) => case.find_variables(excluded_variables),
             Self::ConstructorApplication(constructor_application) => {
                 constructor_application.find_variables(excluded_variables)
@@ -71,6 +75,9 @@ impl Expression {
         global_variables: &HashSet<String>,
     ) -> Self {
         match self {
+            Self::Bitcast(bitcast) => bitcast
+                .infer_environment(variables, global_variables)
+                .into(),
             Self::Case(case) => case.infer_environment(variables, global_variables).into(),
             Self::ConstructorApplication(constructor_application) => constructor_application
                 .infer_environment(variables, global_variables)
@@ -93,6 +100,7 @@ impl Expression {
 
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         match self {
+            Self::Bitcast(bitcast) => bitcast.convert_types(convert).into(),
             Self::Case(case) => case.convert_types(convert).into(),
             Self::ConstructorApplication(constructor_application) => {
                 constructor_application.convert_types(convert).into()
@@ -111,6 +119,12 @@ impl Expression {
 impl From<AlgebraicCase> for Expression {
     fn from(algebraic_case: AlgebraicCase) -> Self {
         Self::Case(algebraic_case.into())
+    }
+}
+
+impl From<Bitcast> for Expression {
+    fn from(bitcast: Bitcast) -> Self {
+        Self::Bitcast(bitcast)
     }
 }
 

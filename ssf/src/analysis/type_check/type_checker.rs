@@ -93,6 +93,10 @@ impl TypeChecker {
         variables: &HashMap<&str, Type>,
     ) -> Result<Type, TypeCheckError> {
         match expression {
+            Expression::Bitcast(bitcast) => {
+                self.check_expression(bitcast.expression(), variables)?;
+                Ok(bitcast.type_().clone().into())
+            }
             Expression::Case(case) => self.check_case(case, variables),
             Expression::ConstructorApplication(constructor_application) => {
                 let constructor = constructor_application.constructor();

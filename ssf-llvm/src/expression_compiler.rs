@@ -38,6 +38,11 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         match expression {
+            ssf::ir::Expression::Bitcast(bitcast) => Ok(self.builder.build_bitcast(
+                self.compile(bitcast.expression(), variables)?,
+                self.type_compiler.compile_value(bitcast.type_()),
+                "",
+            )),
             ssf::ir::Expression::Case(case) => self.compile_case(case, variables),
             ssf::ir::Expression::ConstructorApplication(constructor_application) => {
                 let constructor = constructor_application.constructor();
