@@ -1,5 +1,8 @@
 use inkwell::types::BasicType;
 
+static EMPTY_BOXED_CONSTRUCTOR: ssf::types::Constructor =
+    ssf::types::Constructor::boxed(Vec::new());
+
 pub struct TypeCompiler<'c> {
     context: &'c inkwell::context::Context,
     target_machine: inkwell::targets::TargetMachine,
@@ -73,7 +76,9 @@ impl<'c> TypeCompiler<'c> {
 
         if !algebraic.is_enum() {
             if let Some(index) = index {
-                elements.push(self.compile_constructor(&algebraic.unfold().constructors()[index]));
+                elements.push(
+                    self.compile_constructor(&algebraic.unfold().constructors()[index], false),
+                );
             } else {
                 elements.push(self.compile_unsized_constructor(algebraic));
             }
@@ -154,13 +159,18 @@ impl<'c> TypeCompiler<'c> {
     fn compile_constructor(
         &self,
         constructor: &ssf::types::Constructor,
+        shallow: bool,
     ) -> inkwell::types::BasicTypeEnum<'c> {
-        let type_ = self.compile_unboxed_constructor(constructor);
-
-        if constructor.is_boxed() && !constructor.is_enum() {
-            type_.ptr_type(inkwell::AddressSpace::Generic).into()
+        let type_ = self.compile_unboxed_constructor(if shallow && constructor.is_boxed() {
+            &EMPTY_BOXED_CONSTRUCTOR
         } else {
+            constructor
+        });
+
+        if constructor.is_enum() || !constructor.is_boxed() {
             type_.into()
+        } else {
+            type_.ptr_type(inkwell::AddressSpace::Generic).into()
         }
     }
 
@@ -191,11 +201,7 @@ impl<'c> TypeCompiler<'c> {
                     .map(|constructor| {
                         self.target_machine
                             .get_target_data()
-                            .get_store_size(&if constructor.is_boxed() {
-                                self.compile_constructor(&ssf::types::Constructor::boxed(vec![]))
-                            } else {
-                                self.compile_constructor(constructor)
-                            })
+                            .get_store_size(&self.compile_constructor(constructor, true))
                     })
                     .max()
                     .unwrap() as u32,

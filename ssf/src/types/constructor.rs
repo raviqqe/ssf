@@ -8,15 +8,15 @@ pub struct Constructor {
 }
 
 impl Constructor {
-    pub fn new(elements: Vec<Type>, boxed: bool) -> Self {
+    pub const fn new(elements: Vec<Type>, boxed: bool) -> Self {
         Self { elements, boxed }
     }
 
-    pub fn boxed(elements: Vec<Type>) -> Self {
+    pub const fn boxed(elements: Vec<Type>) -> Self {
         Self::new(elements, true)
     }
 
-    pub fn unboxed(elements: Vec<Type>) -> Self {
+    pub const fn unboxed(elements: Vec<Type>) -> Self {
         Self::new(elements, false)
     }
 

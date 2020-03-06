@@ -7,6 +7,10 @@ pub struct Algebraic {
 
 impl Algebraic {
     pub fn new(constructors: Vec<Constructor>) -> Self {
+        if constructors.is_empty() {
+            panic!("no constructors in algebraic data type");
+        }
+
         Self { constructors }
     }
 
@@ -60,6 +64,12 @@ impl Algebraic {
 mod tests {
     use super::super::primitive::Primitive;
     use super::*;
+
+    #[test]
+    #[should_panic]
+    fn new_with_no_constructor() {
+        Algebraic::new(vec![]);
+    }
 
     #[test]
     fn to_id() {
