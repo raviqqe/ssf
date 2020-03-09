@@ -164,10 +164,10 @@ impl<'c> TypeCompiler<'c> {
             constructor
         });
 
-        if constructor.is_enum() || !constructor.is_boxed() {
-            type_.into()
-        } else {
+        if constructor.is_boxed() {
             type_.ptr_type(inkwell::AddressSpace::Generic).into()
+        } else {
+            type_.into()
         }
     }
 

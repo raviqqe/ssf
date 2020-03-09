@@ -29,7 +29,7 @@ impl Constructor {
     }
 
     pub fn is_enum(&self) -> bool {
-        self.elements.is_empty()
+        self.elements.is_empty() && !self.boxed
     }
 
     pub fn to_id(&self) -> String {
@@ -59,6 +59,14 @@ impl Constructor {
 mod tests {
     use super::super::primitive::Primitive;
     use super::*;
+
+    #[test]
+    fn is_enum() {
+        assert!(Constructor::unboxed(vec![]).is_enum());
+        assert!(!Constructor::boxed(vec![]).is_enum());
+        assert!(!Constructor::unboxed(vec![Primitive::Float64.into()]).is_enum());
+        assert!(!Constructor::boxed(vec![Primitive::Float64.into()]).is_enum());
+    }
 
     #[test]
     fn to_id() {
