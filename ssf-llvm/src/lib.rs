@@ -279,4 +279,35 @@ mod tests {
         )
         .unwrap();
     }
+
+    #[test]
+    fn compile_function_applications() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![
+                    ssf::ir::FunctionDefinition::new(
+                        "f",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        42.0,
+                        ssf::types::Primitive::Float64,
+                    )
+                    .into(),
+                    ssf::ir::FunctionDefinition::new(
+                        "g",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        ssf::ir::FunctionApplication::new(
+                            ssf::ir::Variable::new("f"),
+                            vec![42.0.into()],
+                        ),
+                        ssf::types::Primitive::Float64,
+                    )
+                    .into(),
+                ],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
 }
