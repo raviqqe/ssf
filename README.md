@@ -6,7 +6,7 @@
 
 `ssf` is a structurally-typed strict functional core language supposed to be used as a target language for high-level strict functional programming languages.
 
-This repository consists of two crates of `ssf` and `ssf-llvm`. The former is to construct intermediate representation (IR) of `ssf` going through type check and other validation and the latter is to compile it into LLVM IR bitcodes.
+This repository consists of two crates of `ssf` and `ssf-llvm`. The former is to construct intermediate representation (IR) of `ssf` going through type check and other validation and the latter is to compile it into LLVM IR bitcode.
 
 ## Install
 
