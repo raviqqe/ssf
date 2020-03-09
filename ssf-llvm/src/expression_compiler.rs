@@ -3,6 +3,7 @@ use super::error::CompileError;
 use super::function_compiler::FunctionCompiler;
 use super::type_compiler::TypeCompiler;
 use std::collections::HashMap;
+use std::convert::TryInto;
 
 pub struct ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
     context: &'c inkwell::context::Context,
@@ -541,8 +542,20 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 match value.get_type().get_element_type() {
                     inkwell::types::AnyTypeEnum::FloatType(_) => self.builder.build_load(value, ""),
                     inkwell::types::AnyTypeEnum::IntType(_) => self.builder.build_load(value, ""),
-                    inkwell::types::AnyTypeEnum::StructType(_) => {
-                        self.builder.build_load(value, "")
+                    inkwell::types::AnyTypeEnum::StructType(struct_type) => {
+                        let is_closure = struct_type
+                            .get_field_type_at_index(0)
+                            .and_then(|field_type| field_type.try_into().ok())
+                            .map(|pointer_type: inkwell::types::PointerType<'c>| {
+                                pointer_type.get_element_type().is_function_type()
+                            })
+                            .unwrap_or(false);
+
+                        if is_closure {
+                            value.into()
+                        } else {
+                            self.builder.build_load(value, "")
+                        }
                     }
                     _ => value.into(),
                 }
