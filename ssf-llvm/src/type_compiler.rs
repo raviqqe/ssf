@@ -11,24 +11,21 @@ pub struct TypeCompiler<'c> {
 impl<'c> TypeCompiler<'c> {
     pub fn new(context: &'c inkwell::context::Context) -> Self {
         inkwell::targets::Target::initialize_all(&inkwell::targets::InitializationConfig::default());
+        let target_triple = inkwell::targets::TargetMachine::get_default_triple();
 
         Self {
             context,
-            target_machine: inkwell::targets::Target::from_triple(
-                inkwell::targets::TargetMachine::get_default_triple()
-                    .to_str()
-                    .unwrap(),
-            )
-            .unwrap()
-            .create_target_machine(
-                "",
-                "",
-                "",
-                Default::default(),
-                inkwell::targets::RelocMode::Default,
-                inkwell::targets::CodeModel::Default,
-            )
-            .unwrap(),
+            target_machine: inkwell::targets::Target::from_triple(&target_triple)
+                .unwrap()
+                .create_target_machine(
+                    &target_triple,
+                    "",
+                    "",
+                    Default::default(),
+                    inkwell::targets::RelocMode::Default,
+                    inkwell::targets::CodeModel::Default,
+                )
+                .unwrap(),
         }
     }
 
