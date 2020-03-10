@@ -23,6 +23,7 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 - Implicit heap allocation for closures
   - Injectable `malloc` functions
 - Optimization of algebraic data types
+- Bitcast
 
 ### Stuff not supported...
 
@@ -36,8 +37,9 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 
 - Functions
 - Algebraic data types
-  - Explicit boxing
+  - Constructors are boxed or unboxed explicitly.
 - Primitives
+  - 8-bit integer
   - 64-bit integer
   - 64-bit floating point number
 
