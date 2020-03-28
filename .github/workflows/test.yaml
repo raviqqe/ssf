@@ -3,7 +3,7 @@ on:
   - push
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     container:
       image: raviqqe/ssf-ci
     env:
@@ -20,7 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - run: wget -O - https://apt.llvm.org/llvm.sh | sudo bash /dev/stdin 8
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
