@@ -29,6 +29,8 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 
 - Type inference
   - The IR needs to be fully-typed already.
+- Partial application
+  - All function and constructor applications need to be saturated.
 - Generics
 - Garbage collection
   - Bring your own GC.
