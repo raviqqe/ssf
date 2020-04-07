@@ -276,17 +276,31 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         self.builder.build_float_mul(lhs, rhs, "").into()
                     }
                     ssf::ir::Operator::Divide => self.builder.build_float_div(lhs, rhs, "").into(),
-                    ssf::ir::Operator::Equal => self.builder.build_cast(
-                        inkwell::values::InstructionOpcode::ZExt,
-                        self.builder.build_float_compare(
-                            inkwell::FloatPredicate::OEQ,
+                    ssf::ir::Operator::Equal => self.compile_float_comparison_operations(
+                        inkwell::FloatPredicate::OEQ,
+                        lhs,
+                        rhs,
+                    ),
+                    ssf::ir::Operator::GreaterThan => self.compile_float_comparison_operations(
+                        inkwell::FloatPredicate::OGT,
+                        lhs,
+                        rhs,
+                    ),
+                    ssf::ir::Operator::GreaterThanOrEqual => self
+                        .compile_float_comparison_operations(
+                            inkwell::FloatPredicate::OGE,
                             lhs,
                             rhs,
-                            "",
                         ),
-                        self.type_compiler
-                            .compile_primitive(&ssf::types::Primitive::Integer8),
-                        "",
+                    ssf::ir::Operator::LessThan => self.compile_float_comparison_operations(
+                        inkwell::FloatPredicate::OLT,
+                        lhs,
+                        rhs,
+                    ),
+                    ssf::ir::Operator::LessThanOrEqual => self.compile_float_comparison_operations(
+                        inkwell::FloatPredicate::OLE,
+                        lhs,
+                        rhs,
                     ),
                 })
             }
@@ -516,6 +530,21 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 Ok(phi.as_basic_value())
             }
         }
+    }
+
+    fn compile_float_comparison_operations(
+        &self,
+        predicate: inkwell::FloatPredicate,
+        lhs: inkwell::values::FloatValue<'c>,
+        rhs: inkwell::values::FloatValue<'c>,
+    ) -> inkwell::values::BasicValueEnum<'c> {
+        self.builder.build_cast(
+            inkwell::values::InstructionOpcode::ZExt,
+            self.builder.build_float_compare(predicate, lhs, rhs, ""),
+            self.type_compiler
+                .compile_primitive(&ssf::types::Primitive::Integer8),
+            "",
+        )
     }
 
     fn compile_primitive(

@@ -351,19 +351,27 @@ mod tests {
 
     #[test]
     fn compile_equal_operation() {
-        compile(
-            &ssf::ir::Module::new(
-                vec![],
-                vec![ssf::ir::ValueDefinition::new(
-                    "x",
-                    ssf::ir::Operation::new(ssf::ir::Operator::Equal, 42.0, 42.0),
-                    ssf::types::Primitive::Integer8,
+        for operator in &[
+            ssf::ir::Operator::Equal,
+            ssf::ir::Operator::GreaterThan,
+            ssf::ir::Operator::GreaterThanOrEqual,
+            ssf::ir::Operator::LessThan,
+            ssf::ir::Operator::LessThanOrEqual,
+        ] {
+            compile(
+                &ssf::ir::Module::new(
+                    vec![],
+                    vec![ssf::ir::ValueDefinition::new(
+                        "x",
+                        ssf::ir::Operation::new(*operator, 42.0, 42.0),
+                        ssf::types::Primitive::Integer8,
+                    )
+                    .into()],
                 )
-                .into()],
+                .unwrap(),
+                &CompileConfiguration::new("", vec![], None, None),
             )
-            .unwrap(),
-            &CompileConfiguration::new("", vec![], None, None),
-        )
-        .unwrap();
+            .unwrap();
+        }
     }
 }

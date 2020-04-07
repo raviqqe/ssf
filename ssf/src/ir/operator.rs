@@ -5,4 +5,8 @@ pub enum Operator {
     Multiply,
     Divide,
     Equal,
+    LessThan,
+    GreaterThan,
+    LessThanOrEqual,
+    GreaterThanOrEqual,
 }
