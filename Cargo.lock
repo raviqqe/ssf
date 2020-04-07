@@ -66,7 +66,7 @@ dependencies = [
 [[package]]
 name = "inkwell"
 version = "0.1.0"
-source = "git+https://github.com/TheDan64/inkwell#c2e2808fbdd3e4fd205284eac152e7d827bccd01"
+source = "git+https://github.com/TheDan64/inkwell#a937b2315383040228a16cf65b333d77d720c391"
 dependencies = [
  "either",
  "inkwell_internals",
@@ -80,7 +80,7 @@ dependencies = [
 [[package]]
 name = "inkwell_internals"
 version = "0.1.0"
-source = "git+https://github.com/TheDan64/inkwell#c2e2808fbdd3e4fd205284eac152e7d827bccd01"
+source = "git+https://github.com/TheDan64/inkwell#a937b2315383040228a16cf65b333d77d720c391"
 dependencies = [
  "proc-macro2",
  "quote",
