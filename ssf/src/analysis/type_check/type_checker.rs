@@ -177,7 +177,13 @@ impl TypeChecker {
                 let rhs_type = self.check_expression(operation.rhs(), variables)?;
 
                 if lhs_type.is_primitive() && rhs_type.is_primitive() && lhs_type == rhs_type {
-                    Ok(lhs_type)
+                    Ok(match operation.operator() {
+                        Operator::Equal => types::Primitive::Integer8.into(),
+                        Operator::Add
+                        | Operator::Subtract
+                        | Operator::Multiply
+                        | Operator::Divide => lhs_type,
+                    })
                 } else {
                     Err(TypeCheckError)
                 }

@@ -348,4 +348,22 @@ mod tests {
         )
         .unwrap();
     }
+
+    #[test]
+    fn compile_equal_operation() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::ValueDefinition::new(
+                    "x",
+                    ssf::ir::Operation::new(ssf::ir::Operator::Equal, 42.0, 42.0),
+                    ssf::types::Primitive::Integer8,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
 }

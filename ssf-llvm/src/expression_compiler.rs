@@ -268,12 +268,27 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 let rhs = self.compile(operation.rhs(), variables)?.into_float_value();
 
                 Ok(match operation.operator() {
-                    ssf::ir::Operator::Add => self.builder.build_float_add(lhs, rhs, ""),
-                    ssf::ir::Operator::Subtract => self.builder.build_float_sub(lhs, rhs, ""),
-                    ssf::ir::Operator::Multiply => self.builder.build_float_mul(lhs, rhs, ""),
-                    ssf::ir::Operator::Divide => self.builder.build_float_div(lhs, rhs, ""),
-                }
-                .into())
+                    ssf::ir::Operator::Add => self.builder.build_float_add(lhs, rhs, "").into(),
+                    ssf::ir::Operator::Subtract => {
+                        self.builder.build_float_sub(lhs, rhs, "").into()
+                    }
+                    ssf::ir::Operator::Multiply => {
+                        self.builder.build_float_mul(lhs, rhs, "").into()
+                    }
+                    ssf::ir::Operator::Divide => self.builder.build_float_div(lhs, rhs, "").into(),
+                    ssf::ir::Operator::Equal => self.builder.build_cast(
+                        inkwell::values::InstructionOpcode::ZExt,
+                        self.builder.build_float_compare(
+                            inkwell::FloatPredicate::OEQ,
+                            lhs,
+                            rhs,
+                            "",
+                        ),
+                        self.type_compiler
+                            .compile_primitive(&ssf::types::Primitive::Integer8),
+                        "",
+                    ),
+                })
             }
             ssf::ir::Expression::Variable(variable) => self.compile_variable(variable, variables),
         }

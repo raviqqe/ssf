@@ -4,4 +4,5 @@ pub enum Operator {
     Subtract,
     Multiply,
     Divide,
+    Equal,
 }
