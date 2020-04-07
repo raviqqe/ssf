@@ -264,45 +264,97 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
             }
             ssf::ir::Expression::Primitive(primitive) => Ok(self.compile_primitive(primitive)),
             ssf::ir::Expression::Operation(operation) => {
-                let lhs = self.compile(operation.lhs(), variables)?.into_float_value();
-                let rhs = self.compile(operation.rhs(), variables)?.into_float_value();
+                let lhs = self.compile(operation.lhs(), variables)?;
+                let rhs = self.compile(operation.rhs(), variables)?;
 
-                Ok(match operation.operator() {
-                    ssf::ir::Operator::Add => self.builder.build_float_add(lhs, rhs, "").into(),
-                    ssf::ir::Operator::Subtract => {
-                        self.builder.build_float_sub(lhs, rhs, "").into()
-                    }
-                    ssf::ir::Operator::Multiply => {
-                        self.builder.build_float_mul(lhs, rhs, "").into()
-                    }
-                    ssf::ir::Operator::Divide => self.builder.build_float_div(lhs, rhs, "").into(),
-                    ssf::ir::Operator::Equal => self.compile_float_comparison_operations(
-                        inkwell::FloatPredicate::OEQ,
-                        lhs,
-                        rhs,
-                    ),
-                    ssf::ir::Operator::GreaterThan => self.compile_float_comparison_operations(
-                        inkwell::FloatPredicate::OGT,
-                        lhs,
-                        rhs,
-                    ),
-                    ssf::ir::Operator::GreaterThanOrEqual => self
-                        .compile_float_comparison_operations(
-                            inkwell::FloatPredicate::OGE,
+                match (lhs, rhs) {
+                    (
+                        inkwell::values::BasicValueEnum::IntValue(lhs),
+                        inkwell::values::BasicValueEnum::IntValue(rhs),
+                    ) => Ok(match operation.operator() {
+                        ssf::ir::Operator::Add => self.builder.build_int_add(lhs, rhs, "").into(),
+                        ssf::ir::Operator::Subtract => {
+                            self.builder.build_int_sub(lhs, rhs, "").into()
+                        }
+                        ssf::ir::Operator::Multiply => {
+                            self.builder.build_int_mul(lhs, rhs, "").into()
+                        }
+                        ssf::ir::Operator::Divide => {
+                            self.builder.build_int_signed_div(lhs, rhs, "").into()
+                        }
+                        ssf::ir::Operator::Equal => self.compile_integer_comparison_operations(
+                            inkwell::IntPredicate::EQ,
                             lhs,
                             rhs,
                         ),
-                    ssf::ir::Operator::LessThan => self.compile_float_comparison_operations(
-                        inkwell::FloatPredicate::OLT,
-                        lhs,
-                        rhs,
-                    ),
-                    ssf::ir::Operator::LessThanOrEqual => self.compile_float_comparison_operations(
-                        inkwell::FloatPredicate::OLE,
-                        lhs,
-                        rhs,
-                    ),
-                })
+                        ssf::ir::Operator::GreaterThan => self
+                            .compile_integer_comparison_operations(
+                                inkwell::IntPredicate::SGT,
+                                lhs,
+                                rhs,
+                            ),
+                        ssf::ir::Operator::GreaterThanOrEqual => self
+                            .compile_integer_comparison_operations(
+                                inkwell::IntPredicate::SGE,
+                                lhs,
+                                rhs,
+                            ),
+                        ssf::ir::Operator::LessThan => self.compile_integer_comparison_operations(
+                            inkwell::IntPredicate::SLT,
+                            lhs,
+                            rhs,
+                        ),
+                        ssf::ir::Operator::LessThanOrEqual => self
+                            .compile_integer_comparison_operations(
+                                inkwell::IntPredicate::SLE,
+                                lhs,
+                                rhs,
+                            ),
+                    }),
+                    (
+                        inkwell::values::BasicValueEnum::FloatValue(lhs),
+                        inkwell::values::BasicValueEnum::FloatValue(rhs),
+                    ) => Ok(match operation.operator() {
+                        ssf::ir::Operator::Add => self.builder.build_float_add(lhs, rhs, "").into(),
+                        ssf::ir::Operator::Subtract => {
+                            self.builder.build_float_sub(lhs, rhs, "").into()
+                        }
+                        ssf::ir::Operator::Multiply => {
+                            self.builder.build_float_mul(lhs, rhs, "").into()
+                        }
+                        ssf::ir::Operator::Divide => {
+                            self.builder.build_float_div(lhs, rhs, "").into()
+                        }
+                        ssf::ir::Operator::Equal => self.compile_float_comparison_operations(
+                            inkwell::FloatPredicate::OEQ,
+                            lhs,
+                            rhs,
+                        ),
+                        ssf::ir::Operator::GreaterThan => self.compile_float_comparison_operations(
+                            inkwell::FloatPredicate::OGT,
+                            lhs,
+                            rhs,
+                        ),
+                        ssf::ir::Operator::GreaterThanOrEqual => self
+                            .compile_float_comparison_operations(
+                                inkwell::FloatPredicate::OGE,
+                                lhs,
+                                rhs,
+                            ),
+                        ssf::ir::Operator::LessThan => self.compile_float_comparison_operations(
+                            inkwell::FloatPredicate::OLT,
+                            lhs,
+                            rhs,
+                        ),
+                        ssf::ir::Operator::LessThanOrEqual => self
+                            .compile_float_comparison_operations(
+                                inkwell::FloatPredicate::OLE,
+                                lhs,
+                                rhs,
+                            ),
+                    }),
+                    _ => unreachable!(),
+                }
             }
             ssf::ir::Expression::Variable(variable) => self.compile_variable(variable, variables),
         }
@@ -530,6 +582,21 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 Ok(phi.as_basic_value())
             }
         }
+    }
+
+    fn compile_integer_comparison_operations(
+        &self,
+        predicate: inkwell::IntPredicate,
+        lhs: inkwell::values::IntValue<'c>,
+        rhs: inkwell::values::IntValue<'c>,
+    ) -> inkwell::values::BasicValueEnum<'c> {
+        self.builder.build_cast(
+            inkwell::values::InstructionOpcode::ZExt,
+            self.builder.build_int_compare(predicate, lhs, rhs, ""),
+            self.type_compiler
+                .compile_primitive(&ssf::types::Primitive::Integer8),
+            "",
+        )
     }
 
     fn compile_float_comparison_operations(

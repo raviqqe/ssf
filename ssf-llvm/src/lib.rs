@@ -29,6 +29,21 @@ pub fn compile(
 mod tests {
     use super::*;
 
+    const NUMBER_ARITHMETIC_OPERATORS: [ssf::ir::Operator; 4] = [
+        ssf::ir::Operator::Add,
+        ssf::ir::Operator::Subtract,
+        ssf::ir::Operator::Multiply,
+        ssf::ir::Operator::Divide,
+    ];
+
+    const NUMBER_COMPARISON_OPERATORS: [ssf::ir::Operator; 5] = [
+        ssf::ir::Operator::Equal,
+        ssf::ir::Operator::GreaterThan,
+        ssf::ir::Operator::GreaterThanOrEqual,
+        ssf::ir::Operator::LessThan,
+        ssf::ir::Operator::LessThanOrEqual,
+    ];
+
     #[test]
     fn compile_() {
         compile(
@@ -350,14 +365,68 @@ mod tests {
     }
 
     #[test]
-    fn compile_equal_operation() {
-        for operator in &[
-            ssf::ir::Operator::Equal,
-            ssf::ir::Operator::GreaterThan,
-            ssf::ir::Operator::GreaterThanOrEqual,
-            ssf::ir::Operator::LessThan,
-            ssf::ir::Operator::LessThanOrEqual,
-        ] {
+    fn compile_integer_arithmetic_operators() {
+        for operator in &NUMBER_ARITHMETIC_OPERATORS {
+            compile(
+                &ssf::ir::Module::new(
+                    vec![],
+                    vec![ssf::ir::ValueDefinition::new(
+                        "x",
+                        ssf::ir::Operation::new(*operator, 42, 42),
+                        ssf::types::Primitive::Integer64,
+                    )
+                    .into()],
+                )
+                .unwrap(),
+                &CompileConfiguration::new("", vec![], None, None),
+            )
+            .unwrap();
+        }
+    }
+
+    #[test]
+    fn compile_float_arithmetic_operators() {
+        for operator in &NUMBER_ARITHMETIC_OPERATORS {
+            compile(
+                &ssf::ir::Module::new(
+                    vec![],
+                    vec![ssf::ir::ValueDefinition::new(
+                        "x",
+                        ssf::ir::Operation::new(*operator, 42.0, 42.0),
+                        ssf::types::Primitive::Float64,
+                    )
+                    .into()],
+                )
+                .unwrap(),
+                &CompileConfiguration::new("", vec![], None, None),
+            )
+            .unwrap();
+        }
+    }
+
+    #[test]
+    fn compile_integer_comparison_operators() {
+        for operator in &NUMBER_COMPARISON_OPERATORS {
+            compile(
+                &ssf::ir::Module::new(
+                    vec![],
+                    vec![ssf::ir::ValueDefinition::new(
+                        "x",
+                        ssf::ir::Operation::new(*operator, 42, 42),
+                        ssf::types::Primitive::Integer8,
+                    )
+                    .into()],
+                )
+                .unwrap(),
+                &CompileConfiguration::new("", vec![], None, None),
+            )
+            .unwrap();
+        }
+    }
+
+    #[test]
+    fn compile_float_comparison_operators() {
+        for operator in &NUMBER_COMPARISON_OPERATORS {
             compile(
                 &ssf::ir::Module::new(
                     vec![],
