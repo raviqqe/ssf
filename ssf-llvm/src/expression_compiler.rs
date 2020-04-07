@@ -264,10 +264,10 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
             }
             ssf::ir::Expression::Primitive(primitive) => Ok(self.compile_primitive(primitive)),
             ssf::ir::Expression::Operation(operation) => {
-                let lhs = self.compile(operation.lhs(), variables)?;
-                let rhs = self.compile(operation.rhs(), variables)?;
-
-                match (lhs, rhs) {
+                match (
+                    self.compile(operation.lhs(), variables)?,
+                    self.compile(operation.rhs(), variables)?,
+                ) {
                     (
                         inkwell::values::BasicValueEnum::IntValue(lhs),
                         inkwell::values::BasicValueEnum::IntValue(rhs),
