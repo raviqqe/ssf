@@ -652,4 +652,19 @@ mod tests {
         );
         assert_eq!(check_types(&module), Ok(()));
     }
+
+    #[test]
+    fn check_equality_operator() {
+        let module = Module::without_validation(
+            vec![],
+            vec![ValueDefinition::new(
+                "x",
+                Operation::new(Operator::Equal, 42.0, 42.0),
+                types::Primitive::Integer8,
+            )
+            .into()],
+            vec![],
+        );
+        assert_eq!(check_types(&module), Ok(()));
+    }
 }
