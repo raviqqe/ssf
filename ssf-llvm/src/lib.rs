@@ -36,8 +36,9 @@ mod tests {
         ssf::ir::Operator::Divide,
     ];
 
-    const NUMBER_COMPARISON_OPERATORS: [ssf::ir::Operator; 5] = [
+    const NUMBER_COMPARISON_OPERATORS: [ssf::ir::Operator; 6] = [
         ssf::ir::Operator::Equal,
+        ssf::ir::Operator::NotEqual,
         ssf::ir::Operator::GreaterThan,
         ssf::ir::Operator::GreaterThanOrEqual,
         ssf::ir::Operator::LessThan,
