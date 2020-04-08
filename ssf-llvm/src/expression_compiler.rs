@@ -287,6 +287,11 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                             lhs,
                             rhs,
                         ),
+                        ssf::ir::Operator::NotEqual => self.compile_integer_comparison_operations(
+                            inkwell::IntPredicate::NE,
+                            lhs,
+                            rhs,
+                        ),
                         ssf::ir::Operator::GreaterThan => self
                             .compile_integer_comparison_operations(
                                 inkwell::IntPredicate::SGT,
@@ -327,6 +332,11 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         }
                         ssf::ir::Operator::Equal => self.compile_float_comparison_operations(
                             inkwell::FloatPredicate::OEQ,
+                            lhs,
+                            rhs,
+                        ),
+                        ssf::ir::Operator::NotEqual => self.compile_float_comparison_operations(
+                            inkwell::FloatPredicate::ONE,
                             lhs,
                             rhs,
                         ),

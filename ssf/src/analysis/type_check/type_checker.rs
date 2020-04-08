@@ -179,6 +179,7 @@ impl TypeChecker {
                 if lhs_type.is_primitive() && rhs_type.is_primitive() && lhs_type == rhs_type {
                     Ok(match operation.operator() {
                         Operator::Equal
+                        | Operator::NotEqual
                         | Operator::GreaterThan
                         | Operator::GreaterThanOrEqual
                         | Operator::LessThan
