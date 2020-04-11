@@ -277,6 +277,17 @@ mod tests {
     }
 
     #[test]
+    fn compile_recursive_algebraic_with_constructor_content() {
+        let context = inkwell::context::Context::create();
+        TypeCompiler::new(&context).compile_algebraic(
+            &ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
+                ssf::types::Value::Index(0).into(),
+            ])]),
+            Some(0),
+        );
+    }
+
+    #[test]
     fn keep_equality_of_recursive_types() {
         let context = inkwell::context::Context::create();
         let compiler = TypeCompiler::new(&context);
