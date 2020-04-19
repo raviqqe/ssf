@@ -95,14 +95,21 @@ impl Module {
                 .iter()
                 .map(|definition| match definition {
                     Definition::FunctionDefinition(function_definition) => {
+                        let original_names = names;
+                        let mut names = names.clone();
+
+                        for argument in function_definition.arguments() {
+                            names.remove(argument.name());
+                        }
+
                         FunctionDefinition::with_environment(
-                            names
+                            original_names
                                 .get(function_definition.name())
                                 .cloned()
                                 .unwrap_or_else(|| function_definition.name().into()),
                             function_definition.environment().to_vec(),
                             function_definition.arguments().to_vec(),
-                            function_definition.body().rename_variables(names),
+                            function_definition.body().rename_variables(&names),
                             function_definition.result_type().clone(),
                         )
                         .into()
@@ -149,9 +156,10 @@ mod tests {
     use super::*;
     use crate::ir::*;
     use crate::types;
+    use pretty_assertions::assert_eq;
 
     #[test]
-    fn rename_global_variables() {
+    fn rename_global_values() {
         assert_eq!(
             Module::new(vec![], vec![])
                 .unwrap()
@@ -171,6 +179,10 @@ mod tests {
                 vec!["bar".into()]
             )
         );
+    }
+
+    #[test]
+    fn rename_declarations() {
         assert_eq!(
             Module::new(
                 vec![Declaration::new("foo", types::Primitive::Float64)],
@@ -181,6 +193,35 @@ mod tests {
             Module::without_validation(
                 vec![Declaration::new("bar", types::Primitive::Float64)],
                 vec![],
+                vec![]
+            )
+        );
+    }
+
+    #[test]
+    fn rename_global_functions() {
+        assert_eq!(
+            Module::new(
+                vec![],
+                vec![FunctionDefinition::new(
+                    "foo",
+                    vec![Argument::new("foo", types::Primitive::Float64)],
+                    Variable::new("foo"),
+                    types::Primitive::Float64
+                )
+                .into()]
+            )
+            .unwrap()
+            .rename_global_variables(&vec![("foo".into(), "bar".into())].drain(..).collect()),
+            Module::without_validation(
+                vec![],
+                vec![FunctionDefinition::new(
+                    "bar",
+                    vec![Argument::new("foo", types::Primitive::Float64)],
+                    Variable::new("foo"),
+                    types::Primitive::Float64
+                )
+                .into()],
                 vec![]
             )
         );
