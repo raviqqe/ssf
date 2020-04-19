@@ -48,7 +48,7 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 ## Examples
 
 ```rust
-let algebraic_type = ssf::types::Algebraic::new(vec![ssf::types::Constructor::new(vec![
+let algebraic_type = ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
     ssf::types::Primitive::Float64.into(),
 ])]);
 
