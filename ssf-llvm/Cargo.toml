@@ -7,5 +7,5 @@ authors = ["Yota Toyama <raviqqe@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "llvm8-0" }
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "llvm10-0" }
 ssf = { path = "../ssf" }
