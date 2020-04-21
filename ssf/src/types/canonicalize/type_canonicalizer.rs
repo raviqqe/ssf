@@ -38,18 +38,21 @@ impl<'a> TypeCanonicalizer<'a> {
 
                 let other = self.push_type(algebraic);
 
-                Algebraic::new(
+                Algebraic::with_tags(
                     algebraic
                         .constructors()
                         .iter()
-                        .map(|constructor| {
-                            Constructor::new(
-                                constructor
-                                    .elements()
-                                    .iter()
-                                    .map(|element| other.canonicalize(element))
-                                    .collect(),
-                                constructor.is_boxed(),
+                        .map(|(tag, constructor)| {
+                            (
+                                *tag,
+                                Constructor::new(
+                                    constructor
+                                        .elements()
+                                        .iter()
+                                        .map(|element| other.canonicalize(element))
+                                        .collect(),
+                                    constructor.is_boxed(),
+                                ),
                             )
                         })
                         .collect(),

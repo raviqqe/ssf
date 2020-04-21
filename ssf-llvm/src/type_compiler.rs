@@ -74,7 +74,7 @@ impl<'c> TypeCompiler<'c> {
         if !algebraic.is_enum() {
             if let Some(index) = index {
                 elements.push(
-                    self.compile_constructor(&algebraic.unfold().constructors()[index], false),
+                    self.compile_constructor(&algebraic.unfold().constructors()[&index], false),
                 );
             } else {
                 elements.push(self.compile_unsized_constructor(algebraic));
@@ -195,7 +195,7 @@ impl<'c> TypeCompiler<'c> {
                 algebraic_type
                     .constructors()
                     .iter()
-                    .map(|constructor| {
+                    .map(|(_, constructor)| {
                         self.target_machine
                             .get_target_data()
                             .get_store_size(&self.compile_constructor(constructor, true))

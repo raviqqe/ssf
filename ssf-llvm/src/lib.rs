@@ -279,6 +279,39 @@ mod tests {
     }
 
     #[test]
+    fn compile_algebraic_types_with_custom_tags() {
+        let algebraic_type = ssf::types::Algebraic::with_tags(
+            vec![(42, ssf::types::Constructor::unboxed(vec![]).into())]
+                .into_iter()
+                .collect(),
+        );
+
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::FunctionDefinition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", algebraic_type.clone())],
+                    ssf::ir::AlgebraicCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::AlgebraicAlternative::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 42),
+                            vec![],
+                            42.0,
+                        )],
+                        None,
+                    ),
+                    ssf::types::Primitive::Float64,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
+
+    #[test]
     fn compile_bitcast() {
         compile(
             &ssf::ir::Module::new(

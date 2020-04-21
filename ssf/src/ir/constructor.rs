@@ -16,7 +16,7 @@ impl Constructor {
     }
 
     pub fn constructor_type(&self) -> &types::Constructor {
-        &self.type_.constructors()[self.index]
+        &self.type_.constructors()[&self.index]
     }
 
     pub fn index(&self) -> usize {

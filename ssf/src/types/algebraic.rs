@@ -1,12 +1,17 @@
 use super::constructor::Constructor;
+use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Algebraic {
-    constructors: Vec<Constructor>,
+    constructors: BTreeMap<usize, Constructor>,
 }
 
 impl Algebraic {
     pub fn new(constructors: Vec<Constructor>) -> Self {
+        Self::with_tags(constructors.into_iter().enumerate().collect())
+    }
+
+    pub fn with_tags(constructors: BTreeMap<usize, Constructor>) -> Self {
         if constructors.is_empty() {
             panic!("no constructors in algebraic data type");
         }
@@ -14,7 +19,7 @@ impl Algebraic {
         Self { constructors }
     }
 
-    pub fn constructors(&self) -> &[Constructor] {
+    pub fn constructors(&self) -> &BTreeMap<usize, Constructor> {
         &self.constructors
     }
 
@@ -25,7 +30,7 @@ impl Algebraic {
     pub fn is_enum(&self) -> bool {
         self.constructors
             .iter()
-            .all(|constructor| constructor.is_enum())
+            .all(|(_, constructor)| constructor.is_enum())
     }
 
     pub fn to_id(&self) -> String {
@@ -33,7 +38,7 @@ impl Algebraic {
             "{{{}}}",
             self.constructors
                 .iter()
-                .map(|constructor| constructor.to_id())
+                .map(|(tag, constructor)| format!("{:x}:{}", tag, constructor.to_id()))
                 .collect::<Vec<_>>()
                 .join(","),
         )
@@ -44,7 +49,7 @@ impl Algebraic {
             constructors: self
                 .constructors
                 .iter()
-                .map(|constructor| constructor.unfold(self))
+                .map(|(tag, constructor)| (*tag, constructor.unfold(self)))
                 .collect(),
         }
     }
@@ -54,7 +59,7 @@ impl Algebraic {
             constructors: self
                 .constructors
                 .iter()
-                .map(|constructor| constructor.unfold(algebraic_type))
+                .map(|(tag, constructor)| (*tag, constructor.unfold(algebraic_type)))
                 .collect(),
         }
     }
@@ -75,11 +80,11 @@ mod tests {
     fn to_id() {
         assert_eq!(
             &Algebraic::new(vec![Constructor::boxed(vec![])]).to_id(),
-            "{{}}"
+            "{0:{}}"
         );
         assert_eq!(
             &Algebraic::new(vec![Constructor::boxed(vec![]), Constructor::boxed(vec![])]).to_id(),
-            "{{},{}}"
+            "{0:{},1:{}}"
         );
         assert_eq!(
             &Algebraic::new(vec![
@@ -87,7 +92,7 @@ mod tests {
                 Constructor::boxed(vec![Primitive::Float64.into()])
             ])
             .to_id(),
-            "{{},{Float64}}"
+            "{0:{},1:{Float64}}"
         );
         assert_eq!(
             &Algebraic::new(vec![
@@ -95,7 +100,12 @@ mod tests {
                 Constructor::boxed(vec![])
             ])
             .to_id(),
-            "{{Float64},{}}"
+            "{0:{Float64},1:{}}"
+        );
+        assert_eq!(
+            &Algebraic::with_tags(vec![(42, Constructor::boxed(vec![]))].into_iter().collect())
+                .to_id(),
+            "{2a:{}}"
         );
     }
 }
