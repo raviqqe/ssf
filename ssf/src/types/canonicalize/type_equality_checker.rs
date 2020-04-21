@@ -23,7 +23,7 @@ impl<'a> TypeEqualityChecker<'a> {
         one.constructors()
             .iter()
             .zip(other.constructors())
-            .all(|(one, other)| checker.equal_constructors(one, other))
+            .all(|(one, other)| one.0 == other.0 && checker.equal_constructors(one.1, other.1))
     }
 
     fn equal_values(&self, one: &Value, other: &Value) -> bool {

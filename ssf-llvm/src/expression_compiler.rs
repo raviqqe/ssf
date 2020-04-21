@@ -49,7 +49,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 let constructor = constructor_application.constructor();
                 let algebraic_type = constructor.algebraic_type();
                 let constructor_type =
-                    algebraic_type.unfold().constructors()[constructor.index()].clone();
+                    algebraic_type.unfold().constructors()[&constructor.index()].clone();
 
                 let mut algebraic_value = self
                     .type_compiler
