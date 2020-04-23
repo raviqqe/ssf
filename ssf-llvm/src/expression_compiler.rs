@@ -49,11 +49,11 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 let constructor = constructor_application.constructor();
                 let algebraic_type = constructor.algebraic_type();
                 let constructor_type =
-                    algebraic_type.unfold().constructors()[&constructor.index()].clone();
+                    algebraic_type.unfold().constructors()[&constructor.tag()].clone();
 
                 let mut algebraic_value = self
                     .type_compiler
-                    .compile_algebraic(algebraic_type, Some(constructor.index()))
+                    .compile_algebraic(algebraic_type, Some(constructor.tag()))
                     .const_zero()
                     .into();
 
@@ -62,9 +62,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         .builder
                         .build_insert_value(
                             algebraic_value,
-                            self.context
-                                .i64_type()
-                                .const_int(constructor.index() as u64, false),
+                            self.context.i64_type().const_int(constructor.tag(), false),
                             0,
                             "",
                         )
@@ -418,7 +416,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                                         self.type_compiler
                                             .compile_algebraic(
                                                 constructor.algebraic_type(),
-                                                Some(constructor.index()),
+                                                Some(constructor.tag()),
                                             )
                                             .ptr_type(inkwell::AddressSpace::Generic),
                                         "",
@@ -460,9 +458,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     }
 
                     cases.push((
-                        self.context
-                            .i64_type()
-                            .const_int(constructor.index() as u64, false),
+                        self.context.i64_type().const_int(constructor.tag(), false),
                         block,
                         self.compile(alternative.expression(), &variables)?,
                     ));
