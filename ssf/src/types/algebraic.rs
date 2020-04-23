@@ -3,15 +3,21 @@ use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Algebraic {
-    constructors: BTreeMap<usize, Constructor>,
+    constructors: BTreeMap<u64, Constructor>,
 }
 
 impl Algebraic {
     pub fn new(constructors: Vec<Constructor>) -> Self {
-        Self::with_tags(constructors.into_iter().enumerate().collect())
+        Self::with_tags(
+            constructors
+                .into_iter()
+                .enumerate()
+                .map(|(tag, constructor)| (tag as u64, constructor))
+                .collect(),
+        )
     }
 
-    pub fn with_tags(constructors: BTreeMap<usize, Constructor>) -> Self {
+    pub fn with_tags(constructors: BTreeMap<u64, Constructor>) -> Self {
         if constructors.is_empty() {
             panic!("no constructors in algebraic data type");
         }
@@ -19,7 +25,7 @@ impl Algebraic {
         Self { constructors }
     }
 
-    pub fn constructors(&self) -> &BTreeMap<usize, Constructor> {
+    pub fn constructors(&self) -> &BTreeMap<u64, Constructor> {
         &self.constructors
     }
 

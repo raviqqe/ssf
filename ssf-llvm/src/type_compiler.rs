@@ -63,7 +63,7 @@ impl<'c> TypeCompiler<'c> {
     pub fn compile_algebraic(
         &self,
         algebraic: &ssf::types::Algebraic,
-        index: Option<usize>,
+        index: Option<u64>,
     ) -> inkwell::types::StructType<'c> {
         let mut elements = vec![];
 
