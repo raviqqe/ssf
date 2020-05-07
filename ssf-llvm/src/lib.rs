@@ -353,6 +353,47 @@ mod tests {
     }
 
     #[test]
+    fn compile_nested_algebraic_cases_with_default_alternatives() {
+        let algebraic_type = ssf::types::Algebraic::new(
+            vec![ssf::types::Constructor::unboxed(vec![]).into()]
+                .into_iter()
+                .collect(),
+        );
+
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::FunctionDefinition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", algebraic_type.clone())],
+                    ssf::ir::AlgebraicCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::AlgebraicAlternative::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                            vec![],
+                            ssf::ir::AlgebraicCase::new(
+                                ssf::ir::Variable::new("x"),
+                                vec![ssf::ir::AlgebraicAlternative::new(
+                                    ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                                    vec![],
+                                    42.0,
+                                )],
+                                Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
+                            ),
+                        )],
+                        Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
+                    ),
+                    ssf::types::Primitive::Float64,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
+
+    #[test]
     fn compile_bitcast() {
         compile(
             &ssf::ir::Module::new(
@@ -538,6 +579,36 @@ mod tests {
                             ),
                         )],
                         None,
+                    ),
+                    ssf::types::Primitive::Float64,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, Some("panic".into())),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn compile_nested_primitive_cases_with_default_alternatives() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::FunctionDefinition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                    ssf::ir::PrimitiveCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::PrimitiveAlternative::new(
+                            42.0,
+                            ssf::ir::PrimitiveCase::new(
+                                ssf::ir::Variable::new("x"),
+                                vec![ssf::ir::PrimitiveAlternative::new(42.0, 42.0)],
+                                Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
+                            ),
+                        )],
+                        Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
                     ),
                     ssf::types::Primitive::Float64,
                 )
