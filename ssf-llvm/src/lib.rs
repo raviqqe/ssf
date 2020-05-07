@@ -312,6 +312,47 @@ mod tests {
     }
 
     #[test]
+    fn compile_nested_algebraic_cases() {
+        let algebraic_type = ssf::types::Algebraic::new(
+            vec![ssf::types::Constructor::unboxed(vec![]).into()]
+                .into_iter()
+                .collect(),
+        );
+
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::FunctionDefinition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", algebraic_type.clone())],
+                    ssf::ir::AlgebraicCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::AlgebraicAlternative::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                            vec![],
+                            ssf::ir::AlgebraicCase::new(
+                                ssf::ir::Variable::new("x"),
+                                vec![ssf::ir::AlgebraicAlternative::new(
+                                    ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                                    vec![],
+                                    42.0,
+                                )],
+                                None,
+                            ),
+                        )],
+                        None,
+                    ),
+                    ssf::types::Primitive::Float64,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
+
+    #[test]
     fn compile_bitcast() {
         compile(
             &ssf::ir::Module::new(
