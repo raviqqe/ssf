@@ -556,7 +556,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
                     cases.push((
                         self.compile(alternative.expression(), &variables)?,
-                        then_block,
+                        self.builder.get_insert_block().unwrap(),
                     ));
 
                     self.builder.build_unconditional_branch(phi_block);

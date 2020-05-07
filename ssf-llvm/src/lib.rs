@@ -518,4 +518,34 @@ mod tests {
             .unwrap();
         }
     }
+
+    #[test]
+    fn compile_nested_primitive_cases() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::FunctionDefinition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                    ssf::ir::PrimitiveCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::PrimitiveAlternative::new(
+                            42.0,
+                            ssf::ir::PrimitiveCase::new(
+                                ssf::ir::Variable::new("x"),
+                                vec![ssf::ir::PrimitiveAlternative::new(42.0, 42.0)],
+                                None,
+                            ),
+                        )],
+                        None,
+                    ),
+                    ssf::types::Primitive::Float64,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, Some("panic".into())),
+        )
+        .unwrap();
+    }
 }
