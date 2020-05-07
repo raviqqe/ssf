@@ -457,10 +457,13 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         }
                     }
 
+                    let expression = self.compile(alternative.expression(), &variables)?;
+
                     cases.push((
                         self.context.i64_type().const_int(constructor.tag(), false),
                         block,
-                        self.compile(alternative.expression(), &variables)?,
+                        self.builder.get_insert_block().unwrap(),
+                        expression,
                     ));
 
                     self.builder.build_unconditional_branch(phi_block);
@@ -488,7 +491,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     default_block,
                     &cases
                         .iter()
-                        .map(|(tag, block, _)| (*tag, *block))
+                        .map(|(tag, start_block, _, _)| (*tag, *start_block))
                         .collect::<Vec<_>>(),
                 );
 
@@ -496,15 +499,15 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 let phi = self.builder.build_phi(
                     cases
                         .get(0)
-                        .map(|(_, _, value)| value.get_type())
+                        .map(|(_, _, _, value)| value.get_type())
                         .unwrap_or_else(|| default_value.unwrap().get_type()),
                     "",
                 );
                 phi.add_incoming(
                     &cases
                         .iter()
-                        .map(|(_, block, value)| {
-                            (value as &dyn inkwell::values::BasicValue<'c>, *block)
+                        .map(|(_, _, end_block, value)| {
+                            (value as &dyn inkwell::values::BasicValue<'c>, *end_block)
                         })
                         .chain(match &default_value {
                             Some(default_value) => vec![(
@@ -553,7 +556,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
                     cases.push((
                         self.compile(alternative.expression(), &variables)?,
-                        then_block,
+                        self.builder.get_insert_block().unwrap(),
                     ));
 
                     self.builder.build_unconditional_branch(phi_block);
