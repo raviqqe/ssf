@@ -108,7 +108,7 @@ impl TypeChecker {
                 {
                     self.check_equality(
                         &self.check_expression(argument, variables)?,
-                        &element_type.unfold(constructor.algebraic_type()),
+                        &element_type,
                     )?;
                 }
 
@@ -219,12 +219,11 @@ impl TypeChecker {
 
                     let mut variables = variables.clone();
 
-                    for (name, type_) in alternative.element_names().iter().zip(
-                        constructor
-                            .constructor_type()
-                            .unfold(constructor.algebraic_type())
-                            .elements(),
-                    ) {
+                    for (name, type_) in alternative
+                        .element_names()
+                        .iter()
+                        .zip(constructor.constructor_type().elements())
+                    {
                         variables.insert(name, type_.clone());
                     }
 

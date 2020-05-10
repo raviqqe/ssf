@@ -4,6 +4,7 @@ mod constructor;
 mod function;
 mod primitive;
 mod type_;
+mod unfold;
 mod value;
 
 pub use algebraic::*;
