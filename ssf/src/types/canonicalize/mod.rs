@@ -77,6 +77,24 @@ mod tests {
                 .into()])])
                 .into(),
             ),
+            (
+                Algebraic::new(vec![Constructor::boxed(vec![Algebraic::new(vec![
+                    Constructor::unboxed(vec![Algebraic::new(vec![Constructor::boxed(vec![
+                        Value::Index(2).into(),
+                    ])])
+                    .into()]),
+                ])
+                .into()])])
+                .into(),
+                Algebraic::new(vec![Constructor::boxed(vec![Algebraic::new(vec![
+                    Constructor::unboxed(vec![Algebraic::new(vec![Constructor::boxed(vec![
+                        Value::Index(2).into(),
+                    ])])
+                    .into()]),
+                ])
+                .into()])])
+                .into(),
+            ),
         ] {
             assert_eq!(&canonicalize(type_), canonical_type);
         }

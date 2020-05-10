@@ -61,6 +61,7 @@ impl<'a> TypeEqualityChecker<'a> {
 
     fn equal_constructors(&self, one: &Constructor, other: &Constructor) -> bool {
         one.elements().len() == other.elements().len()
+            && one.is_boxed() == other.is_boxed()
             && one
                 .elements()
                 .iter()
