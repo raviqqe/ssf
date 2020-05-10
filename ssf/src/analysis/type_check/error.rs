@@ -1,8 +1,18 @@
+use crate::ir::*;
+use crate::types::Type;
 use std::error::Error;
 use std::fmt::Display;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct TypeCheckError;
+pub enum TypeCheckError {
+    AlgebraicExpected(Expression),
+    FunctionExpected(Expression),
+    NoAlternativeFound(Case),
+    PrimitiveExpected(Expression),
+    TypesNotMatched(Type, Type),
+    VariableNotFound(Variable),
+    WrongArgumentsLength(Expression),
+}
 
 impl Display for TypeCheckError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
