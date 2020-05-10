@@ -64,13 +64,10 @@ impl TypeChecker {
             variables.insert(argument.name(), argument.type_().clone());
         }
 
-        if self.check_expression(function_definition.body(), &variables)?
-            == function_definition.result_type().clone().into()
-        {
-            Ok(())
-        } else {
-            Err(TypeCheckError)
-        }
+        self.check_equality(
+            &self.check_expression(function_definition.body(), &variables)?,
+            &function_definition.result_type().clone().into(),
+        )
     }
 
     fn check_value_definition(
@@ -78,13 +75,10 @@ impl TypeChecker {
         value_definition: &ValueDefinition,
         variables: &HashMap<&str, Type>,
     ) -> Result<(), TypeCheckError> {
-        if self.check_expression(value_definition.body(), &variables)?
-            == value_definition.type_().clone().into()
-        {
-            Ok(())
-        } else {
-            Err(TypeCheckError)
-        }
+        self.check_equality(
+            &self.check_expression(value_definition.body(), &variables)?,
+            &value_definition.type_().clone().into(),
+        )
     }
 
     fn check_expression(
@@ -104,7 +98,7 @@ impl TypeChecker {
                 if constructor_application.arguments().len()
                     != constructor.constructor_type().elements().len()
                 {
-                    return Err(TypeCheckError);
+                    return Err(TypeCheckError::WrongArgumentsLength(expression.clone()));
                 }
 
                 for (argument, element_type) in constructor_application
@@ -112,11 +106,10 @@ impl TypeChecker {
                     .iter()
                     .zip(constructor.constructor_type().elements())
                 {
-                    if self.check_expression(argument, variables)?
-                        != element_type.unfold(constructor.algebraic_type())
-                    {
-                        return Err(TypeCheckError);
-                    }
+                    self.check_equality(
+                        &self.check_expression(argument, variables)?,
+                        &element_type.unfold(constructor.algebraic_type()),
+                    )?;
                 }
 
                 Ok(constructor_application
@@ -130,7 +123,7 @@ impl TypeChecker {
                     Type::Function(function_type) => {
                         if function_type.arguments().len() != function_application.arguments().len()
                         {
-                            return Err(TypeCheckError);
+                            return Err(TypeCheckError::WrongArgumentsLength(expression.clone()));
                         }
 
                         for (argument, expected_type) in function_application
@@ -138,14 +131,17 @@ impl TypeChecker {
                             .iter()
                             .zip(function_type.arguments())
                         {
-                            if &self.check_expression(argument, variables)? != expected_type {
-                                return Err(TypeCheckError);
-                            }
+                            self.check_equality(
+                                &self.check_expression(argument, variables)?,
+                                expected_type,
+                            )?;
                         }
 
                         Ok(function_type.result().clone().into())
                     }
-                    Type::Value(_) => Err(TypeCheckError),
+                    Type::Value(_) => Err(TypeCheckError::FunctionExpected(
+                        function_application.function().clone(),
+                    )),
                 }
             }
             Expression::LetFunctions(let_functions) => {
@@ -190,7 +186,7 @@ impl TypeChecker {
                         | Operator::Divide => lhs_type,
                     })
                 } else {
-                    Err(TypeCheckError)
+                    Err(TypeCheckError::TypesNotMatched(lhs_type, rhs_type))
                 }
             }
             Expression::Variable(variable) => self.check_variable(variable, variables),
@@ -208,15 +204,18 @@ impl TypeChecker {
                     .check_expression(algebraic_case.argument(), variables)?
                     .into_value()
                     .and_then(|value_type| value_type.into_algebraic())
-                    .ok_or(TypeCheckError)?;
+                    .ok_or_else(|| {
+                        TypeCheckError::AlgebraicExpected(algebraic_case.argument().clone())
+                    })?;
                 let mut expression_type = None;
 
                 for alternative in algebraic_case.alternatives() {
                     let constructor = alternative.constructor();
 
-                    if constructor.algebraic_type() != &argument_type {
-                        return Err(TypeCheckError);
-                    }
+                    self.check_equality(
+                        &constructor.algebraic_type().clone().into(),
+                        &argument_type.clone().into(),
+                    )?;
 
                     let mut variables = variables.clone();
 
@@ -234,9 +233,7 @@ impl TypeChecker {
 
                     match &expression_type {
                         Some(expression_type) => {
-                            if &alternative_type != expression_type {
-                                return Err(TypeCheckError);
-                            }
+                            self.check_equality(&alternative_type, expression_type)?;
                         }
                         None => expression_type = Some(alternative_type),
                     }
@@ -252,37 +249,36 @@ impl TypeChecker {
 
                     match &expression_type {
                         Some(expression_type) => {
-                            if &alternative_type != expression_type {
-                                return Err(TypeCheckError);
-                            }
+                            self.check_equality(&alternative_type, expression_type)?;
                         }
                         None => expression_type = Some(alternative_type),
                     }
                 }
 
-                expression_type.ok_or(TypeCheckError)
+                expression_type.ok_or_else(|| TypeCheckError::NoAlternativeFound(case.clone()))
             }
             Case::Primitive(primitive_case) => {
                 let argument_type = self
                     .check_expression(primitive_case.argument(), variables)?
                     .into_value()
                     .and_then(|value_type| value_type.into_primitive())
-                    .ok_or(TypeCheckError)?;
+                    .ok_or_else(|| {
+                        TypeCheckError::PrimitiveExpected(primitive_case.argument().clone())
+                    })?;
                 let mut expression_type = None;
 
                 for alternative in primitive_case.alternatives() {
-                    if self.check_primitive(alternative.primitive()) != argument_type {
-                        return Err(TypeCheckError);
-                    }
+                    self.check_equality(
+                        &self.check_primitive(alternative.primitive()).into(),
+                        &argument_type.clone().into(),
+                    )?;
 
                     let alternative_type =
                         self.check_expression(alternative.expression(), variables)?;
 
                     match &expression_type {
                         Some(expression_type) => {
-                            if &alternative_type != expression_type {
-                                return Err(TypeCheckError);
-                            }
+                            self.check_equality(&alternative_type, expression_type)?;
                         }
                         None => expression_type = Some(alternative_type),
                     }
@@ -298,15 +294,13 @@ impl TypeChecker {
 
                     match &expression_type {
                         Some(expression_type) => {
-                            if &alternative_type != expression_type {
-                                return Err(TypeCheckError);
-                            }
+                            self.check_equality(&alternative_type, expression_type)?;
                         }
                         None => expression_type = Some(alternative_type),
                     }
                 }
 
-                expression_type.ok_or(TypeCheckError)
+                expression_type.ok_or_else(|| TypeCheckError::NoAlternativeFound(case.clone()))
             }
         }
     }
@@ -327,6 +321,14 @@ impl TypeChecker {
         variables
             .get(variable.name())
             .cloned()
-            .ok_or(TypeCheckError)
+            .ok_or_else(|| TypeCheckError::VariableNotFound(variable.clone()))
+    }
+
+    fn check_equality(&self, one: &Type, other: &Type) -> Result<(), TypeCheckError> {
+        if one == other {
+            Ok(())
+        } else {
+            Err(TypeCheckError::TypesNotMatched(one.clone(), other.clone()))
+        }
     }
 }
