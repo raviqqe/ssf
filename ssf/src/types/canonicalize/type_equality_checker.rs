@@ -189,6 +189,10 @@ mod tests {
                 ])])
                 .into(),
             ),
+            (
+                Algebraic::new(vec![Constructor::boxed(vec![Primitive::Float64.into()])]).into(),
+                Algebraic::new(vec![Constructor::unboxed(vec![Primitive::Float64.into()])]).into(),
+            ),
         ] {
             assert!(!TypeEqualityChecker::new(&[]).equal(one, other));
         }
