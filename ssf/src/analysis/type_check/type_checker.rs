@@ -186,10 +186,7 @@ impl TypeChecker {
                         | Operator::Divide => lhs_type,
                     })
                 } else {
-                    Err(TypeCheckError::TypesNotMatched(
-                        lhs_type.clone(),
-                        rhs_type.clone(),
-                    ))
+                    Err(TypeCheckError::TypesNotMatched(lhs_type, rhs_type))
                 }
             }
             Expression::Variable(variable) => self.check_variable(variable, variables),
@@ -207,9 +204,9 @@ impl TypeChecker {
                     .check_expression(algebraic_case.argument(), variables)?
                     .into_value()
                     .and_then(|value_type| value_type.into_algebraic())
-                    .ok_or(TypeCheckError::AlgebraicExpected(
-                        algebraic_case.argument().clone(),
-                    ))?;
+                    .ok_or_else(|| {
+                        TypeCheckError::AlgebraicExpected(algebraic_case.argument().clone())
+                    })?;
                 let mut expression_type = None;
 
                 for alternative in algebraic_case.alternatives() {
@@ -258,16 +255,16 @@ impl TypeChecker {
                     }
                 }
 
-                expression_type.ok_or(TypeCheckError::NoAlternativeFound(case.clone()))
+                expression_type.ok_or_else(|| TypeCheckError::NoAlternativeFound(case.clone()))
             }
             Case::Primitive(primitive_case) => {
                 let argument_type = self
                     .check_expression(primitive_case.argument(), variables)?
                     .into_value()
                     .and_then(|value_type| value_type.into_primitive())
-                    .ok_or(TypeCheckError::PrimitiveExpected(
-                        primitive_case.argument().clone(),
-                    ))?;
+                    .ok_or_else(|| {
+                        TypeCheckError::PrimitiveExpected(primitive_case.argument().clone())
+                    })?;
                 let mut expression_type = None;
 
                 for alternative in primitive_case.alternatives() {
@@ -303,7 +300,7 @@ impl TypeChecker {
                     }
                 }
 
-                expression_type.ok_or(TypeCheckError::NoAlternativeFound(case.clone()))
+                expression_type.ok_or_else(|| TypeCheckError::NoAlternativeFound(case.clone()))
             }
         }
     }
@@ -324,7 +321,7 @@ impl TypeChecker {
         variables
             .get(variable.name())
             .cloned()
-            .ok_or(TypeCheckError::VariableNotFound(variable.clone()))
+            .ok_or_else(|| TypeCheckError::VariableNotFound(variable.clone()))
     }
 
     fn check_equality(&self, one: &Type, other: &Type) -> Result<(), TypeCheckError> {
