@@ -1,4 +1,4 @@
-use crate::types::{Algebraic, Constructor, Type, Value};
+use crate::types::*;
 
 pub struct TypeEqualityChecker<'a> {
     pairs: Vec<(&'a Algebraic, &'a Algebraic)>,
@@ -83,7 +83,6 @@ impl<'a> TypeEqualityChecker<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Algebraic, Function, Primitive};
 
     #[test]
     fn equal() {

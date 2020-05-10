@@ -11,7 +11,7 @@ pub(crate) fn canonicalize(type_: &Type) -> Type {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Algebraic, Constructor, Function, Primitive, Value};
+    use crate::types::*;
     use pretty_assertions::assert_eq;
 
     #[test]

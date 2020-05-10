@@ -1,5 +1,5 @@
 use super::type_equality_checker::TypeEqualityChecker;
-use crate::types::{Algebraic, Constructor, Function, Type, Value};
+use crate::types::*;
 
 pub struct TypeCanonicalizer<'a> {
     types: Vec<&'a Algebraic>,
