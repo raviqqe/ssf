@@ -1,4 +1,5 @@
 use super::constructor::Constructor;
+use super::unfold::unfold;
 use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -51,23 +52,7 @@ impl Algebraic {
     }
 
     pub fn unfold(&self) -> Self {
-        Self {
-            constructors: self
-                .constructors
-                .iter()
-                .map(|(tag, constructor)| (*tag, constructor.unfold(self)))
-                .collect(),
-        }
-    }
-
-    pub(crate) fn unfold_with(&self, algebraic_type: &Self) -> Self {
-        Self {
-            constructors: self
-                .constructors
-                .iter()
-                .map(|(tag, constructor)| (*tag, constructor.unfold(algebraic_type)))
-                .collect(),
-        }
+        unfold(self)
     }
 }
 

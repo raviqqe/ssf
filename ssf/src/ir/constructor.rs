@@ -3,12 +3,17 @@ use crate::types::{self, Algebraic, Type};
 #[derive(Clone, Debug, PartialEq)]
 pub struct Constructor {
     type_: Algebraic,
+    unfolded_type: Algebraic,
     tag: u64,
 }
 
 impl Constructor {
     pub fn new(type_: Algebraic, tag: u64) -> Self {
-        Self { type_, tag }
+        Self {
+            unfolded_type: type_.unfold(),
+            type_,
+            tag,
+        }
     }
 
     pub fn algebraic_type(&self) -> &Algebraic {
@@ -16,7 +21,7 @@ impl Constructor {
     }
 
     pub fn constructor_type(&self) -> &types::Constructor {
-        &self.type_.constructors()[&self.tag]
+        &self.unfolded_type.constructors()[&self.tag]
     }
 
     pub fn tag(&self) -> u64 {
@@ -24,12 +29,13 @@ impl Constructor {
     }
 
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
-        Self {
-            type_: convert(&self.type_.clone().into())
+        Self::new(
+            convert(&self.type_.clone().into())
                 .into_value()
-                .and_then(|value_type| value_type.into_algebraic())
+                .unwrap()
+                .into_algebraic()
                 .unwrap(),
-            tag: self.tag,
-        }
+            self.tag,
+        )
     }
 }
