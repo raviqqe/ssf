@@ -35,7 +35,7 @@ impl TypeUnfolder {
                 if *index == self.index {
                     self.algebraic_type.clone().into()
                 } else {
-                    Value::Index(*index).into()
+                    Value::Index(*index)
                 }
             }
             Value::Primitive(_) => value.clone(),
