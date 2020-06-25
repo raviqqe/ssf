@@ -281,7 +281,7 @@ mod tests {
     }
 
     #[test]
-    fn infer_environment() {
+    fn infer_empty_environment_of_global_function() {
         assert_eq!(
             Module::new(
                 vec![],
@@ -306,6 +306,10 @@ mod tests {
                 vec![]
             ))
         );
+    }
+
+    #[test]
+    fn infer_empty_environment_of_global_function_using_global_variable() {
         assert_eq!(
             Module::new(
                 vec![],
@@ -336,6 +340,10 @@ mod tests {
                 vec!["y".into()]
             ))
         );
+    }
+
+    #[test]
+    fn infer_environment_with_captured_argument() {
         assert_eq!(
             Module::new(
                 vec![],
