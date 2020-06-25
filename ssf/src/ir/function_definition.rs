@@ -130,20 +130,18 @@ impl FunctionDefinition {
         global_variables: &HashSet<String>,
     ) -> Self {
         let mut variables = original_variables.clone();
+        let mut excluded_variables = global_variables.clone();
 
         for argument in &self.arguments {
             variables.insert(argument.name().into(), argument.type_().clone());
+            excluded_variables.insert(argument.name().into());
         }
 
         Self::with_environment(
             self.name.clone(),
-            self.find_variables(global_variables)
+            self.body
+                .find_variables(&excluded_variables)
                 .iter()
-                .filter(|name| {
-                    self.arguments
-                        .iter()
-                        .all(|argument| argument.name() != name.as_str())
-                })
                 .map(|name| Argument::new(name, original_variables[name].clone()))
                 .collect(),
             self.arguments.clone(),
