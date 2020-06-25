@@ -281,7 +281,7 @@ mod tests {
     }
 
     #[test]
-    fn infer_environment() {
+    fn infer_empty_environment_of_global_function() {
         assert_eq!(
             Module::new(
                 vec![],
@@ -306,6 +306,10 @@ mod tests {
                 vec![]
             ))
         );
+    }
+
+    #[test]
+    fn infer_empty_environment_of_global_function_using_global_variable() {
         assert_eq!(
             Module::new(
                 vec![],
@@ -336,6 +340,10 @@ mod tests {
                 vec!["y".into()]
             ))
         );
+    }
+
+    #[test]
+    fn infer_environment_with_captured_argument() {
         assert_eq!(
             Module::new(
                 vec![],
@@ -381,6 +389,62 @@ mod tests {
                     .into()
                 ],
                 vec!["y".into()]
+            ))
+        );
+    }
+
+    #[test]
+    fn infer_environment_of_recursive_function_in_let_expression() {
+        assert_eq!(
+            Module::new(
+                vec![],
+                vec![FunctionDefinition::new(
+                    "f",
+                    vec![Argument::new("x", types::Primitive::Float64)],
+                    LetFunctions::new(
+                        vec![FunctionDefinition::new(
+                            "g",
+                            vec![Argument::new("y", types::Primitive::Float64)],
+                            FunctionApplication::new(
+                                Variable::new("g"),
+                                vec![Variable::new("y").into()]
+                            ),
+                            types::Primitive::Float64
+                        )],
+                        42.0
+                    ),
+                    types::Primitive::Float64
+                )
+                .into()]
+            ),
+            Ok(Module::without_validation(
+                vec![],
+                vec![FunctionDefinition::new(
+                    "f",
+                    vec![Argument::new("x", types::Primitive::Float64)],
+                    LetFunctions::new(
+                        vec![FunctionDefinition::with_environment(
+                            "g",
+                            vec![Argument::new(
+                                "g",
+                                types::Function::new(
+                                    vec![types::Primitive::Float64.into()],
+                                    types::Primitive::Float64
+                                )
+                            )],
+                            vec![Argument::new("y", types::Primitive::Float64)],
+                            FunctionApplication::new(
+                                Variable::new("g"),
+                                vec![Variable::new("y").into()]
+                            ),
+                            types::Primitive::Float64
+                        )],
+                        42.0
+                    ),
+                    types::Primitive::Float64
+                )
+                .into()],
+                vec![]
             ))
         );
     }
