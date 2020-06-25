@@ -220,12 +220,15 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                             .as_pointer_value(),
                     );
 
-                    for (index, value) in definition
+                    for (index, &&value) in definition
                         .environment()
                         .iter()
-                        .map(|argument| variables.get(argument.name()).copied())
-                        .collect::<Option<Vec<_>>>()
-                        .ok_or(CompileError::VariableNotFound)?
+                        .map(|argument| {
+                            variables.get(argument.name()).ok_or_else(|| {
+                                CompileError::VariableNotFound(argument.name().into())
+                            })
+                        })
+                        .collect::<Result<Vec<_>, _>>()?
                         .iter()
                         .enumerate()
                     {
@@ -241,7 +244,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                                     "",
                                 )
                             },
-                            *value,
+                            value,
                         );
                     }
                 }
@@ -649,7 +652,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         match variables.get(variable.name()) {
             Some(value) => Ok(self.unwrap_value(*value)),
-            None => Err(CompileError::VariableNotFound),
+            None => Err(CompileError::VariableNotFound(variable.name().into())),
         }
     }
 
