@@ -4,7 +4,7 @@ use std::fmt::Display;
 #[derive(Clone, Debug, PartialEq)]
 pub enum CompileError {
     Llvm(String),
-    VariableNotFound,
+    VariableNotFound(String),
 }
 
 impl Display for CompileError {
