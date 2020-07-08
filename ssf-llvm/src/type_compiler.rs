@@ -243,6 +243,14 @@ mod tests {
     }
 
     #[test]
+    fn compile_function_type_with_no_argument() {
+        let context = inkwell::context::Context::create();
+
+        TypeCompiler::new(&context)
+            .compile(&ssf::types::Function::new(vec![], ssf::types::Primitive::Float64).into());
+    }
+
+    #[test]
     fn compile_algebraic_with_one_constructor() {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile(
