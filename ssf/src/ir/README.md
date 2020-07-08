@@ -7,4 +7,4 @@
 In the ssf IR, heap allocation happens in the following cases:
 
 - To create boxed constructors of ADTs.
-- To create closures in let-function expressions.
+- To create closures in let-functions expressions.
