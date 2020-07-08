@@ -1,6 +1,7 @@
 use super::algebraic::Algebraic;
 use super::primitive::Primitive;
 
+/// Value types are ones which are not functions.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Value {
     Algebraic(Algebraic),

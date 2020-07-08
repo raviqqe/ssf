@@ -1,6 +1,10 @@
 use super::type_::Type;
 use super::value::Value;
 
+/// Function types map multiple arguments to single results.
+///
+/// Their result types are always value types, which is to prevent invalid
+/// recursive types of functions and to simplify their compilation.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Function {
     arguments: Vec<Type>,
