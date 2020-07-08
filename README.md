@@ -25,7 +25,7 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 - Optimization of algebraic data types
 - Bitcast
 
-### Stuff not supported...
+### Ones not supported...
 
 - Type inference
   - The IR needs to be fully-typed already.
