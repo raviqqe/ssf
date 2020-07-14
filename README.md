@@ -24,6 +24,7 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
   - Injectable `malloc` functions
 - Optimization of algebraic data types
 - Bitcast
+- Lazy evaluation
 
 ### Ones not supported...
 
