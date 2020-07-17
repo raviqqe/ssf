@@ -22,7 +22,7 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
         type_compiler: &'t TypeCompiler<'c>,
         compile_configuration: &'c CompileConfiguration,
     ) -> ModuleCompiler<'c, 'm, 't> {
-        ModuleCompiler {
+        Self {
             context,
             module,
             type_compiler,
