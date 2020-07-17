@@ -640,6 +640,33 @@ mod tests {
     }
 
     #[test]
+    fn compile_thunk_evaluation() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![
+                    ssf::ir::FunctionDefinition::new(
+                        "f",
+                        vec![],
+                        42.0,
+                        ssf::types::Primitive::Float64,
+                    )
+                    .into(),
+                    ssf::ir::ValueDefinition::new(
+                        "x",
+                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("f"), vec![]),
+                        ssf::types::Primitive::Float64,
+                    )
+                    .into(),
+                ],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
+
+    #[test]
     fn compile_let_functions_expression_with_free_variable() {
         compile(
             &ssf::ir::Module::new(
