@@ -138,17 +138,22 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     .compile(function_application.function(), variables)?
                     .into_pointer_value();
 
-                let mut arguments = vec![unsafe {
-                    self.builder.build_gep(
-                        closure,
-                        &[
-                            self.context.i32_type().const_int(0, false),
-                            self.context.i32_type().const_int(1, false),
-                        ],
-                        "",
-                    )
-                }
-                .into()];
+                let mut arguments = vec![self.builder.build_bitcast(
+                    unsafe {
+                        self.builder.build_gep(
+                            closure,
+                            &[
+                                self.context.i32_type().const_int(0, false),
+                                self.context.i32_type().const_int(1, false),
+                            ],
+                            "",
+                        )
+                    },
+                    self.type_compiler
+                        .compile_unsized_environment()
+                        .ptr_type(inkwell::AddressSpace::Generic),
+                    "",
+                )];
 
                 for argument in function_application.arguments() {
                     arguments.push(self.compile(argument, variables)?);
@@ -184,8 +189,9 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 let mut closures = HashMap::<&str, inkwell::values::PointerValue>::new();
 
                 for definition in let_functions.definitions() {
-                    let closure_type = self.type_compiler.compile_closure(definition);
-                    let pointer = self.compile_struct_malloc(closure_type);
+                    let pointer = self.compile_struct_malloc(
+                        self.type_compiler.compile_sized_closure(definition),
+                    );
 
                     variables.insert(
                         definition.name().into(),
@@ -220,6 +226,26 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                             .as_pointer_value(),
                     );
 
+                    let environment = self
+                        .builder
+                        .build_bitcast(
+                            unsafe {
+                                self.builder.build_gep(
+                                    closure,
+                                    &[
+                                        self.context.i32_type().const_int(0, false),
+                                        self.context.i32_type().const_int(1, false),
+                                    ],
+                                    "",
+                                )
+                            },
+                            self.type_compiler
+                                .compile_environment(definition)
+                                .ptr_type(inkwell::AddressSpace::Generic),
+                            "",
+                        )
+                        .into_pointer_value();
+
                     for (index, &&value) in definition
                         .environment()
                         .iter()
@@ -235,10 +261,9 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         self.builder.build_store(
                             unsafe {
                                 self.builder.build_gep(
-                                    closure,
+                                    environment,
                                     &[
                                         self.context.i32_type().const_int(0, false),
-                                        self.context.i32_type().const_int(1, false),
                                         self.context.i32_type().const_int(index as u64, false),
                                     ],
                                     "",

@@ -638,4 +638,92 @@ mod tests {
         )
         .unwrap();
     }
+
+    #[test]
+    fn compile_thunk_evaluation() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![
+                    ssf::ir::FunctionDefinition::new(
+                        "f",
+                        vec![],
+                        42.0,
+                        ssf::types::Primitive::Float64,
+                    )
+                    .into(),
+                    ssf::ir::ValueDefinition::new(
+                        "x",
+                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("f"), vec![]),
+                        ssf::types::Primitive::Float64,
+                    )
+                    .into(),
+                ],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn compile_let_functions_expression_with_free_variable() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::FunctionDefinition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                    ssf::ir::LetFunctions::new(
+                        vec![ssf::ir::FunctionDefinition::new(
+                            "g",
+                            vec![ssf::ir::Argument::new("y", ssf::types::Primitive::Float64)],
+                            ssf::ir::Variable::new("x"),
+                            ssf::types::Primitive::Float64,
+                        )],
+                        42.0,
+                    ),
+                    ssf::types::Primitive::Float64,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn compile_let_functions_expression_with_with_two_free_variables() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::FunctionDefinition::new(
+                    "f",
+                    vec![
+                        ssf::ir::Argument::new("x", ssf::types::Primitive::Float64),
+                        ssf::ir::Argument::new("y", ssf::types::Primitive::Float64),
+                    ],
+                    ssf::ir::LetFunctions::new(
+                        vec![ssf::ir::FunctionDefinition::new(
+                            "g",
+                            vec![ssf::ir::Argument::new("z", ssf::types::Primitive::Float64)],
+                            ssf::ir::Operation::new(
+                                ssf::ir::Operator::Add,
+                                ssf::ir::Variable::new("x"),
+                                ssf::ir::Variable::new("y"),
+                            ),
+                            ssf::types::Primitive::Float64,
+                        )],
+                        42.0,
+                    ),
+                    ssf::types::Primitive::Float64,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
 }

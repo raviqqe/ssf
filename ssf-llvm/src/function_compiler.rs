@@ -34,14 +34,13 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         &self,
         function_definition: &ssf::ir::FunctionDefinition,
     ) -> Result<inkwell::values::FunctionValue, CompileError> {
-        let closure_type = self.type_compiler.compile_closure(function_definition);
+        let entry_function_type = self
+            .type_compiler
+            .compile_entry_function(function_definition.type_());
 
         let entry_function = self.module.add_function(
             &Self::generate_closure_entry_name(function_definition.name()),
-            closure_type.get_field_types()[0]
-                .into_pointer_type()
-                .get_element_type()
-                .into_function_type(),
+            entry_function_type,
             None,
         );
 
@@ -51,8 +50,8 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         let environment = builder
             .build_bitcast(
                 entry_function.get_params()[0],
-                closure_type.get_field_types()[1]
-                    .into_struct_type()
+                self.type_compiler
+                    .compile_environment(function_definition)
                     .ptr_type(inkwell::AddressSpace::Generic),
                 "",
             )
@@ -120,7 +119,8 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
                         builder
                             .build_bitcast(
                                 environment,
-                                closure_type.get_field_types()[0]
+                                entry_function_type
+                                    .ptr_type(inkwell::AddressSpace::Generic)
                                     .ptr_type(inkwell::AddressSpace::Generic),
                                 "",
                             )
@@ -146,11 +146,9 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         &self,
         function_definition: &ssf::ir::FunctionDefinition,
     ) -> inkwell::values::FunctionValue {
-        let closure_type = self.type_compiler.compile_closure(function_definition);
-        let entry_function_type = closure_type.get_field_types()[0]
-            .into_pointer_type()
-            .get_element_type()
-            .into_function_type();
+        let entry_function_type = self
+            .type_compiler
+            .compile_entry_function(function_definition.type_());
 
         let entry_function = self.module.add_function(
             &Self::generate_normal_thunk_entry_name(function_definition.name()),

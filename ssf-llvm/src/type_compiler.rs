@@ -85,7 +85,7 @@ impl<'c> TypeCompiler<'c> {
         self.context.struct_type(&elements, false)
     }
 
-    pub fn compile_closure(
+    pub fn compile_sized_closure(
         &self,
         function_definition: &ssf::ir::FunctionDefinition,
     ) -> inkwell::types::StructType<'c> {
@@ -94,7 +94,7 @@ impl<'c> TypeCompiler<'c> {
                 self.compile_entry_function(function_definition.type_())
                     .ptr_type(inkwell::AddressSpace::Generic)
                     .into(),
-                self.compile_environment(function_definition).into(),
+                self.compile_payload(function_definition).into(),
             ],
             false,
         )
@@ -115,21 +115,14 @@ impl<'c> TypeCompiler<'c> {
         )
     }
 
-    fn compile_environment(
+    fn compile_payload(
         &self,
         function_definition: &ssf::ir::FunctionDefinition,
     ) -> inkwell::types::StructType {
         let size = max(
-            self.target_machine.get_target_data().get_store_size(
-                &self.context.struct_type(
-                    &function_definition
-                        .environment()
-                        .iter()
-                        .map(|argument| self.compile(argument.type_()))
-                        .collect::<Vec<_>>(),
-                    false,
-                ),
-            ),
+            self.target_machine
+                .get_target_data()
+                .get_store_size(&self.compile_environment(function_definition)),
             self.target_machine
                 .get_target_data()
                 .get_store_size(&self.compile_value(function_definition.result_type())),
@@ -143,14 +136,28 @@ impl<'c> TypeCompiler<'c> {
         )
     }
 
-    fn compile_unsized_environment(&self) -> inkwell::types::StructType<'c> {
+    pub fn compile_environment(
+        &self,
+        function_definition: &ssf::ir::FunctionDefinition,
+    ) -> inkwell::types::StructType<'c> {
+        self.context.struct_type(
+            &function_definition
+                .environment()
+                .iter()
+                .map(|argument| self.compile(argument.type_()))
+                .collect::<Vec<_>>(),
+            false,
+        )
+    }
+
+    pub fn compile_unsized_environment(&self) -> inkwell::types::StructType<'c> {
         self.context.struct_type(&[], false)
     }
 
-    fn compile_entry_function(
+    pub fn compile_entry_function(
         &self,
         function: &ssf::types::Function,
-    ) -> inkwell::types::FunctionType {
+    ) -> inkwell::types::FunctionType<'c> {
         let mut arguments = vec![self
             .compile_unsized_environment()
             .ptr_type(inkwell::AddressSpace::Generic)
@@ -344,6 +351,6 @@ mod tests {
         let context = inkwell::context::Context::create();
 
         TypeCompiler::new(&context)
-            .compile_closure(module.definitions()[0].to_function_definition().unwrap());
+            .compile_sized_closure(module.definitions()[0].to_function_definition().unwrap());
     }
 }
