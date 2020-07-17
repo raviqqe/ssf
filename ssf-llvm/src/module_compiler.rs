@@ -103,14 +103,14 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
         function_definition: &ssf::ir::FunctionDefinition,
     ) -> Result<(), CompileError> {
         let global_variable = self.global_variables[function_definition.name()];
-        let struct_type = global_variable
+        let closure_type = global_variable
             .as_pointer_value()
             .get_type()
             .get_element_type()
             .into_struct_type();
 
         global_variable.set_initializer(
-            &struct_type.const_named_struct(&[
+            &closure_type.const_named_struct(&[
                 FunctionCompiler::new(
                     self.context,
                     self.module,
@@ -122,7 +122,7 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
                 .as_global_value()
                 .as_pointer_value()
                 .into(),
-                struct_type.get_field_types()[1]
+                closure_type.get_field_types()[1]
                     .into_struct_type()
                     .get_undef()
                     .into(),
