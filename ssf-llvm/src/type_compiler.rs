@@ -1,4 +1,5 @@
 use inkwell::types::BasicType;
+use std::cmp::max;
 
 static EMPTY_BOXED_CONSTRUCTOR: ssf::types::Constructor =
     ssf::types::Constructor::boxed(Vec::new());
@@ -93,8 +94,7 @@ impl<'c> TypeCompiler<'c> {
                 self.compile_entry_function(function_definition.type_())
                     .ptr_type(inkwell::AddressSpace::Generic)
                     .into(),
-                self.compile_environment(function_definition.environment())
-                    .into(),
+                self.compile_environment(function_definition).into(),
             ],
             false,
         )
@@ -117,12 +117,27 @@ impl<'c> TypeCompiler<'c> {
 
     fn compile_environment(
         &self,
-        free_variables: &[ssf::ir::Argument],
+        function_definition: &ssf::ir::FunctionDefinition,
     ) -> inkwell::types::StructType {
+        let size = max(
+            self.target_machine.get_target_data().get_store_size(
+                &self.context.struct_type(
+                    &function_definition
+                        .environment()
+                        .iter()
+                        .map(|argument| self.compile(argument.type_()))
+                        .collect::<Vec<_>>(),
+                    false,
+                ),
+            ),
+            self.target_machine
+                .get_target_data()
+                .get_store_size(&self.compile_value(function_definition.result_type())),
+        );
+
         self.context.struct_type(
-            &free_variables
-                .iter()
-                .map(|argument| self.compile(argument.type_()))
+            &(0..((size as isize - 1) / 8 + 1))
+                .map(|_| self.context.i64_type().into())
                 .collect::<Vec<_>>(),
             false,
         )
@@ -243,6 +258,14 @@ mod tests {
     }
 
     #[test]
+    fn compile_function_type_with_no_argument() {
+        let context = inkwell::context::Context::create();
+
+        TypeCompiler::new(&context)
+            .compile(&ssf::types::Function::new(vec![], ssf::types::Primitive::Float64).into());
+    }
+
+    #[test]
     fn compile_algebraic_with_one_constructor() {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile(
@@ -302,5 +325,25 @@ mod tests {
         };
 
         assert_eq!(compile_type(), compile_type());
+    }
+
+    #[test]
+    fn compile_updatable_closure() {
+        let module = ssf::ir::Module::new(
+            vec![],
+            vec![ssf::ir::FunctionDefinition::new(
+                "f",
+                vec![],
+                42,
+                ssf::types::Primitive::Integer64,
+            )
+            .into()],
+        )
+        .unwrap();
+
+        let context = inkwell::context::Context::create();
+
+        TypeCompiler::new(&context)
+            .compile_closure(module.definitions()[0].to_function_definition().unwrap());
     }
 }

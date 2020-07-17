@@ -26,6 +26,20 @@ impl Definition {
         }
     }
 
+    pub fn to_function_definition(&self) -> Option<&FunctionDefinition> {
+        match self {
+            Self::FunctionDefinition(function_definition) => Some(function_definition),
+            Self::ValueDefinition(_) => None,
+        }
+    }
+
+    pub fn to_value_definition(&self) -> Option<&ValueDefinition> {
+        match self {
+            Self::FunctionDefinition(_) => None,
+            Self::ValueDefinition(value_definition) => Some(value_definition),
+        }
+    }
+
     pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
         match self {
             Self::FunctionDefinition(function_definition) => {
