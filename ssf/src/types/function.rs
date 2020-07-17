@@ -5,6 +5,9 @@ use super::value::Value;
 ///
 /// Their result types are always value types, which is to prevent invalid
 /// recursive types of functions and to simplify their compilation.
+///
+/// Function types without arguments represent thunks that are always
+/// updatable.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Function {
     arguments: Vec<Type>,

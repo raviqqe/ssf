@@ -619,4 +619,23 @@ mod tests {
         )
         .unwrap();
     }
+
+    #[test]
+    fn compile_thunk_of_global_variable() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::FunctionDefinition::new(
+                    "f",
+                    vec![],
+                    42.0,
+                    ssf::types::Primitive::Float64,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
 }
