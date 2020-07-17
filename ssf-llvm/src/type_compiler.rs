@@ -85,7 +85,7 @@ impl<'c> TypeCompiler<'c> {
         self.context.struct_type(&elements, false)
     }
 
-    pub fn compile_closure(
+    pub fn compile_sized_closure(
         &self,
         function_definition: &ssf::ir::FunctionDefinition,
     ) -> inkwell::types::StructType<'c> {
@@ -136,10 +136,10 @@ impl<'c> TypeCompiler<'c> {
         )
     }
 
-    fn compile_environment(
+    pub fn compile_environment(
         &self,
         function_definition: &ssf::ir::FunctionDefinition,
-    ) -> inkwell::types::StructType {
+    ) -> inkwell::types::StructType<'c> {
         self.context.struct_type(
             &function_definition
                 .environment()
@@ -150,14 +150,14 @@ impl<'c> TypeCompiler<'c> {
         )
     }
 
-    fn compile_unsized_environment(&self) -> inkwell::types::StructType<'c> {
+    pub fn compile_unsized_environment(&self) -> inkwell::types::StructType<'c> {
         self.context.struct_type(&[], false)
     }
 
-    fn compile_entry_function(
+    pub fn compile_entry_function(
         &self,
         function: &ssf::types::Function,
-    ) -> inkwell::types::FunctionType {
+    ) -> inkwell::types::FunctionType<'c> {
         let mut arguments = vec![self
             .compile_unsized_environment()
             .ptr_type(inkwell::AddressSpace::Generic)
@@ -351,6 +351,6 @@ mod tests {
         let context = inkwell::context::Context::create();
 
         TypeCompiler::new(&context)
-            .compile_closure(module.definitions()[0].to_function_definition().unwrap());
+            .compile_sized_closure(module.definitions()[0].to_function_definition().unwrap());
     }
 }

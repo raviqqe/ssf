@@ -49,7 +49,7 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
         for definition in ir_module.definitions() {
             match definition {
                 ssf::ir::Definition::FunctionDefinition(function_definition) => {
-                    self.declare_function(function_definition.name(), function_definition.type_())
+                    self.define_function(function_definition)
                 }
                 ssf::ir::Definition::ValueDefinition(value_definition) => {
                     self.declare_global_variable(value_definition.name(), value_definition.type_())
@@ -86,32 +86,47 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
         );
     }
 
+    fn define_function(&mut self, function_definition: &ssf::ir::FunctionDefinition) {
+        self.global_variables.insert(
+            function_definition.name().into(),
+            self.module.add_global(
+                self.type_compiler
+                    .compile_sized_closure(function_definition),
+                None,
+                function_definition.name(),
+            ),
+        );
+    }
+
     fn compile_function(
         &mut self,
         function_definition: &ssf::ir::FunctionDefinition,
     ) -> Result<(), CompileError> {
         let global_variable = self.global_variables[function_definition.name()];
+        let struct_type = global_variable
+            .as_pointer_value()
+            .get_type()
+            .get_element_type()
+            .into_struct_type();
 
         global_variable.set_initializer(
-            &global_variable
+            &struct_type.const_named_struct(&[
+                FunctionCompiler::new(
+                    self.context,
+                    self.module,
+                    self.type_compiler,
+                    &self.global_variables,
+                    self.compile_configuration,
+                )
+                .compile(function_definition)?
+                .as_global_value()
                 .as_pointer_value()
-                .get_type()
-                .get_element_type()
-                .into_struct_type()
-                .const_named_struct(&[
-                    FunctionCompiler::new(
-                        self.context,
-                        self.module,
-                        self.type_compiler,
-                        &self.global_variables,
-                        self.compile_configuration,
-                    )
-                    .compile(function_definition)?
-                    .as_global_value()
-                    .as_pointer_value()
+                .into(),
+                struct_type.get_field_types()[1]
+                    .into_struct_type()
+                    .get_undef()
                     .into(),
-                    self.context.const_struct(&[], false).into(),
-                ]),
+            ]),
         );
 
         Ok(())
