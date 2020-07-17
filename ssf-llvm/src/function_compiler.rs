@@ -146,8 +146,10 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         &self,
         function_definition: &ssf::ir::FunctionDefinition,
     ) -> inkwell::values::FunctionValue {
-        let closure_type = self.type_compiler.compile_closure(function_definition);
-        let entry_function_type = closure_type.get_field_types()[0]
+        let entry_function_type = self
+            .type_compiler
+            .compile_closure(function_definition)
+            .get_field_types()[0]
             .into_pointer_type()
             .get_element_type()
             .into_function_type();
