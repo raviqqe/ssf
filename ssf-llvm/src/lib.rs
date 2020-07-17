@@ -638,4 +638,31 @@ mod tests {
         )
         .unwrap();
     }
+
+    #[test]
+    fn compile_let_functions_expression_with_environment() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::FunctionDefinition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                    ssf::ir::LetFunctions::new(
+                        vec![ssf::ir::FunctionDefinition::new(
+                            "g",
+                            vec![ssf::ir::Argument::new("y", ssf::types::Primitive::Float64)],
+                            ssf::ir::Variable::new("x"),
+                            ssf::types::Primitive::Float64,
+                        )],
+                        42.0,
+                    ),
+                    ssf::types::Primitive::Float64,
+                )
+                .into()],
+            )
+            .unwrap(),
+            &CompileConfiguration::new("", vec![], None, None),
+        )
+        .unwrap();
+    }
 }
