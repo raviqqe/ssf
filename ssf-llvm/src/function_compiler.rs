@@ -1,11 +1,13 @@
 use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::expression_compiler::ExpressionCompiler;
+use super::thunk_compiler::ThunkCompiler;
 use super::type_compiler::TypeCompiler;
 use inkwell::types::BasicType;
 use std::collections::HashMap;
 
 pub struct FunctionCompiler<'c, 'm, 't, 'v> {
+    thunk_compiler: ThunkCompiler<'c, 'm, 't>,
     context: &'c inkwell::context::Context,
     module: &'m inkwell::module::Module<'c>,
     type_compiler: &'t TypeCompiler<'c>,
@@ -22,6 +24,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         compile_configuration: &'c CompileConfiguration,
     ) -> Self {
         Self {
+            thunk_compiler: ThunkCompiler::new(context, module, type_compiler),
             context,
             module,
             type_compiler,
@@ -129,7 +132,8 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
                         "",
                     )
                 },
-                self.compile_normal_thunk_entry(function_definition)
+                self.thunk_compiler
+                    .compile_normal_thunk_entry(function_definition)
                     .as_global_value()
                     .as_pointer_value(),
             );
@@ -142,46 +146,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         Ok(entry_function)
     }
 
-    fn compile_normal_thunk_entry(
-        &self,
-        function_definition: &ssf::ir::FunctionDefinition,
-    ) -> inkwell::values::FunctionValue {
-        let entry_function_type = self
-            .type_compiler
-            .compile_entry_function(function_definition.type_());
-
-        let entry_function = self.module.add_function(
-            &Self::generate_normal_thunk_entry_name(function_definition.name()),
-            entry_function_type,
-            None,
-        );
-
-        let builder = self.context.create_builder();
-        builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
-
-        let environment = builder
-            .build_bitcast(
-                entry_function.get_params()[0],
-                entry_function_type
-                    .get_return_type()
-                    .unwrap()
-                    .ptr_type(inkwell::AddressSpace::Generic),
-                "",
-            )
-            .into_pointer_value();
-
-        builder.build_return(Some(&builder.build_load(environment, "")));
-
-        entry_function.verify(true);
-
-        entry_function
-    }
-
     fn generate_closure_entry_name(name: &str) -> String {
         [name, ".$entry"].concat()
-    }
-
-    fn generate_normal_thunk_entry_name(name: &str) -> String {
-        [name, ".$entry.normal"].concat()
     }
 }
