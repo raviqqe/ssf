@@ -94,7 +94,7 @@ impl<'c> TypeCompiler<'c> {
                 self.compile_entry_function(function_definition.type_())
                     .ptr_type(inkwell::AddressSpace::Generic)
                     .into(),
-                self.compile_environment(function_definition).into(),
+                self.compile_payload(function_definition).into(),
             ],
             false,
         )
@@ -115,21 +115,14 @@ impl<'c> TypeCompiler<'c> {
         )
     }
 
-    fn compile_environment(
+    fn compile_payload(
         &self,
         function_definition: &ssf::ir::FunctionDefinition,
     ) -> inkwell::types::StructType {
         let size = max(
-            self.target_machine.get_target_data().get_store_size(
-                &self.context.struct_type(
-                    &function_definition
-                        .environment()
-                        .iter()
-                        .map(|argument| self.compile(argument.type_()))
-                        .collect::<Vec<_>>(),
-                    false,
-                ),
-            ),
+            self.target_machine
+                .get_target_data()
+                .get_store_size(&self.compile_environment(function_definition)),
             self.target_machine
                 .get_target_data()
                 .get_store_size(&self.compile_value(function_definition.result_type())),
@@ -138,6 +131,20 @@ impl<'c> TypeCompiler<'c> {
         self.context.struct_type(
             &(0..((size as isize - 1) / 8 + 1))
                 .map(|_| self.context.i64_type().into())
+                .collect::<Vec<_>>(),
+            false,
+        )
+    }
+
+    fn compile_environment(
+        &self,
+        function_definition: &ssf::ir::FunctionDefinition,
+    ) -> inkwell::types::StructType {
+        self.context.struct_type(
+            &function_definition
+                .environment()
+                .iter()
+                .map(|argument| self.compile(argument.type_()))
                 .collect::<Vec<_>>(),
             false,
         )

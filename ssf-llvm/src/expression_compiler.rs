@@ -184,8 +184,8 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 let mut closures = HashMap::<&str, inkwell::values::PointerValue>::new();
 
                 for definition in let_functions.definitions() {
-                    let closure_type = self.type_compiler.compile_closure(definition);
-                    let pointer = self.compile_struct_malloc(closure_type);
+                    let pointer =
+                        self.compile_struct_malloc(self.type_compiler.compile_closure(definition));
 
                     variables.insert(
                         definition.name().into(),
