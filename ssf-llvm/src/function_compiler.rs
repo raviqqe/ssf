@@ -116,7 +116,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
                 result,
             );
 
-            builder.build_store(
+            let store_value = builder.build_store(
                 unsafe {
                     builder.build_gep(
                         builder
@@ -137,6 +137,10 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
                     .as_global_value()
                     .as_pointer_value(),
             );
+            store_value.set_alignment(8).unwrap();
+            store_value
+                .set_atomic_ordering(inkwell::AtomicOrdering::SequentiallyConsistent)
+                .unwrap();
         }
 
         builder.build_return(Some(&result));
