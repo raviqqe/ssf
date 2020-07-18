@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub struct CompileConfiguration {
     initializer_name: String,
     dependent_initializer_names: Vec<String>,

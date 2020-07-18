@@ -12,7 +12,7 @@ pub struct ExpressionCompiler<'c, 'm, 'b, 'f, 'v> {
     builder: &'b inkwell::builder::Builder<'c>,
     function_compiler: &'f FunctionCompiler<'c, 'm, 'v>,
     type_compiler: Arc<TypeCompiler<'c>>,
-    compile_configuration: &'m CompileConfiguration,
+    compile_configuration: Arc<CompileConfiguration>,
 }
 
 impl<'c, 'm, 'b, 'f, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 'v> {
@@ -22,7 +22,7 @@ impl<'c, 'm, 'b, 'f, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 'v> {
         builder: &'b inkwell::builder::Builder<'c>,
         function_compiler: &'f FunctionCompiler<'c, 'm, 'v>,
         type_compiler: impl Into<Arc<TypeCompiler<'c>>>,
-        compile_configuration: &'m CompileConfiguration,
+        compile_configuration: impl Into<Arc<CompileConfiguration>>,
     ) -> Self {
         Self {
             context,
@@ -30,7 +30,7 @@ impl<'c, 'm, 'b, 'f, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 'v> {
             builder,
             function_compiler,
             type_compiler: type_compiler.into(),
-            compile_configuration,
+            compile_configuration: compile_configuration.into(),
         }
     }
 
@@ -852,10 +852,10 @@ mod tests {
                             &module,
                             type_compiler.clone(),
                             &HashMap::new(),
-                            &compile_configuration,
+                            compile_configuration.clone(),
                         ),
                         type_compiler.clone(),
-                        &compile_configuration,
+                        compile_configuration.clone(),
                     )
                     .compile(
                         &algebraic_case.into(),
@@ -927,10 +927,10 @@ mod tests {
                             &module,
                             type_compiler.clone(),
                             &HashMap::new(),
-                            &compile_configuration,
+                            compile_configuration.clone(),
                         ),
                         type_compiler.clone(),
-                        &compile_configuration,
+                        compile_configuration.clone(),
                     )
                     .compile(
                         &algebraic_case.into(),
@@ -1036,10 +1036,10 @@ mod tests {
                             &module,
                             type_compiler.clone(),
                             &HashMap::new(),
-                            &compile_configuration,
+                            compile_configuration.clone(),
                         ),
                         type_compiler.clone(),
-                        &compile_configuration,
+                        compile_configuration.clone(),
                     )
                     .compile(
                         &algebraic_case.into(),
@@ -1129,10 +1129,10 @@ mod tests {
                                 &module,
                                 type_compiler.clone(),
                                 &HashMap::new(),
-                                &compile_configuration,
+                                compile_configuration.clone(),
                             ),
                             type_compiler,
-                            &compile_configuration,
+                            compile_configuration.clone(),
                         )
                         .compile(
                             &primitive_case.into(),
@@ -1209,10 +1209,10 @@ mod tests {
                                 &module,
                                 type_compiler.clone(),
                                 &HashMap::new(),
-                                &compile_configuration,
+                                compile_configuration.clone(),
                             ),
                             type_compiler,
-                            &compile_configuration,
+                            compile_configuration.clone(),
                         )
                         .compile(
                             &primitive_case.into(),
@@ -1284,10 +1284,10 @@ mod tests {
                             &module,
                             type_compiler.clone(),
                             &HashMap::new(),
-                            &compile_configuration,
+                            compile_configuration.clone(),
                         ),
                         type_compiler,
-                        &compile_configuration,
+                        compile_configuration.clone(),
                     )
                     .compile(&constructor_application.into(), &HashMap::new())
                     .unwrap(),
@@ -1349,10 +1349,10 @@ mod tests {
                             &module,
                             type_compiler.clone(),
                             &HashMap::new(),
-                            &compile_configuration,
+                            compile_configuration.clone(),
                         ),
                         type_compiler,
-                        &compile_configuration,
+                        compile_configuration.clone(),
                     )
                     .compile(&constructor_application.into(), &HashMap::new())
                     .unwrap(),
