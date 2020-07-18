@@ -5,27 +5,28 @@ use super::function_compiler::FunctionCompiler;
 use super::type_compiler::TypeCompiler;
 use super::utilities;
 use std::collections::HashMap;
+use std::sync::Arc;
 
-pub struct ModuleCompiler<'c, 'm, 't> {
+pub struct ModuleCompiler<'c, 'm> {
     context: &'c inkwell::context::Context,
     module: &'m inkwell::module::Module<'c>,
-    type_compiler: &'t TypeCompiler<'c>,
+    type_compiler: Arc<TypeCompiler<'c>>,
     global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
     initializers: HashMap<String, inkwell::values::FunctionValue<'c>>,
     compile_configuration: &'c CompileConfiguration,
 }
 
-impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
+impl<'c, 'm> ModuleCompiler<'c, 'm> {
     pub fn new(
         context: &'c inkwell::context::Context,
         module: &'m inkwell::module::Module<'c>,
-        type_compiler: &'t TypeCompiler<'c>,
+        type_compiler: impl Into<Arc<TypeCompiler<'c>>>,
         compile_configuration: &'c CompileConfiguration,
-    ) -> ModuleCompiler<'c, 'm, 't> {
+    ) -> Self {
         Self {
             context,
             module,
-            type_compiler,
+            type_compiler: type_compiler.into(),
             global_variables: HashMap::new(),
             initializers: HashMap::new(),
             compile_configuration,
@@ -114,7 +115,7 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
                 FunctionCompiler::new(
                     self.context,
                     self.module,
-                    self.type_compiler,
+                    self.type_compiler.clone(),
                     &self.global_variables,
                     self.compile_configuration,
                 )
@@ -172,11 +173,11 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
                 &FunctionCompiler::new(
                     self.context,
                     self.module,
-                    self.type_compiler,
+                    self.type_compiler.clone(),
                     &self.global_variables,
                     self.compile_configuration,
                 ),
-                &self.type_compiler,
+                self.type_compiler.clone(),
                 self.compile_configuration,
             )
             .compile(

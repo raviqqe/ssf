@@ -1,22 +1,23 @@
 use super::type_compiler::TypeCompiler;
 use inkwell::types::BasicType;
+use std::sync::Arc;
 
-pub struct ThunkCompiler<'c, 'm, 't> {
+pub struct ThunkCompiler<'c, 'm> {
     context: &'c inkwell::context::Context,
     module: &'m inkwell::module::Module<'c>,
-    type_compiler: &'t TypeCompiler<'c>,
+    type_compiler: Arc<TypeCompiler<'c>>,
 }
 
-impl<'c, 'm, 't> ThunkCompiler<'c, 'm, 't> {
+impl<'c, 'm> ThunkCompiler<'c, 'm> {
     pub fn new(
         context: &'c inkwell::context::Context,
         module: &'m inkwell::module::Module<'c>,
-        type_compiler: &'t TypeCompiler<'c>,
+        type_compiler: impl Into<Arc<TypeCompiler<'c>>>,
     ) -> Self {
         Self {
             context,
             module,
-            type_compiler,
+            type_compiler: type_compiler.into(),
         }
     }
 
