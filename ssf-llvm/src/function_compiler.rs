@@ -13,7 +13,7 @@ pub struct FunctionCompiler<'c, 'm, 'v> {
     module: &'m inkwell::module::Module<'c>,
     type_compiler: Arc<TypeCompiler<'c>>,
     global_variables: &'v HashMap<String, inkwell::values::GlobalValue<'c>>,
-    compile_configuration: Arc<CompileConfiguration>,
+    compile_configuration: &'c CompileConfiguration,
 }
 
 impl<'c, 'm, 'v> FunctionCompiler<'c, 'm, 'v> {
@@ -22,7 +22,7 @@ impl<'c, 'm, 'v> FunctionCompiler<'c, 'm, 'v> {
         module: &'m inkwell::module::Module<'c>,
         type_compiler: impl Into<Arc<TypeCompiler<'c>>>,
         global_variables: &'v HashMap<String, inkwell::values::GlobalValue<'c>>,
-        compile_configuration: impl Into<Arc<CompileConfiguration>>,
+        compile_configuration: &'c CompileConfiguration,
     ) -> Self {
         let type_compiler = type_compiler.into();
 
@@ -32,7 +32,7 @@ impl<'c, 'm, 'v> FunctionCompiler<'c, 'm, 'v> {
             module,
             type_compiler,
             global_variables,
-            compile_configuration: compile_configuration.into(),
+            compile_configuration,
         }
     }
 
@@ -101,7 +101,7 @@ impl<'c, 'm, 'v> FunctionCompiler<'c, 'm, 'v> {
             &builder,
             self,
             self.type_compiler.clone(),
-            self.compile_configuration.clone(),
+            self.compile_configuration,
         );
 
         let result = expression_compiler.compile(&function_definition.body(), &variables)?;

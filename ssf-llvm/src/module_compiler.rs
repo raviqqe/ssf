@@ -13,7 +13,7 @@ pub struct ModuleCompiler<'c, 'm> {
     type_compiler: Arc<TypeCompiler<'c>>,
     global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
     initializers: HashMap<String, inkwell::values::FunctionValue<'c>>,
-    compile_configuration: Arc<CompileConfiguration>,
+    compile_configuration: &'c CompileConfiguration,
 }
 
 impl<'c, 'm> ModuleCompiler<'c, 'm> {
@@ -21,7 +21,7 @@ impl<'c, 'm> ModuleCompiler<'c, 'm> {
         context: &'c inkwell::context::Context,
         module: &'m inkwell::module::Module<'c>,
         type_compiler: impl Into<Arc<TypeCompiler<'c>>>,
-        compile_configuration: impl Into<Arc<CompileConfiguration>>,
+        compile_configuration: &'c CompileConfiguration,
     ) -> Self {
         Self {
             context,
@@ -29,7 +29,7 @@ impl<'c, 'm> ModuleCompiler<'c, 'm> {
             type_compiler: type_compiler.into(),
             global_variables: HashMap::new(),
             initializers: HashMap::new(),
-            compile_configuration: compile_configuration.into(),
+            compile_configuration,
         }
     }
 
@@ -117,7 +117,7 @@ impl<'c, 'm> ModuleCompiler<'c, 'm> {
                     self.module,
                     self.type_compiler.clone(),
                     &self.global_variables,
-                    self.compile_configuration.clone(),
+                    self.compile_configuration,
                 )
                 .compile(function_definition)?
                 .as_global_value()
@@ -175,10 +175,10 @@ impl<'c, 'm> ModuleCompiler<'c, 'm> {
                     self.module,
                     self.type_compiler.clone(),
                     &self.global_variables,
-                    self.compile_configuration.clone(),
+                    self.compile_configuration,
                 ),
                 self.type_compiler.clone(),
-                self.compile_configuration.clone(),
+                self.compile_configuration,
             )
             .compile(
                 &value_definition.body(),
