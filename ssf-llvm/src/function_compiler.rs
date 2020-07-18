@@ -133,7 +133,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
                     )
                 },
                 self.thunk_compiler
-                    .compile_normal_thunk_entry(function_definition)
+                    .compile_normal_entry(function_definition)
                     .as_global_value()
                     .as_pointer_value(),
             );

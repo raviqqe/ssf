@@ -20,7 +20,7 @@ impl<'c, 'm, 't> ThunkCompiler<'c, 'm, 't> {
         }
     }
 
-    pub fn compile_normal_thunk_entry(
+    pub fn compile_normal_entry(
         &self,
         function_definition: &ssf::ir::FunctionDefinition,
     ) -> inkwell::values::FunctionValue {
