@@ -4,24 +4,23 @@ use super::function_compiler::FunctionCompiler;
 use super::type_compiler::TypeCompiler;
 use std::collections::HashMap;
 use std::convert::TryInto;
-use std::sync::Arc;
 
-pub struct ExpressionCompiler<'c, 'm, 'b, 'f, 'v> {
+pub struct ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
     context: &'c inkwell::context::Context,
     module: &'m inkwell::module::Module<'c>,
     builder: &'b inkwell::builder::Builder<'c>,
-    function_compiler: &'f FunctionCompiler<'c, 'm, 'v>,
-    type_compiler: Arc<TypeCompiler<'c>>,
+    function_compiler: &'f FunctionCompiler<'c, 'm, 't, 'v>,
+    type_compiler: &'t TypeCompiler<'c>,
     compile_configuration: &'m CompileConfiguration,
 }
 
-impl<'c, 'm, 'b, 'f, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 'v> {
+impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
     pub fn new(
         context: &'c inkwell::context::Context,
         module: &'m inkwell::module::Module<'c>,
         builder: &'b inkwell::builder::Builder<'c>,
-        function_compiler: &'f FunctionCompiler<'c, 'm, 'v>,
-        type_compiler: impl Into<Arc<TypeCompiler<'c>>>,
+        function_compiler: &'f FunctionCompiler<'c, 'm, 't, 'v>,
+        type_compiler: &'t TypeCompiler<'c>,
         compile_configuration: &'m CompileConfiguration,
     ) -> Self {
         Self {
@@ -29,7 +28,7 @@ impl<'c, 'm, 'b, 'f, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 'v> {
             module,
             builder,
             function_compiler,
-            type_compiler: type_compiler.into(),
+            type_compiler,
             compile_configuration,
         }
     }
@@ -836,7 +835,7 @@ mod tests {
                     ),
                 ] {
                     let context = inkwell::context::Context::create();
-                    let type_compiler = Arc::new(TypeCompiler::new(&context));
+                    let type_compiler = TypeCompiler::new(&context);
                     let module = context.create_module("");
                     let function =
                         module.add_function("", context.void_type().fn_type(&[], false), None);
@@ -850,11 +849,11 @@ mod tests {
                         &FunctionCompiler::new(
                             &context,
                             &module,
-                            type_compiler.clone(),
+                            &type_compiler,
                             &HashMap::new(),
                             &compile_configuration,
                         ),
-                        type_compiler.clone(),
+                        &type_compiler,
                         &compile_configuration,
                     )
                     .compile(
@@ -911,7 +910,7 @@ mod tests {
                     ),
                 ] {
                     let context = inkwell::context::Context::create();
-                    let type_compiler = Arc::new(TypeCompiler::new(&context));
+                    let type_compiler = TypeCompiler::new(&context);
                     let module = context.create_module("");
                     let function =
                         module.add_function("", context.void_type().fn_type(&[], false), None);
@@ -925,11 +924,11 @@ mod tests {
                         &FunctionCompiler::new(
                             &context,
                             &module,
-                            type_compiler.clone(),
+                            &type_compiler,
                             &HashMap::new(),
                             &compile_configuration,
                         ),
-                        type_compiler.clone(),
+                        &type_compiler,
                         &compile_configuration,
                     )
                     .compile(
@@ -1020,7 +1019,7 @@ mod tests {
                     ),
                 ] {
                     let context = inkwell::context::Context::create();
-                    let type_compiler = Arc::new(TypeCompiler::new(&context));
+                    let type_compiler = TypeCompiler::new(&context);
                     let module = context.create_module("");
                     let function =
                         module.add_function("", context.void_type().fn_type(&[], false), None);
@@ -1034,11 +1033,11 @@ mod tests {
                         &FunctionCompiler::new(
                             &context,
                             &module,
-                            type_compiler.clone(),
+                            &type_compiler,
                             &HashMap::new(),
                             &compile_configuration,
                         ),
-                        type_compiler.clone(),
+                        &type_compiler,
                         &compile_configuration,
                     )
                     .compile(
@@ -1105,7 +1104,7 @@ mod tests {
                     ),
                 ] {
                     let context = inkwell::context::Context::create();
-                    let type_compiler = Arc::new(TypeCompiler::new(&context));
+                    let type_compiler = TypeCompiler::new(&context);
                     let module = context.create_module("");
                     let function = module.add_function(
                         "",
@@ -1127,11 +1126,11 @@ mod tests {
                             &FunctionCompiler::new(
                                 &context,
                                 &module,
-                                type_compiler.clone(),
+                                &type_compiler,
                                 &HashMap::new(),
                                 &compile_configuration,
                             ),
-                            type_compiler,
+                            &type_compiler,
                             &compile_configuration,
                         )
                         .compile(
@@ -1186,7 +1185,7 @@ mod tests {
                     ),
                 ] {
                     let context = inkwell::context::Context::create();
-                    let type_compiler = Arc::new(TypeCompiler::new(&context));
+                    let type_compiler = TypeCompiler::new(&context);
                     let module = context.create_module("");
                     let function = module.add_function(
                         "",
@@ -1207,11 +1206,11 @@ mod tests {
                             &FunctionCompiler::new(
                                 &context,
                                 &module,
-                                type_compiler.clone(),
+                                &type_compiler,
                                 &HashMap::new(),
                                 &compile_configuration,
                             ),
-                            type_compiler,
+                            &type_compiler,
                             &compile_configuration,
                         )
                         .compile(
@@ -1252,7 +1251,7 @@ mod tests {
                 ),
             ] {
                 let context = inkwell::context::Context::create();
-                let type_compiler = Arc::new(TypeCompiler::new(&context));
+                let type_compiler = TypeCompiler::new(&context);
                 let module = context.create_module("");
 
                 module.add_function(
@@ -1282,11 +1281,11 @@ mod tests {
                         &FunctionCompiler::new(
                             &context,
                             &module,
-                            type_compiler.clone(),
+                            &type_compiler,
                             &HashMap::new(),
                             &compile_configuration,
                         ),
-                        type_compiler,
+                        &type_compiler,
                         &compile_configuration,
                     )
                     .compile(&constructor_application.into(), &HashMap::new())
@@ -1317,7 +1316,7 @@ mod tests {
                 ),
             ] {
                 let context = inkwell::context::Context::create();
-                let type_compiler = Arc::new(TypeCompiler::new(&context));
+                let type_compiler = TypeCompiler::new(&context);
                 let module = context.create_module("");
 
                 module.add_function(
@@ -1347,11 +1346,11 @@ mod tests {
                         &FunctionCompiler::new(
                             &context,
                             &module,
-                            type_compiler.clone(),
+                            &type_compiler,
                             &HashMap::new(),
                             &compile_configuration,
                         ),
-                        type_compiler,
+                        &type_compiler,
                         &compile_configuration,
                     )
                     .compile(&constructor_application.into(), &HashMap::new())

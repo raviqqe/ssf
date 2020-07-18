@@ -20,7 +20,7 @@ pub fn compile(
     let module = context.create_module("main");
     let type_compiler = TypeCompiler::new(&context);
 
-    ModuleCompiler::new(&context, &module, type_compiler, compile_configuration)
+    ModuleCompiler::new(&context, &module, &type_compiler, compile_configuration)
         .compile(ir_module)?;
 
     Ok(module.write_bitcode_to_memory().as_slice().to_vec())

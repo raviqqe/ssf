@@ -5,29 +5,26 @@ use super::thunk_compiler::ThunkCompiler;
 use super::type_compiler::TypeCompiler;
 use inkwell::types::BasicType;
 use std::collections::HashMap;
-use std::sync::Arc;
 
-pub struct FunctionCompiler<'c, 'm, 'v> {
-    thunk_compiler: ThunkCompiler<'c, 'm>,
+pub struct FunctionCompiler<'c, 'm, 't, 'v> {
+    thunk_compiler: ThunkCompiler<'c, 'm, 't>,
     context: &'c inkwell::context::Context,
     module: &'m inkwell::module::Module<'c>,
-    type_compiler: Arc<TypeCompiler<'c>>,
+    type_compiler: &'t TypeCompiler<'c>,
     global_variables: &'v HashMap<String, inkwell::values::GlobalValue<'c>>,
     compile_configuration: &'c CompileConfiguration,
 }
 
-impl<'c, 'm, 'v> FunctionCompiler<'c, 'm, 'v> {
+impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     pub fn new(
         context: &'c inkwell::context::Context,
         module: &'m inkwell::module::Module<'c>,
-        type_compiler: impl Into<Arc<TypeCompiler<'c>>>,
+        type_compiler: &'t TypeCompiler<'c>,
         global_variables: &'v HashMap<String, inkwell::values::GlobalValue<'c>>,
         compile_configuration: &'c CompileConfiguration,
     ) -> Self {
-        let type_compiler = type_compiler.into();
-
         Self {
-            thunk_compiler: ThunkCompiler::new(context, module, type_compiler.clone()),
+            thunk_compiler: ThunkCompiler::new(context, module, type_compiler),
             context,
             module,
             type_compiler,
@@ -100,7 +97,7 @@ impl<'c, 'm, 'v> FunctionCompiler<'c, 'm, 'v> {
             self.module,
             &builder,
             self,
-            self.type_compiler.clone(),
+            self.type_compiler,
             self.compile_configuration,
         );
 
