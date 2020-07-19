@@ -108,7 +108,10 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         builder.build_return(Some(
             &builder
                 .build_call(
-                    self.compile_atomic_load(&builder, entry_pointer),
+                    builder
+                        .build_extract_value(condition, 0, "")
+                        .unwrap()
+                        .into_pointer_value(),
                     &[entry_function.get_params()[0]],
                     "",
                 )
