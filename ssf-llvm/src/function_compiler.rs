@@ -135,16 +135,13 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
             result,
         );
 
-        let store_value = builder.build_store(
+        self.compile_atomic_store(
+            &builder,
             entry_pointer,
             self.compile_normal_entry(function_definition)
                 .as_global_value()
                 .as_pointer_value(),
         );
-        store_value.set_alignment(8).unwrap();
-        store_value
-            .set_atomic_ordering(inkwell::AtomicOrdering::SequentiallyConsistent)
-            .unwrap();
 
         builder.build_return(Some(&result));
 
@@ -216,7 +213,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     fn compile_normal_entry(
         &self,
         function_definition: &ssf::ir::FunctionDefinition,
-    ) -> inkwell::values::FunctionValue {
+    ) -> inkwell::values::FunctionValue<'c> {
         let entry_function = self.module.add_function(
             &Self::generate_normal_entry_name(function_definition.name()),
             self.type_compiler
@@ -351,6 +348,19 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
             .unwrap();
 
         value.into_pointer_value()
+    }
+
+    fn compile_atomic_store(
+        &self,
+        builder: &inkwell::builder::Builder<'c>,
+        pointer: inkwell::values::PointerValue<'c>,
+        value: impl inkwell::values::BasicValue<'c>,
+    ) {
+        let store_value = builder.build_store(pointer, value);
+        store_value.set_alignment(8).unwrap();
+        store_value
+            .set_atomic_ordering(inkwell::AtomicOrdering::SequentiallyConsistent)
+            .unwrap();
     }
 
     fn generate_closure_entry_name(name: &str) -> String {
