@@ -37,18 +37,129 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         &self,
         function_definition: &ssf::ir::FunctionDefinition,
     ) -> Result<inkwell::values::FunctionValue, CompileError> {
-        let entry_function_type = self
-            .type_compiler
-            .compile_entry_function(function_definition.type_());
+        Ok(if function_definition.arguments().is_empty() {
+            self.compile_thunk(function_definition)?
+        } else {
+            self.compile_function(function_definition)?
+        })
+    }
 
+    fn compile_function(
+        &self,
+        function_definition: &ssf::ir::FunctionDefinition,
+    ) -> Result<inkwell::values::FunctionValue, CompileError> {
         let entry_function = self.module.add_function(
             &Self::generate_closure_entry_name(function_definition.name()),
-            entry_function_type,
+            self.type_compiler
+                .compile_entry_function(function_definition.type_()),
             None,
         );
 
         let builder = self.context.create_builder();
         builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
+
+        builder.build_return(Some(&self.compile_body(&builder, function_definition)?));
+
+        entry_function.verify(true);
+
+        Ok(entry_function)
+    }
+
+    fn compile_thunk(
+        &self,
+        function_definition: &ssf::ir::FunctionDefinition,
+    ) -> Result<inkwell::values::FunctionValue, CompileError> {
+        let entry_function = self.module.add_function(
+            &Self::generate_closure_entry_name(function_definition.name()),
+            self.type_compiler
+                .compile_entry_function(function_definition.type_()),
+            None,
+        );
+
+        let builder = self.context.create_builder();
+        builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
+
+        let entry_pointer = unsafe {
+            builder.build_gep(
+                builder
+                    .build_bitcast(
+                        entry_function.get_params()[0],
+                        entry_function
+                            .get_type()
+                            .ptr_type(inkwell::AddressSpace::Generic)
+                            .ptr_type(inkwell::AddressSpace::Generic),
+                        "",
+                    )
+                    .into_pointer_value(),
+                &[self.context.i64_type().const_int(-1i64 as u64, true)],
+                "",
+            )
+        };
+
+        let condition = builder
+            .build_cmpxchg(
+                entry_pointer,
+                entry_function.as_global_value().as_pointer_value(),
+                self.thunk_compiler
+                    .compile_locked_entry(function_definition)
+                    .as_global_value()
+                    .as_pointer_value(),
+                inkwell::AtomicOrdering::SequentiallyConsistent,
+                inkwell::AtomicOrdering::SequentiallyConsistent,
+            )
+            .unwrap();
+
+        let next_block = self.context.append_basic_block(entry_function, "next");
+
+        builder.build_conditional_branch(
+            builder
+                .build_extract_value(condition, 1, "")
+                .unwrap()
+                .into_int_value(),
+            next_block,
+            entry_block,
+        );
+
+        builder.position_at_end(next_block);
+
+        let result = self.compile_body(&builder, function_definition)?;
+
+        builder.build_store(
+            builder
+                .build_bitcast(
+                    entry_function.get_params()[0],
+                    result.get_type().ptr_type(inkwell::AddressSpace::Generic),
+                    "",
+                )
+                .into_pointer_value(),
+            result,
+        );
+
+        let store_value = builder.build_store(
+            entry_pointer,
+            self.thunk_compiler
+                .compile_normal_entry(function_definition)
+                .as_global_value()
+                .as_pointer_value(),
+        );
+        store_value.set_alignment(8).unwrap();
+        store_value
+            .set_atomic_ordering(inkwell::AtomicOrdering::SequentiallyConsistent)
+            .unwrap();
+
+        builder.build_return(Some(&result));
+
+        entry_function.verify(true);
+
+        Ok(entry_function)
+    }
+
+    fn compile_body(
+        &self,
+        builder: &inkwell::builder::Builder<'c>,
+        function_definition: &ssf::ir::FunctionDefinition,
+    ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
+        let entry_function = builder.get_insert_block().unwrap().get_parent().unwrap();
 
         let environment = builder
             .build_bitcast(
@@ -101,53 +212,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
             self.compile_configuration,
         );
 
-        let result = expression_compiler.compile(&function_definition.body(), &variables)?;
-
-        if function_definition.arguments().is_empty() {
-            // TODO Make this thunk update thread-safe.
-            builder.build_store(
-                builder
-                    .build_bitcast(
-                        environment,
-                        result.get_type().ptr_type(inkwell::AddressSpace::Generic),
-                        "",
-                    )
-                    .into_pointer_value(),
-                result,
-            );
-
-            let store_value = builder.build_store(
-                unsafe {
-                    builder.build_gep(
-                        builder
-                            .build_bitcast(
-                                environment,
-                                entry_function_type
-                                    .ptr_type(inkwell::AddressSpace::Generic)
-                                    .ptr_type(inkwell::AddressSpace::Generic),
-                                "",
-                            )
-                            .into_pointer_value(),
-                        &[self.context.i64_type().const_int(-1i64 as u64, true)],
-                        "",
-                    )
-                },
-                self.thunk_compiler
-                    .compile_normal_entry(function_definition)
-                    .as_global_value()
-                    .as_pointer_value(),
-            );
-            store_value.set_alignment(8).unwrap();
-            store_value
-                .set_atomic_ordering(inkwell::AtomicOrdering::SequentiallyConsistent)
-                .unwrap();
-        }
-
-        builder.build_return(Some(&result));
-
-        entry_function.verify(true);
-
-        Ok(entry_function)
+        Ok(expression_compiler.compile(&function_definition.body(), &variables)?)
     }
 
     fn generate_closure_entry_name(name: &str) -> String {
