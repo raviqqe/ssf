@@ -3,7 +3,6 @@ mod error;
 mod expression_compiler;
 mod function_compiler;
 mod module_compiler;
-mod thunk_compiler;
 mod type_compiler;
 mod utilities;
 
