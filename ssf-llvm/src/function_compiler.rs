@@ -272,6 +272,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
 
         let final_block = self.context.append_basic_block(entry_function, "final");
 
+        // TODO Do not spin-lock.
         builder.build_conditional_branch(condition, loop_block, final_block);
 
         builder.position_at_end(final_block);
