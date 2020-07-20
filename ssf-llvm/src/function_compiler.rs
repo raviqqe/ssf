@@ -1,9 +1,9 @@
 use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::expression_compiler::ExpressionCompiler;
+use super::instruction_compiler::InstructionCompiler;
 use super::type_compiler::TypeCompiler;
 use inkwell::types::BasicType;
-use inkwell::values::BasicValue;
 use std::collections::HashMap;
 
 pub struct FunctionCompiler<'c, 'm, 't, 'v> {
@@ -135,7 +135,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
             result,
         );
 
-        self.compile_atomic_store(
+        InstructionCompiler::compile_atomic_store(
             &builder,
             entry_pointer,
             self.compile_normal_entry(function_definition)
@@ -251,7 +251,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         builder.build_unconditional_branch(loop_block);
         builder.position_at_end(loop_block);
 
-        let current_entry_function = self.compile_atomic_load(
+        let current_entry_function = InstructionCompiler::compile_atomic_load(
             &builder,
             self.compile_entry_pointer(&builder, entry_function),
         );
@@ -327,40 +327,6 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
                 "",
             )
         }
-    }
-
-    fn compile_atomic_load(
-        &self,
-        builder: &inkwell::builder::Builder<'c>,
-        pointer: inkwell::values::PointerValue<'c>,
-    ) -> inkwell::values::PointerValue<'c> {
-        let value = builder.build_load(pointer, "");
-
-        value
-            .as_instruction_value()
-            .unwrap()
-            .set_alignment(8)
-            .unwrap();
-        value
-            .as_instruction_value()
-            .unwrap()
-            .set_atomic_ordering(inkwell::AtomicOrdering::SequentiallyConsistent)
-            .unwrap();
-
-        value.into_pointer_value()
-    }
-
-    fn compile_atomic_store(
-        &self,
-        builder: &inkwell::builder::Builder<'c>,
-        pointer: inkwell::values::PointerValue<'c>,
-        value: impl inkwell::values::BasicValue<'c>,
-    ) {
-        let store_value = builder.build_store(pointer, value);
-        store_value.set_alignment(8).unwrap();
-        store_value
-            .set_atomic_ordering(inkwell::AtomicOrdering::SequentiallyConsistent)
-            .unwrap();
     }
 
     fn generate_closure_entry_name(name: &str) -> String {

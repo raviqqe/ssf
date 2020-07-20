@@ -2,6 +2,7 @@ mod compile_configuration;
 mod error;
 mod expression_compiler;
 mod function_compiler;
+mod instruction_compiler;
 mod module_compiler;
 mod type_compiler;
 mod utilities;
