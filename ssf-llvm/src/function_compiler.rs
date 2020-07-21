@@ -1,6 +1,7 @@
 use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::expression_compiler::ExpressionCompiler;
+use super::instruction_compiler::InstructionCompiler;
 use super::type_compiler::TypeCompiler;
 use inkwell::types::BasicType;
 use std::collections::HashMap;
@@ -34,18 +35,127 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         &self,
         function_definition: &ssf::ir::FunctionDefinition,
     ) -> Result<inkwell::values::FunctionValue, CompileError> {
-        let entry_function_type = self
-            .type_compiler
-            .compile_entry_function(function_definition.type_());
+        Ok(if function_definition.arguments().is_empty() {
+            self.compile_thunk(function_definition)?
+        } else {
+            self.compile_non_thunk(function_definition)?
+        })
+    }
 
+    fn compile_non_thunk(
+        &self,
+        function_definition: &ssf::ir::FunctionDefinition,
+    ) -> Result<inkwell::values::FunctionValue, CompileError> {
         let entry_function = self.module.add_function(
             &Self::generate_closure_entry_name(function_definition.name()),
-            entry_function_type,
+            self.type_compiler
+                .compile_entry_function(function_definition.type_()),
             None,
         );
 
         let builder = self.context.create_builder();
         builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
+
+        builder.build_return(Some(&self.compile_body(&builder, function_definition)?));
+
+        entry_function.verify(true);
+
+        Ok(entry_function)
+    }
+
+    fn compile_thunk(
+        &self,
+        function_definition: &ssf::ir::FunctionDefinition,
+    ) -> Result<inkwell::values::FunctionValue, CompileError> {
+        let entry_function = self.module.add_function(
+            &Self::generate_closure_entry_name(function_definition.name()),
+            self.type_compiler
+                .compile_entry_function(function_definition.type_()),
+            None,
+        );
+
+        let builder = self.context.create_builder();
+        builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
+
+        let entry_pointer = self.compile_entry_pointer(&builder, entry_function);
+
+        let condition = builder
+            .build_cmpxchg(
+                entry_pointer,
+                entry_function.as_global_value().as_pointer_value(),
+                self.compile_locked_entry(function_definition)
+                    .as_global_value()
+                    .as_pointer_value(),
+                inkwell::AtomicOrdering::SequentiallyConsistent,
+                inkwell::AtomicOrdering::SequentiallyConsistent,
+            )
+            .unwrap();
+
+        let then_block = self.context.append_basic_block(entry_function, "then");
+        let else_block = self.context.append_basic_block(entry_function, "else");
+
+        builder.build_conditional_branch(
+            builder
+                .build_extract_value(condition, 1, "")
+                .unwrap()
+                .into_int_value(),
+            then_block,
+            else_block,
+        );
+
+        builder.position_at_end(else_block);
+
+        builder.build_return(Some(
+            &builder
+                .build_call(
+                    builder
+                        .build_extract_value(condition, 0, "")
+                        .unwrap()
+                        .into_pointer_value(),
+                    &[entry_function.get_params()[0]],
+                    "",
+                )
+                .try_as_basic_value()
+                .left()
+                .unwrap(),
+        ));
+
+        builder.position_at_end(then_block);
+
+        let result = self.compile_body(&builder, function_definition)?;
+
+        builder.build_store(
+            builder
+                .build_bitcast(
+                    entry_function.get_params()[0],
+                    result.get_type().ptr_type(inkwell::AddressSpace::Generic),
+                    "",
+                )
+                .into_pointer_value(),
+            result,
+        );
+
+        InstructionCompiler::compile_atomic_store(
+            &builder,
+            entry_pointer,
+            self.compile_normal_entry(function_definition)
+                .as_global_value()
+                .as_pointer_value(),
+        );
+
+        builder.build_return(Some(&result));
+
+        entry_function.verify(true);
+
+        Ok(entry_function)
+    }
+
+    fn compile_body(
+        &self,
+        builder: &inkwell::builder::Builder<'c>,
+        function_definition: &ssf::ir::FunctionDefinition,
+    ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
+        let entry_function = builder.get_insert_block().unwrap().get_parent().unwrap();
 
         let environment = builder
             .build_bitcast(
@@ -89,99 +199,148 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
             );
         }
 
-        let expression_compiler = ExpressionCompiler::new(
+        Ok(ExpressionCompiler::new(
             self.context,
             self.module,
             &builder,
             self,
             self.type_compiler,
             self.compile_configuration,
-        );
-
-        let result = expression_compiler.compile(&function_definition.body(), &variables)?;
-
-        if function_definition.arguments().is_empty() {
-            // TODO Make this thunk update thread-safe.
-            builder.build_store(
-                builder
-                    .build_bitcast(
-                        environment,
-                        result.get_type().ptr_type(inkwell::AddressSpace::Generic),
-                        "",
-                    )
-                    .into_pointer_value(),
-                result,
-            );
-
-            builder.build_store(
-                unsafe {
-                    builder.build_gep(
-                        builder
-                            .build_bitcast(
-                                environment,
-                                entry_function_type
-                                    .ptr_type(inkwell::AddressSpace::Generic)
-                                    .ptr_type(inkwell::AddressSpace::Generic),
-                                "",
-                            )
-                            .into_pointer_value(),
-                        &[self.context.i64_type().const_int(-1i64 as u64, true)],
-                        "",
-                    )
-                },
-                self.compile_normal_thunk_entry(function_definition)
-                    .as_global_value()
-                    .as_pointer_value(),
-            );
-        }
-
-        builder.build_return(Some(&result));
-
-        entry_function.verify(true);
-
-        Ok(entry_function)
+        )
+        .compile(&function_definition.body(), &variables)?)
     }
 
-    fn compile_normal_thunk_entry(
+    fn compile_normal_entry(
         &self,
         function_definition: &ssf::ir::FunctionDefinition,
-    ) -> inkwell::values::FunctionValue {
-        let entry_function_type = self
-            .type_compiler
-            .compile_entry_function(function_definition.type_());
-
+    ) -> inkwell::values::FunctionValue<'c> {
         let entry_function = self.module.add_function(
-            &Self::generate_normal_thunk_entry_name(function_definition.name()),
-            entry_function_type,
+            &Self::generate_normal_entry_name(function_definition.name()),
+            self.type_compiler
+                .compile_entry_function(function_definition.type_()),
             None,
         );
 
         let builder = self.context.create_builder();
         builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
 
-        let environment = builder
-            .build_bitcast(
-                entry_function.get_params()[0],
-                entry_function_type
-                    .get_return_type()
-                    .unwrap()
-                    .ptr_type(inkwell::AddressSpace::Generic),
-                "",
-            )
-            .into_pointer_value();
-
-        builder.build_return(Some(&builder.build_load(environment, "")));
+        self.compile_normal_body(&builder, entry_function);
 
         entry_function.verify(true);
 
         entry_function
     }
 
+    fn compile_locked_entry(
+        &self,
+        function_definition: &ssf::ir::FunctionDefinition,
+    ) -> inkwell::values::FunctionValue<'c> {
+        let entry_function = self.module.add_function(
+            &Self::generate_locked_entry_name(function_definition.name()),
+            self.type_compiler
+                .compile_entry_function(function_definition.type_()),
+            None,
+        );
+
+        let builder = self.context.create_builder();
+
+        let entry_block = self.context.append_basic_block(entry_function, "entry");
+        let loop_block = self.context.append_basic_block(entry_function, "loop");
+
+        builder.position_at_end(entry_block);
+        builder.build_unconditional_branch(loop_block);
+        builder.position_at_end(loop_block);
+
+        let condition = builder.build_int_compare(
+            inkwell::IntPredicate::EQ,
+            builder.build_ptr_to_int(
+                InstructionCompiler::compile_atomic_load(
+                    &builder,
+                    self.compile_entry_pointer(&builder, entry_function),
+                )
+                .into_pointer_value(),
+                self.context.i64_type(),
+                "",
+            ),
+            builder.build_ptr_to_int(
+                entry_function.as_global_value().as_pointer_value(),
+                self.context.i64_type(),
+                "",
+            ),
+            "",
+        );
+
+        let final_block = self.context.append_basic_block(entry_function, "final");
+
+        // TODO Do not spin-lock.
+        builder.build_conditional_branch(condition, loop_block, final_block);
+
+        builder.position_at_end(final_block);
+
+        self.compile_normal_body(&builder, entry_function);
+
+        entry_function.verify(true);
+
+        entry_function
+    }
+
+    fn compile_normal_body(
+        &self,
+        builder: &inkwell::builder::Builder<'c>,
+        entry_function: inkwell::values::FunctionValue<'c>,
+    ) {
+        builder.build_return(Some(
+            &builder.build_load(
+                builder
+                    .build_bitcast(
+                        entry_function.get_params()[0],
+                        entry_function
+                            .get_type()
+                            .get_return_type()
+                            .unwrap()
+                            .ptr_type(inkwell::AddressSpace::Generic),
+                        "",
+                    )
+                    .into_pointer_value(),
+                "",
+            ),
+        ));
+    }
+
+    fn compile_entry_pointer(
+        &self,
+        builder: &inkwell::builder::Builder<'c>,
+        entry_function: inkwell::values::FunctionValue<'c>,
+    ) -> inkwell::values::PointerValue<'c> {
+        let base_pointer = builder
+            .build_bitcast(
+                entry_function.get_params()[0],
+                entry_function
+                    .get_type()
+                    .ptr_type(inkwell::AddressSpace::Generic)
+                    .ptr_type(inkwell::AddressSpace::Generic),
+                "",
+            )
+            .into_pointer_value();
+
+        unsafe {
+            builder.build_gep(
+                base_pointer,
+                &[self.context.i64_type().const_int(-1i64 as u64, true)],
+                "",
+            )
+        }
+    }
+
     fn generate_closure_entry_name(name: &str) -> String {
         [name, ".$entry"].concat()
     }
 
-    fn generate_normal_thunk_entry_name(name: &str) -> String {
+    fn generate_normal_entry_name(name: &str) -> String {
         [name, ".$entry.normal"].concat()
+    }
+
+    fn generate_locked_entry_name(name: &str) -> String {
+        [name, ".$entry.locked"].concat()
     }
 }
