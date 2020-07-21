@@ -1,6 +1,7 @@
 use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::function_compiler::FunctionCompiler;
+use super::instruction_compiler::InstructionCompiler;
 use super::type_compiler::TypeCompiler;
 use std::collections::HashMap;
 use std::convert::TryInto;
@@ -159,24 +160,29 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     arguments.push(self.compile(argument, variables)?);
                 }
 
+                let entry_pointer = unsafe {
+                    self.builder.build_gep(
+                        closure,
+                        &[
+                            self.context.i32_type().const_int(0, false),
+                            self.context.i32_type().const_int(0, false),
+                        ],
+                        "",
+                    )
+                };
+
                 Ok(self
                     .builder
                     .build_call(
-                        self.builder
-                            .build_load(
-                                unsafe {
-                                    self.builder.build_gep(
-                                        closure,
-                                        &[
-                                            self.context.i32_type().const_int(0, false),
-                                            self.context.i32_type().const_int(0, false),
-                                        ],
-                                        "",
-                                    )
-                                },
-                                "",
-                            )
-                            .into_pointer_value(),
+                        if function_application.arguments().is_empty() {
+                            // Entry functions of thunks need to be loaded atomically
+                            // to make thunk update therad-safe.
+                            InstructionCompiler::compile_atomic_load(&self.builder, entry_pointer)
+                        } else {
+                            self.builder
+                                .build_load(entry_pointer, "")
+                                .into_pointer_value()
+                        },
                         &arguments,
                         "",
                     )
