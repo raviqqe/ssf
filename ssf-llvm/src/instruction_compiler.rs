@@ -6,7 +6,7 @@ impl InstructionCompiler {
     pub fn compile_atomic_load<'c>(
         builder: &inkwell::builder::Builder<'c>,
         pointer: inkwell::values::PointerValue<'c>,
-    ) -> inkwell::values::PointerValue<'c> {
+    ) -> inkwell::values::BasicValueEnum<'c> {
         let value = builder.build_load(pointer, "");
 
         value
@@ -20,7 +20,7 @@ impl InstructionCompiler {
             .set_atomic_ordering(inkwell::AtomicOrdering::SequentiallyConsistent)
             .unwrap();
 
-        value.into_pointer_value()
+        value
     }
 
     pub fn compile_atomic_store<'c>(

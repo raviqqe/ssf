@@ -178,6 +178,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                             // Entry functions of thunks need to be loaded atomically
                             // to make thunk update thread-safe.
                             InstructionCompiler::compile_atomic_load(&self.builder, entry_pointer)
+                                .into_pointer_value()
                         } else {
                             self.builder
                                 .build_load(entry_pointer, "")

@@ -251,14 +251,17 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         builder.build_unconditional_branch(loop_block);
         builder.position_at_end(loop_block);
 
-        let current_entry_function = InstructionCompiler::compile_atomic_load(
-            &builder,
-            self.compile_entry_pointer(&builder, entry_function),
-        );
-
         let condition = builder.build_int_compare(
             inkwell::IntPredicate::EQ,
-            builder.build_ptr_to_int(current_entry_function, self.context.i64_type(), ""),
+            builder.build_ptr_to_int(
+                InstructionCompiler::compile_atomic_load(
+                    &builder,
+                    self.compile_entry_pointer(&builder, entry_function),
+                )
+                .into_pointer_value(),
+                self.context.i64_type(),
+                "",
+            ),
             builder.build_ptr_to_int(
                 entry_function.as_global_value().as_pointer_value(),
                 self.context.i64_type(),
