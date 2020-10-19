@@ -16,10 +16,7 @@ impl Type {
     }
 
     pub fn is_primitive(&self) -> bool {
-        match self {
-            Self::Value(Value::Primitive(_)) => true,
-            _ => false,
-        }
+        matches!(self, Self::Value(Value::Primitive(_)))
     }
 
     pub fn into_function(self) -> Option<Function> {
