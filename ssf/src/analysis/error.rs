@@ -11,7 +11,7 @@ pub enum AnalysisError {
 
 impl Display for AnalysisError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
-        write!(formatter, "{:?}", self)
+        write!(formatter, "{:#?}", self)
     }
 }
 
