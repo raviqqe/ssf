@@ -1,22 +1,23 @@
 use super::expression::Expression;
+use super::variable::Variable;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FunctionApplication {
-    function: Box<Expression>,
+    function: Variable,
     arguments: Vec<Expression>,
 }
 
 impl FunctionApplication {
-    pub fn new(function: impl Into<Expression>, arguments: Vec<Expression>) -> Self {
+    pub fn new(function: Variable, arguments: Vec<Expression>) -> Self {
         Self {
-            function: Box::new(function.into()),
+            function,
             arguments,
         }
     }
 
-    pub fn function(&self) -> &Expression {
+    pub fn function(&self) -> &Variable {
         &self.function
     }
 
@@ -50,7 +51,7 @@ impl FunctionApplication {
         global_variables: &HashSet<String>,
     ) -> Self {
         Self::new(
-            *self.function.clone(),
+            self.function.clone(),
             self.arguments
                 .iter()
                 .map(|argument| argument.infer_environment(variables, global_variables))
