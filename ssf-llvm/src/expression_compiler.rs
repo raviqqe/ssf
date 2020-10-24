@@ -136,7 +136,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
             }
             ssf::ir::Expression::FunctionApplication(function_application) => {
                 let closure = self
-                    .compile(function_application.function(), variables)?
+                    .compile_variable(function_application.function(), variables)?
                     .into_pointer_value();
 
                 let mut arguments = vec![self.builder.build_bitcast(

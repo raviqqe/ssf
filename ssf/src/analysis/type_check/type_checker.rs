@@ -119,7 +119,7 @@ impl TypeChecker {
                     .into())
             }
             Expression::FunctionApplication(function_application) => {
-                match self.check_expression(function_application.function(), variables)? {
+                match self.check_variable(function_application.function(), variables)? {
                     Type::Function(function_type) => {
                         if function_type.arguments().len() != function_application.arguments().len()
                         {
