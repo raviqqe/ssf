@@ -85,6 +85,7 @@ impl Expression {
             Self::FunctionApplication(function_application) => function_application
                 .infer_environment(variables, global_variables)
                 .into(),
+            Self::Lambda(lambda) => lambda.infer_environment(variables, global_variables).into(),
             Self::Let(let_) => let_.infer_environment(variables, global_variables).into(),
             Self::Operation(operation) => operation
                 .infer_environment(variables, global_variables)
@@ -103,6 +104,7 @@ impl Expression {
             Self::FunctionApplication(function_application) => {
                 function_application.convert_types(convert).into()
             }
+            Self::Lambda(lambda) => lambda.convert_types(convert).into(),
             Self::Let(let_) => let_.convert_types(convert).into(),
             Self::Operation(operation) => operation.convert_types(convert).into(),
             Self::Primitive(_) | Self::Variable(_) => self.clone(),

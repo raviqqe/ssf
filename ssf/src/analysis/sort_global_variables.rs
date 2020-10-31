@@ -5,16 +5,11 @@ use petgraph::graph::Graph;
 use std::collections::{HashMap, HashSet};
 
 pub fn sort_global_variables(module: &ir::Module) -> Result<Vec<&str>, AnalysisError> {
-    let value_names = module
+    let global_names = module
         .definitions()
         .iter()
-        .map(|definition| match definition {
-            ir::Definition::FunctionDefinition(_) => None,
-            ir::Definition::ValueDefinition(value_definition) => Some(value_definition.name()),
-        })
-        .filter(|option| option.is_some())
-        .collect::<Option<HashSet<&str>>>()
-        .unwrap_or_else(HashSet::new);
+        .map(|definition| definition.name())
+        .collect::<HashSet<&str>>();
 
     let mut graph = Graph::<&str, ()>::new();
     let mut name_indices = HashMap::<&str, _>::new();
@@ -25,7 +20,7 @@ pub fn sort_global_variables(module: &ir::Module) -> Result<Vec<&str>, AnalysisE
 
     for definition in module.definitions() {
         for name in definition.find_variables(&HashSet::new()) {
-            if value_names.contains(name.as_str()) {
+            if global_names.contains(name.as_str()) {
                 graph.add_edge(
                     name_indices[name.as_str()],
                     name_indices[definition.name()],
@@ -38,7 +33,7 @@ pub fn sort_global_variables(module: &ir::Module) -> Result<Vec<&str>, AnalysisE
     Ok(toposort(&graph, None)?
         .into_iter()
         .map(|index| graph[index])
-        .filter(|name| value_names.contains(name))
+        .filter(|name| global_names.contains(name))
         .collect())
 }
 
@@ -60,7 +55,7 @@ mod tests {
         assert_eq!(
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
-                vec![ir::ValueDefinition::new("x", 42.0, types::Primitive::Float64).into()],
+                vec![ir::Definition::new("x", 42.0, types::Primitive::Float64).into()],
                 vec![]
             )),
             Ok(vec!["x".into()])
@@ -73,13 +68,9 @@ mod tests {
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ir::ValueDefinition::new("x", 42.0, types::Primitive::Float64).into(),
-                    ir::ValueDefinition::new(
-                        "y",
-                        ir::Variable::new("x"),
-                        types::Primitive::Float64
-                    )
-                    .into()
+                    ir::Definition::new("x", 42.0, types::Primitive::Float64).into(),
+                    ir::Definition::new("y", ir::Variable::new("x"), types::Primitive::Float64)
+                        .into()
                 ],
                 vec![]
             )),
@@ -93,13 +84,9 @@ mod tests {
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ir::ValueDefinition::new(
-                        "y",
-                        ir::Variable::new("x"),
-                        types::Primitive::Float64
-                    )
-                    .into(),
-                    ir::ValueDefinition::new("x", 42.0, types::Primitive::Float64).into(),
+                    ir::Definition::new("y", ir::Variable::new("x"), types::Primitive::Float64)
+                        .into(),
+                    ir::Definition::new("x", 42.0, types::Primitive::Float64).into(),
                 ],
                 vec![]
             )),
@@ -113,7 +100,7 @@ mod tests {
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ir::ValueDefinition::new(
+                    ir::Definition::new(
                         "y",
                         ir::FunctionApplication::new(ir::Variable::new("f"), vec![42.0.into()]),
                         types::Primitive::Float64
@@ -126,7 +113,7 @@ mod tests {
                         types::Primitive::Float64
                     )
                     .into(),
-                    ir::ValueDefinition::new("x", 42.0, types::Primitive::Float64).into(),
+                    ir::Definition::new("x", 42.0, types::Primitive::Float64).into(),
                 ],
                 vec![]
             )),
@@ -140,7 +127,7 @@ mod tests {
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ir::ValueDefinition::new(
+                    ir::Definition::new(
                         "y",
                         ir::FunctionApplication::new(ir::Variable::new("f"), vec![42.0.into()]),
                         types::Primitive::Float64
@@ -166,7 +153,7 @@ mod tests {
                         types::Primitive::Float64
                     )
                     .into(),
-                    ir::ValueDefinition::new("x", 42.0, types::Primitive::Float64).into(),
+                    ir::Definition::new("x", 42.0, types::Primitive::Float64).into(),
                 ],
                 vec![]
             )),
@@ -179,12 +166,10 @@ mod tests {
         assert_eq!(
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
-                vec![ir::ValueDefinition::new(
-                    "x",
-                    ir::Variable::new("x"),
-                    types::Primitive::Float64
-                )
-                .into()],
+                vec![
+                    ir::Definition::new("x", ir::Variable::new("x"), types::Primitive::Float64)
+                        .into()
+                ],
                 vec![]
             )),
             Err(AnalysisError::CircularInitialization)
@@ -197,18 +182,10 @@ mod tests {
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
                 vec![
-                    ir::ValueDefinition::new(
-                        "x",
-                        ir::Variable::new("y"),
-                        types::Primitive::Float64
-                    )
-                    .into(),
-                    ir::ValueDefinition::new(
-                        "y",
-                        ir::Variable::new("x"),
-                        types::Primitive::Float64
-                    )
-                    .into(),
+                    ir::Definition::new("x", ir::Variable::new("y"), types::Primitive::Float64)
+                        .into(),
+                    ir::Definition::new("y", ir::Variable::new("x"), types::Primitive::Float64)
+                        .into(),
                 ],
                 vec![]
             )),

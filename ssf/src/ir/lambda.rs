@@ -42,12 +42,8 @@ impl Lambda {
                             result_type.clone(),
                         )
                         .into(),
-                        |function, argument| {
-                            types::Function::new(
-                                argument.type_().clone(),
-                                result_type.clone().into(),
-                            )
-                            .into()
+                        |result, argument| {
+                            types::Function::new(argument.type_().clone(), result).into()
                         },
                     ),
                 )
@@ -82,6 +78,8 @@ impl Lambda {
     }
 
     pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
+        let mut names = names.clone();
+
         for argument in &self.arguments {
             names.remove(argument.name());
         }

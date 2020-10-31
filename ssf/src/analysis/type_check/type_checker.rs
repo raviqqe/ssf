@@ -19,65 +19,24 @@ impl TypeChecker {
         }
 
         for definition in module.definitions() {
-            match definition {
-                Definition::FunctionDefinition(function_definition) => {
-                    variables.insert(
-                        function_definition.name(),
-                        function_definition.type_().clone().into(),
-                    );
-                }
-                Definition::ValueDefinition(value_definition) => {
-                    variables.insert(
-                        value_definition.name(),
-                        value_definition.type_().clone().into(),
-                    );
-                }
-            }
+            variables.insert(definition.name(), definition.type_().clone().into());
         }
 
         for definition in module.definitions() {
-            match definition {
-                Definition::FunctionDefinition(function_definition) => {
-                    self.check_function_definition(function_definition, &variables)?;
-                }
-                Definition::ValueDefinition(value_definition) => {
-                    self.check_value_definition(value_definition, &variables)?;
-                }
-            };
+            self.check_definition(definition, &variables)?;
         }
 
         Ok(())
     }
 
-    fn check_function_definition(
+    fn check_definition(
         &self,
-        function_definition: &FunctionDefinition,
-        variables: &HashMap<&str, Type>,
-    ) -> Result<(), TypeCheckError> {
-        let mut variables = variables.clone();
-
-        for argument in function_definition
-            .environment()
-            .iter()
-            .chain(function_definition.arguments())
-        {
-            variables.insert(argument.name(), argument.type_().clone());
-        }
-
-        self.check_equality(
-            &self.check_expression(function_definition.body(), &variables)?,
-            &function_definition.result_type().clone().into(),
-        )
-    }
-
-    fn check_value_definition(
-        &self,
-        value_definition: &ValueDefinition,
+        definition: &Definition,
         variables: &HashMap<&str, Type>,
     ) -> Result<(), TypeCheckError> {
         self.check_equality(
-            &self.check_expression(value_definition.body(), &variables)?,
-            &value_definition.type_().clone().into(),
+            &self.check_expression(definition.body(), &variables)?,
+            &definition.type_().clone().into(),
         )
     }
 
@@ -119,53 +78,43 @@ impl TypeChecker {
                     .into())
             }
             Expression::FunctionApplication(function_application) => {
-                match self.check_variable(function_application.function(), variables)? {
+                match self.check_expression(function_application.function(), variables)? {
                     Type::Function(function_type) => {
-                        if function_type.arguments().len() != function_application.arguments().len()
-                        {
-                            return Err(TypeCheckError::WrongArgumentsLength(expression.clone()));
-                        }
-
-                        for (argument, expected_type) in function_application
-                            .arguments()
-                            .iter()
-                            .zip(function_type.arguments())
-                        {
-                            self.check_equality(
-                                &self.check_expression(argument, variables)?,
-                                expected_type,
-                            )?;
-                        }
+                        self.check_equality(
+                            &self.check_expression(function_application.argument(), variables)?,
+                            function_type.argument(),
+                        )?;
 
                         Ok(function_type.result().clone().into())
                     }
-                    Type::Value(_) => Err(TypeCheckError::FunctionExpected(
+                    _ => Err(TypeCheckError::FunctionExpected(
                         function_application.function().clone(),
                     )),
                 }
             }
-            Expression::LetFunctions(let_functions) => {
+            Expression::Lambda(lambda) => {
                 let mut variables = variables.clone();
 
-                for definition in let_functions.definitions() {
-                    variables.insert(definition.name(), definition.type_().clone().into());
+                for argument in lambda.arguments() {
+                    variables.insert(argument.name(), argument.type_().clone().into());
                 }
 
-                for definition in let_functions.definitions() {
-                    self.check_function_definition(definition, &variables)?;
-                }
+                self.check_equality(
+                    &self.check_expression(lambda.body(), &variables)?,
+                    lambda.result_type(),
+                )?;
 
-                self.check_expression(let_functions.expression(), &variables)
+                Ok(lambda.type_().clone().into())
             }
-            Expression::LetValues(let_values) => {
+            Expression::Let(let_) => {
                 let mut variables = variables.clone();
 
-                for definition in let_values.definitions() {
-                    self.check_value_definition(definition, &variables)?;
+                for definition in let_.definitions() {
+                    self.check_definition(definition, &variables)?;
                     variables.insert(definition.name(), definition.type_().clone().into());
                 }
 
-                self.check_expression(let_values.expression(), &variables)
+                self.check_expression(let_.expression(), &variables)
             }
             Expression::Primitive(primitive) => Ok(self.check_primitive(primitive).into()),
             Expression::Operation(operation) => {

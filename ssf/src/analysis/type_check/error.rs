@@ -6,7 +6,7 @@ use std::fmt::Display;
 #[derive(Clone, Debug, PartialEq)]
 pub enum TypeCheckError {
     AlgebraicExpected(Expression),
-    FunctionExpected(Variable),
+    FunctionExpected(Expression),
     NoAlternativeFound(Case),
     PrimitiveExpected(Expression),
     TypesNotMatched(Type, Type),
