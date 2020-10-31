@@ -1,23 +1,23 @@
 use super::expression::Expression;
-use super::value_definition::ValueDefinition;
+use super::definition::Definition;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct LetValues {
-    definitions: Vec<ValueDefinition>,
+    definitions: Vec<Definition>,
     expression: Box<Expression>,
 }
 
 impl LetValues {
-    pub fn new(definitions: Vec<ValueDefinition>, expression: impl Into<Expression>) -> Self {
+    pub fn new(definitions: Vec<Definition>, expression: impl Into<Expression>) -> Self {
         Self {
             definitions,
             expression: Box::new(expression.into()),
         }
     }
 
-    pub fn definitions(&self) -> &[ValueDefinition] {
+    pub fn definitions(&self) -> &[Definition] {
         &self.definitions
     }
 
@@ -59,11 +59,11 @@ impl LetValues {
         let mut variables = variables.clone();
         let mut definitions = vec![];
 
-        for value_definition in &self.definitions {
-            definitions.push(value_definition.infer_environment(&variables, global_variables));
+        for definition in &self.definitions {
+            definitions.push(definition.infer_environment(&variables, global_variables));
             variables.insert(
-                value_definition.name().into(),
-                value_definition.type_().clone().into(),
+                definition.name().into(),
+                definition.type_().clone().into(),
             );
         }
 

@@ -19,7 +19,7 @@ mod operator;
 mod primitive;
 mod primitive_alternative;
 mod primitive_case;
-mod value_definition;
+mod definition;
 mod variable;
 
 pub use algebraic_alternative::*;
@@ -43,5 +43,5 @@ pub use operator::*;
 pub use primitive::*;
 pub use primitive_alternative::*;
 pub use primitive_case::*;
-pub use value_definition::*;
+pub use definition::*;
 pub use variable::*;

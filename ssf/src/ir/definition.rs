@@ -1,54 +1,49 @@
-use super::function_definition::*;
-use super::value_definition::*;
-use crate::types::Type;
+use super::expression::Expression;
+use crate::types::{self, Type};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Definition {
-    FunctionDefinition(FunctionDefinition),
-    ValueDefinition(ValueDefinition),
+pub struct Definition {
+    name: String,
+    body: Expression,
+    type_: types::Value,
 }
 
 impl Definition {
+    pub fn new(
+        name: impl Into<String>,
+        body: impl Into<Expression>,
+        type_: impl Into<types::Value>,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            body: body.into(),
+            type_: type_.into(),
+        }
+    }
+
     pub fn name(&self) -> &str {
-        match self {
-            Self::FunctionDefinition(function_definition) => function_definition.name(),
-            Self::ValueDefinition(value_definition) => value_definition.name(),
-        }
+        &self.name
     }
 
-    pub fn type_(&self) -> Type {
-        match self {
-            Self::FunctionDefinition(function_definition) => {
-                function_definition.type_().clone().into()
-            }
-            Self::ValueDefinition(value_definition) => value_definition.type_().clone().into(),
-        }
+    pub fn body(&self) -> &Expression {
+        &self.body
     }
 
-    pub fn to_function_definition(&self) -> Option<&FunctionDefinition> {
-        match self {
-            Self::FunctionDefinition(function_definition) => Some(function_definition),
-            Self::ValueDefinition(_) => None,
-        }
+    pub fn type_(&self) -> &types::Value {
+        &self.type_
     }
 
-    pub fn to_value_definition(&self) -> Option<&ValueDefinition> {
-        match self {
-            Self::FunctionDefinition(_) => None,
-            Self::ValueDefinition(value_definition) => Some(value_definition),
-        }
+    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
+        Self::new(
+            self.name.clone(),
+            self.body.rename_variables(names),
+            self.type_.clone(),
+        )
     }
 
     pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
-        match self {
-            Self::FunctionDefinition(function_definition) => {
-                function_definition.find_variables(excluded_variables)
-            }
-            Self::ValueDefinition(value_definition) => {
-                value_definition.find_variables(excluded_variables)
-            }
-        }
+        self.body.find_variables(&excluded_variables)
     }
 
     pub(crate) fn infer_environment(
@@ -56,36 +51,18 @@ impl Definition {
         variables: &HashMap<String, Type>,
         global_variables: &HashSet<String>,
     ) -> Self {
-        match self {
-            Self::FunctionDefinition(function_definition) => function_definition
-                .infer_environment(variables, global_variables)
-                .into(),
-            Self::ValueDefinition(value_definition) => value_definition
-                .infer_environment(variables, global_variables)
-                .into(),
-        }
+        Self::new(
+            self.name.clone(),
+            self.body.infer_environment(variables, global_variables),
+            self.type_.clone(),
+        )
     }
 
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
-        match self {
-            Self::FunctionDefinition(function_definition) => {
-                function_definition.convert_types(convert).into()
-            }
-            Self::ValueDefinition(value_definition) => {
-                value_definition.convert_types(convert).into()
-            }
-        }
-    }
-}
-
-impl From<FunctionDefinition> for Definition {
-    fn from(function_definition: FunctionDefinition) -> Self {
-        Definition::FunctionDefinition(function_definition)
-    }
-}
-
-impl From<ValueDefinition> for Definition {
-    fn from(function_definition: ValueDefinition) -> Self {
-        Definition::ValueDefinition(function_definition)
+        Self::new(
+            self.name.clone(),
+            self.body.convert_types(convert),
+            convert(&self.type_.clone().into()).into_value().unwrap(),
+        )
     }
 }

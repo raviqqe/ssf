@@ -1,7 +1,5 @@
 use super::declaration::Declaration;
 use super::definition::Definition;
-use super::function_definition::FunctionDefinition;
-use super::value_definition::ValueDefinition;
 use crate::analysis::{check_types, sort_global_variables, AnalysisError};
 use crate::types::canonicalize;
 use std::collections::HashMap;
@@ -114,13 +112,13 @@ impl Module {
                         )
                         .into()
                     }
-                    Definition::ValueDefinition(value_definition) => ValueDefinition::new(
+                    Definition::Definition(definition) => Definition::new(
                         names
-                            .get(value_definition.name())
+                            .get(definition.name())
                             .cloned()
-                            .unwrap_or_else(|| value_definition.name().into()),
-                        value_definition.body().rename_variables(names),
-                        value_definition.type_().clone(),
+                            .unwrap_or_else(|| definition.name().into()),
+                        definition.body().rename_variables(names),
+                        definition.type_().clone(),
                     )
                     .into(),
                 })
@@ -169,13 +167,13 @@ mod tests {
         assert_eq!(
             Module::new(
                 vec![],
-                vec![ValueDefinition::new("foo", 42.0, types::Primitive::Float64).into()]
+                vec![Definition::new("foo", 42.0, types::Primitive::Float64).into()]
             )
             .unwrap()
             .rename_global_variables(&vec![("foo".into(), "bar".into())].drain(..).collect()),
             Module::without_validation(
                 vec![],
-                vec![ValueDefinition::new("bar", 42.0, types::Primitive::Float64).into()],
+                vec![Definition::new("bar", 42.0, types::Primitive::Float64).into()],
                 vec!["bar".into()]
             )
         );
@@ -233,7 +231,7 @@ mod tests {
             Module::new(
                 vec![],
                 vec![
-                    ValueDefinition::new("y", 42.0, types::Primitive::Float64).into(),
+                    Definition::new("y", 42.0, types::Primitive::Float64).into(),
                     FunctionDefinition::new(
                         "f",
                         vec![Argument::new("x", types::Primitive::Float64)],
@@ -256,7 +254,7 @@ mod tests {
             Module::without_validation(
                 vec![],
                 vec![
-                    ValueDefinition::new("y", 42.0, types::Primitive::Float64).into(),
+                    Definition::new("y", 42.0, types::Primitive::Float64).into(),
                     FunctionDefinition::with_environment(
                         "f",
                         vec![],
@@ -314,7 +312,7 @@ mod tests {
             Module::new(
                 vec![],
                 vec![
-                    ValueDefinition::new("y", 42.0, types::Primitive::Float64).into(),
+                    Definition::new("y", 42.0, types::Primitive::Float64).into(),
                     FunctionDefinition::new(
                         "f",
                         vec![Argument::new("x", types::Primitive::Float64)],
@@ -327,7 +325,7 @@ mod tests {
             Ok(Module::without_validation(
                 vec![],
                 vec![
-                    ValueDefinition::new("y", 42.0, types::Primitive::Float64).into(),
+                    Definition::new("y", 42.0, types::Primitive::Float64).into(),
                     FunctionDefinition::with_environment(
                         "f",
                         vec![],
@@ -348,7 +346,7 @@ mod tests {
             Module::new(
                 vec![],
                 vec![
-                    ValueDefinition::new("y", 42.0, types::Primitive::Float64).into(),
+                    Definition::new("y", 42.0, types::Primitive::Float64).into(),
                     FunctionDefinition::new(
                         "f",
                         vec![Argument::new("x", types::Primitive::Float64)],
@@ -369,7 +367,7 @@ mod tests {
             Ok(Module::without_validation(
                 vec![],
                 vec![
-                    ValueDefinition::new("y", 42.0, types::Primitive::Float64).into(),
+                    Definition::new("y", 42.0, types::Primitive::Float64).into(),
                     FunctionDefinition::with_environment(
                         "f",
                         vec![],
