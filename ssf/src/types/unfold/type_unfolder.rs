@@ -15,30 +15,20 @@ impl TypeUnfolder {
 
     pub fn unfold(&self, type_: &Type) -> Type {
         match type_ {
+            Type::Algebraic(algebraic) => self.unfold_algebraic(algebraic).into(),
             Type::Function(function) => Function::new(
-                function
-                    .arguments()
-                    .iter()
-                    .map(|argument| self.unfold(argument))
-                    .collect(),
-                self.unfold_value(function.result()),
+                self.unfold(function.argument()),
+                self.unfold(function.result()),
             )
             .into(),
-            Type::Value(value) => self.unfold_value(value).into(),
-        }
-    }
-
-    fn unfold_value(&self, value: &Value) -> Value {
-        match value {
-            Value::Algebraic(algebraic) => self.unfold_algebraic(algebraic).into(),
-            Value::Index(index) => {
+            Type::Index(index) => {
                 if *index == self.index {
                     self.algebraic_type.clone().into()
                 } else {
-                    Value::Index(*index)
+                    Type::Index(*index)
                 }
             }
-            Value::Primitive(_) => value.clone(),
+            Type::Primitive(_) => type_.clone(),
         }
     }
 

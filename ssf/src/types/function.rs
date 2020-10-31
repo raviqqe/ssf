@@ -1,45 +1,30 @@
 use super::type_::Type;
-use super::value::Value;
+use std::sync::Arc;
 
-/// Function types map multiple arguments to single results.
-///
-/// Their result types are always value types, which is to prevent invalid
-/// recursive types of functions and to simplify their compilation.
-///
-/// Function types without arguments represent thunks that are always
-/// updatable.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Function {
-    arguments: Vec<Type>,
-    result: Value,
+    argument: Arc<Type>,
+    result: Arc<Type>,
 }
 
 impl Function {
-    pub fn new(arguments: Vec<Type>, result: impl Into<Value>) -> Self {
+    pub fn new(argument: impl Into<Type>, result: impl Into<Type>) -> Self {
         Self {
-            arguments,
-            result: result.into(),
+            argument: argument.into().into(),
+            result: result.into().into(),
         }
     }
 
-    pub fn arguments(&self) -> &[Type] {
-        &self.arguments
+    pub fn argument(&self) -> &Type {
+        &self.argument
     }
 
-    pub fn result(&self) -> &Value {
+    pub fn result(&self) -> &Type {
         &self.result
     }
 
     pub fn to_id(&self) -> String {
-        format!(
-            "({}->{})",
-            self.arguments
-                .iter()
-                .map(|argument| argument.to_id())
-                .collect::<Vec<_>>()
-                .join("->"),
-            self.result.to_id()
-        )
+        format!("({}->{})", self.argument.to_id(), self.result.to_id())
     }
 }
 
@@ -51,20 +36,20 @@ mod tests {
     #[test]
     fn to_id() {
         assert_eq!(
-            &Function::new(vec![Primitive::Float64.into()], Primitive::Float64).to_id(),
+            &Function::new(Primitive::Float64, Primitive::Float64).to_id(),
             "(Float64->Float64)"
         );
         assert_eq!(
             &Function::new(
-                vec![Primitive::Float64.into(), Primitive::Float64.into()],
-                Primitive::Float64
+                Primitive::Float64,
+                Function::new(Primitive::Float64, Primitive::Float64),
             )
             .to_id(),
-            "(Float64->Float64->Float64)"
+            "(Float64->(Float64->Float64))"
         );
         assert_eq!(
             &Function::new(
-                vec![Function::new(vec![Primitive::Float64.into()], Primitive::Float64).into()],
+                Function::new(Primitive::Float64, Primitive::Float64),
                 Primitive::Float64
             )
             .to_id(),
@@ -73,17 +58,17 @@ mod tests {
     }
 
     #[test]
-    fn arguments() {
+    fn argument() {
         assert_eq!(
-            Function::new(vec![Primitive::Float64.into()], Primitive::Float64).arguments(),
-            &[Primitive::Float64.into()]
+            Function::new(Primitive::Float64, Primitive::Float64).argument(),
+            &Primitive::Float64.into()
         );
     }
 
     #[test]
     fn result() {
         assert_eq!(
-            Function::new(vec![Primitive::Float64.into()], Primitive::Float64).result(),
+            Function::new(Primitive::Float64, Primitive::Float64).result(),
             &Primitive::Float64.into()
         );
     }

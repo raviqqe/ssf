@@ -72,11 +72,7 @@ mod tests {
     #[test]
     fn to_id() {
         assert_eq!(
-            &Type::from(Function::new(
-                vec![Primitive::Float64.into()],
-                Primitive::Float64
-            ))
-            .to_id(),
+            &Type::from(Function::new(Primitive::Float64, Primitive::Float64)).to_id(),
             "(Float64->Float64)"
         );
     }
