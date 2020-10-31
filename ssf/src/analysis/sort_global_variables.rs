@@ -104,8 +104,7 @@ mod tests {
                         "y",
                         ir::FunctionApplication::new(ir::Variable::new("f"), 42.0),
                         types::Primitive::Float64
-                    )
-                    .into(),
+                    ),
                     ir::Definition::new(
                         "f",
                         ir::Lambda::new(
@@ -114,9 +113,8 @@ mod tests {
                             types::Primitive::Float64
                         ),
                         types::Function::new(types::Primitive::Float64, types::Primitive::Float64)
-                    )
-                    .into(),
-                    ir::Definition::new("x", 42.0, types::Primitive::Float64).into(),
+                    ),
+                    ir::Definition::new("x", 42.0, types::Primitive::Float64),
                 ],
                 vec![]
             )),
