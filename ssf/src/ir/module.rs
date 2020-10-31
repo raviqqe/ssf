@@ -91,28 +91,8 @@ impl Module {
             definitions: self
                 .definitions
                 .iter()
-                .map(|definition| match definition {
-                    Definition::FunctionDefinition(function_definition) => {
-                        let original_names = names;
-                        let mut names = names.clone();
-
-                        for argument in function_definition.arguments() {
-                            names.remove(argument.name());
-                        }
-
-                        FunctionDefinition::with_environment(
-                            original_names
-                                .get(function_definition.name())
-                                .cloned()
-                                .unwrap_or_else(|| function_definition.name().into()),
-                            function_definition.environment().to_vec(),
-                            function_definition.arguments().to_vec(),
-                            function_definition.body().rename_variables(&names),
-                            function_definition.result_type().clone(),
-                        )
-                        .into()
-                    }
-                    Definition::Definition(definition) => Definition::new(
+                .map(|definition| {
+                    Definition::new(
                         names
                             .get(definition.name())
                             .cloned()
@@ -120,7 +100,6 @@ impl Module {
                         definition.body().rename_variables(names),
                         definition.type_().clone(),
                     )
-                    .into(),
                 })
                 .collect(),
             global_variable_initialization_order: self
@@ -387,62 +366,6 @@ mod tests {
                     .into()
                 ],
                 vec!["y".into()]
-            ))
-        );
-    }
-
-    #[test]
-    fn infer_environment_of_recursive_function_in_let_expression() {
-        assert_eq!(
-            Module::new(
-                vec![],
-                vec![FunctionDefinition::new(
-                    "f",
-                    vec![Argument::new("x", types::Primitive::Float64)],
-                    LetFunctions::new(
-                        vec![FunctionDefinition::new(
-                            "g",
-                            vec![Argument::new("y", types::Primitive::Float64)],
-                            FunctionApplication::new(
-                                Variable::new("g"),
-                                vec![Variable::new("y").into()]
-                            ),
-                            types::Primitive::Float64
-                        )],
-                        42.0
-                    ),
-                    types::Primitive::Float64
-                )
-                .into()]
-            ),
-            Ok(Module::without_validation(
-                vec![],
-                vec![FunctionDefinition::new(
-                    "f",
-                    vec![Argument::new("x", types::Primitive::Float64)],
-                    LetFunctions::new(
-                        vec![FunctionDefinition::with_environment(
-                            "g",
-                            vec![Argument::new(
-                                "g",
-                                types::Function::new(
-                                    vec![types::Primitive::Float64.into()],
-                                    types::Primitive::Float64
-                                )
-                            )],
-                            vec![Argument::new("y", types::Primitive::Float64)],
-                            FunctionApplication::new(
-                                Variable::new("g"),
-                                vec![Variable::new("y").into()]
-                            ),
-                            types::Primitive::Float64
-                        )],
-                        42.0
-                    ),
-                    types::Primitive::Float64
-                )
-                .into()],
-                vec![]
             ))
         );
     }

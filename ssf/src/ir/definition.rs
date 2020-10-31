@@ -1,19 +1,19 @@
 use super::expression::Expression;
-use crate::types::{self, Type};
+use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Definition {
     name: String,
     body: Expression,
-    type_: types::Value,
+    type_: Type,
 }
 
 impl Definition {
     pub fn new(
         name: impl Into<String>,
         body: impl Into<Expression>,
-        type_: impl Into<types::Value>,
+        type_: impl Into<Type>,
     ) -> Self {
         Self {
             name: name.into(),
@@ -30,7 +30,7 @@ impl Definition {
         &self.body
     }
 
-    pub fn type_(&self) -> &types::Value {
+    pub fn type_(&self) -> &Type {
         &self.type_
     }
 
@@ -62,7 +62,7 @@ impl Definition {
         Self::new(
             self.name.clone(),
             self.body.convert_types(convert),
-            convert(&self.type_.clone().into()).into_value().unwrap(),
+            convert(&self.type_.clone().into()),
         )
     }
 }

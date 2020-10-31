@@ -3,8 +3,8 @@ use super::bitcast::Bitcast;
 use super::case::Case;
 use super::constructor_application::ConstructorApplication;
 use super::function_application::FunctionApplication;
-use super::let_functions::LetFunctions;
-use super::let_values::LetValues;
+use super::lambda::Lambda;
+use super::let_::Let;
 use super::operation::Operation;
 use super::primitive::Primitive;
 use super::primitive_case::PrimitiveCase;
@@ -18,8 +18,8 @@ pub enum Expression {
     Case(Case),
     ConstructorApplication(ConstructorApplication),
     FunctionApplication(FunctionApplication),
-    LetFunctions(LetFunctions),
-    LetValues(LetValues),
+    Lambda(Lambda),
+    Let(Let),
     Primitive(Primitive),
     Operation(Operation),
     Variable(Variable),
@@ -43,8 +43,8 @@ impl Expression {
             Self::FunctionApplication(function_application) => {
                 function_application.rename_variables(names).into()
             }
-            Self::LetFunctions(let_functions) => let_functions.rename_variables(names).into(),
-            Self::LetValues(let_values) => let_values.rename_variables(names).into(),
+            Self::Lambda(lambda) => lambda.rename_variables(names).into(),
+            Self::Let(let_) => let_.rename_variables(names).into(),
             Self::Operation(operation) => operation.rename_variables(names).into(),
             Self::Variable(variable) => variable.rename_variables(names).into(),
             Self::Primitive(_) => self.clone(),
@@ -61,8 +61,8 @@ impl Expression {
             Self::FunctionApplication(function_application) => {
                 function_application.find_variables(excluded_variables)
             }
-            Self::LetFunctions(let_functions) => let_functions.find_variables(excluded_variables),
-            Self::LetValues(let_values) => let_values.find_variables(excluded_variables),
+            Self::Lambda(lambda) => lambda.find_variables(excluded_variables).into(),
+            Self::Let(let_) => let_.find_variables(excluded_variables),
             Self::Operation(operation) => operation.find_variables(excluded_variables),
             Self::Variable(variable) => variable.find_variables(excluded_variables),
             Self::Primitive(_) => HashSet::new(),
@@ -85,12 +85,7 @@ impl Expression {
             Self::FunctionApplication(function_application) => function_application
                 .infer_environment(variables, global_variables)
                 .into(),
-            Self::LetFunctions(let_functions) => let_functions
-                .infer_environment(variables, global_variables)
-                .into(),
-            Self::LetValues(let_values) => let_values
-                .infer_environment(variables, global_variables)
-                .into(),
+            Self::Let(let_) => let_.infer_environment(variables, global_variables).into(),
             Self::Operation(operation) => operation
                 .infer_environment(variables, global_variables)
                 .into(),
@@ -108,8 +103,7 @@ impl Expression {
             Self::FunctionApplication(function_application) => {
                 function_application.convert_types(convert).into()
             }
-            Self::LetFunctions(let_functions) => let_functions.convert_types(convert).into(),
-            Self::LetValues(let_values) => let_values.convert_types(convert).into(),
+            Self::Let(let_) => let_.convert_types(convert).into(),
             Self::Operation(operation) => operation.convert_types(convert).into(),
             Self::Primitive(_) | Self::Variable(_) => self.clone(),
         }
@@ -146,15 +140,15 @@ impl From<FunctionApplication> for Expression {
     }
 }
 
-impl From<LetFunctions> for Expression {
-    fn from(let_functions: LetFunctions) -> Self {
-        Self::LetFunctions(let_functions)
+impl From<Lambda> for Expression {
+    fn from(lambda: Lambda) -> Self {
+        Self::Lambda(lambda)
     }
 }
 
-impl From<LetValues> for Expression {
-    fn from(let_values: LetValues) -> Self {
-        Self::LetValues(let_values)
+impl From<Let> for Expression {
+    fn from(let_: Let) -> Self {
+        Self::Let(let_)
     }
 }
 

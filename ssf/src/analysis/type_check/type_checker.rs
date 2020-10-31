@@ -202,8 +202,7 @@ impl TypeChecker {
             Case::Algebraic(algebraic_case) => {
                 let argument_type = self
                     .check_expression(algebraic_case.argument(), variables)?
-                    .into_value()
-                    .and_then(|value_type| value_type.into_algebraic())
+                    .into_algebraic()
                     .ok_or_else(|| {
                         TypeCheckError::AlgebraicExpected(algebraic_case.argument().clone())
                     })?;
@@ -259,8 +258,7 @@ impl TypeChecker {
             Case::Primitive(primitive_case) => {
                 let argument_type = self
                     .check_expression(primitive_case.argument(), variables)?
-                    .into_value()
-                    .and_then(|value_type| value_type.into_primitive())
+                    .into_primitive()
                     .ok_or_else(|| {
                         TypeCheckError::PrimitiveExpected(primitive_case.argument().clone())
                     })?;

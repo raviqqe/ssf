@@ -4,12 +4,12 @@ use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct LetValues {
+pub struct Let {
     definitions: Vec<Definition>,
     expression: Box<Expression>,
 }
 
-impl LetValues {
+impl Let {
     pub fn new(definitions: Vec<Definition>, expression: impl Into<Expression>) -> Self {
         Self {
             definitions,
