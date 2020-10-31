@@ -36,7 +36,7 @@ impl Lambda {
                 todo!("thunk not implemented")
             } else {
                 types::canonicalize(
-                    &arguments.iter().rev().take(1).fold(
+                    &arguments.iter().rev().skip(1).fold(
                         types::Function::new(
                             arguments.iter().last().unwrap().type_().clone(),
                             result_type.clone(),
@@ -164,7 +164,6 @@ mod tests {
             )
             .infer_environment(&Default::default(), &Default::default()),
             Lambda::with_environment(
-                "f",
                 vec![],
                 vec![Argument::new("x", types::Primitive::Float64)],
                 42.0,
@@ -188,7 +187,6 @@ mod tests {
                 &Default::default()
             ),
             Lambda::with_environment(
-                "f",
                 vec![Argument::new("y", types::Primitive::Float64)],
                 vec![Argument::new("x", types::Primitive::Float64)],
                 Variable::new("y"),
@@ -212,7 +210,6 @@ mod tests {
             .infer_environment(&variables, &Default::default())
             .infer_environment(&variables, &Default::default()),
             Lambda::with_environment(
-                "f",
                 vec![Argument::new("y", types::Primitive::Float64)],
                 vec![Argument::new("x", types::Primitive::Float64)],
                 Variable::new("y"),

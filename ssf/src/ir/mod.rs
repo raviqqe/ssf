@@ -33,6 +33,7 @@ pub use definition::*;
 pub use definition::*;
 pub use expression::*;
 pub use function_application::*;
+pub use lambda::*;
 pub use let_::*;
 pub use module::*;
 pub use operation::*;

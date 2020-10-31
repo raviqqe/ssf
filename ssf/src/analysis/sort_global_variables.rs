@@ -102,15 +102,18 @@ mod tests {
                 vec![
                     ir::Definition::new(
                         "y",
-                        ir::FunctionApplication::new(ir::Variable::new("f"), vec![42.0.into()]),
+                        ir::FunctionApplication::new(ir::Variable::new("f"), 42.0),
                         types::Primitive::Float64
                     )
                     .into(),
-                    ir::FunctionDefinition::new(
+                    ir::Definition::new(
                         "f",
-                        vec![ir::Argument::new("a", types::Primitive::Float64)],
-                        ir::Variable::new("x"),
-                        types::Primitive::Float64
+                        ir::Lambda::new(
+                            vec![ir::Argument::new("a", types::Primitive::Float64)],
+                            ir::Variable::new("x"),
+                            types::Primitive::Float64
+                        ),
+                        types::Function::new(types::Primitive::Float64, types::Primitive::Float64)
                     )
                     .into(),
                     ir::Definition::new("x", 42.0, types::Primitive::Float64).into(),
@@ -129,28 +132,34 @@ mod tests {
                 vec![
                     ir::Definition::new(
                         "y",
-                        ir::FunctionApplication::new(ir::Variable::new("f"), vec![42.0.into()]),
+                        ir::FunctionApplication::new(ir::Variable::new("f"), 42.0),
                         types::Primitive::Float64
                     )
                     .into(),
-                    ir::FunctionDefinition::new(
+                    ir::Definition::new(
                         "f",
-                        vec![ir::Argument::new("a", types::Primitive::Float64)],
-                        ir::FunctionApplication::new(
-                            ir::Variable::new("g"),
-                            vec![ir::Variable::new("x").into()]
+                        ir::Lambda::new(
+                            vec![ir::Argument::new("a", types::Primitive::Float64)],
+                            ir::FunctionApplication::new(
+                                ir::Variable::new("g"),
+                                ir::Variable::new("x")
+                            ),
+                            types::Primitive::Float64
                         ),
-                        types::Primitive::Float64
+                        types::Function::new(types::Primitive::Float64, types::Primitive::Float64)
                     )
                     .into(),
-                    ir::FunctionDefinition::new(
+                    ir::Definition::new(
                         "g",
-                        vec![ir::Argument::new("a", types::Primitive::Float64)],
-                        ir::FunctionApplication::new(
-                            ir::Variable::new("f"),
-                            vec![ir::Variable::new("x").into()]
+                        ir::Lambda::new(
+                            vec![ir::Argument::new("a", types::Primitive::Float64)],
+                            ir::FunctionApplication::new(
+                                ir::Variable::new("f"),
+                                ir::Variable::new("x")
+                            ),
+                            types::Primitive::Float64
                         ),
-                        types::Primitive::Float64
+                        types::Function::new(types::Primitive::Float64, types::Primitive::Float64)
                     )
                     .into(),
                     ir::Definition::new("x", 42.0, types::Primitive::Float64).into(),

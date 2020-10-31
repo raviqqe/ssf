@@ -3,7 +3,7 @@ use super::primitive_case::PrimitiveCase;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
-/// Case expressions match values of algebraic data types with their
+/// Case expressions match types of algebraic data types with their
 /// constructors deconstructing them.
 ///
 /// Their alternatives do not have to be exhaustive. See also options of each

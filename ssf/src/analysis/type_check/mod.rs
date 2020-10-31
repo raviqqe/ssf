@@ -14,7 +14,7 @@ mod tests {
     use super::check_types;
     use super::error::*;
     use crate::ir::*;
-    use crate::types;
+    use crate::types::{self, Type};
 
     #[test]
     fn check_types_with_empty_modules() {
@@ -39,11 +39,14 @@ mod tests {
         let module = Module::without_validation(
             vec![],
             vec![
-                FunctionDefinition::new(
+                Definition::new(
                     "f",
-                    vec![Argument::new("x", types::Primitive::Float64)],
-                    42.0,
-                    types::Primitive::Float64,
+                    Lambda::new(
+                        vec![Argument::new("x", types::Primitive::Float64)],
+                        42.0,
+                        types::Primitive::Float64,
+                    ),
+                    types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
                 )
                 .into(),
                 Definition::new("x", Variable::new("f"), types::Primitive::Float64).into(),
@@ -61,13 +64,15 @@ mod tests {
     fn check_types_of_functions() {
         let module = Module::without_validation(
             vec![],
-            vec![FunctionDefinition::new(
+            vec![Definition::new(
                 "f",
-                vec![Argument::new("x", types::Primitive::Float64)],
-                42.0,
-                types::Primitive::Float64,
-            )
-            .into()],
+                Lambda::new(
+                    vec![Argument::new("x", types::Primitive::Float64)],
+                    42.0,
+                    types::Primitive::Float64,
+                ),
+                types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
+            )],
             vec![],
         );
 
@@ -79,20 +84,25 @@ mod tests {
         let module = Module::without_validation(
             vec![],
             vec![
-                FunctionDefinition::new(
+                Definition::new(
                     "f",
-                    vec![Argument::new("x", types::Primitive::Float64)],
-                    42.0,
-                    types::Primitive::Float64,
+                    Lambda::new(
+                        vec![Argument::new("x", types::Primitive::Float64)],
+                        42.0,
+                        types::Primitive::Float64,
+                    ),
+                    types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
                 )
                 .into(),
-                FunctionDefinition::new(
+                Definition::new(
                     "g",
-                    vec![Argument::new("x", types::Primitive::Float64)],
-                    Variable::new("f"),
-                    types::Primitive::Float64,
-                )
-                .into(),
+                    Lambda::new(
+                        vec![Argument::new("x", types::Primitive::Float64)],
+                        Variable::new("f"),
+                        types::Primitive::Float64,
+                    ),
+                    types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
+                ),
             ],
             vec![],
         );
@@ -108,16 +118,19 @@ mod tests {
         let module = Module::without_validation(
             vec![],
             vec![
-                FunctionDefinition::new(
+                Definition::new(
                     "f",
-                    vec![Argument::new("x", types::Primitive::Float64)],
-                    42.0,
-                    types::Primitive::Float64,
+                    Lambda::new(
+                        vec![Argument::new("x", types::Primitive::Float64)],
+                        42.0,
+                        types::Primitive::Float64,
+                    ),
+                    types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
                 )
                 .into(),
                 Definition::new(
                     "x",
-                    FunctionApplication::new(Variable::new("f"), vec![42.0.into()]),
+                    FunctionApplication::new(Variable::new("f"), 42.0),
                     types::Primitive::Float64,
                 )
                 .into(),
@@ -133,16 +146,22 @@ mod tests {
         let module = Module::without_validation(
             vec![],
             vec![
-                FunctionDefinition::new(
+                Definition::new(
                     "f",
-                    vec![Argument::new("x", types::Primitive::Float64)],
-                    42.0,
-                    types::Primitive::Float64,
+                    Lambda::new(
+                        vec![Argument::new("x", types::Primitive::Float64)],
+                        42.0,
+                        types::Primitive::Float64,
+                    ),
+                    types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
                 )
                 .into(),
                 Definition::new(
                     "x",
-                    FunctionApplication::new(Variable::new("f"), vec![42.0.into(), 42.0.into()]),
+                    FunctionApplication::new(
+                        FunctionApplication::new(Variable::new("f"), 42.0),
+                        42.0,
+                    ),
                     types::Primitive::Float64,
                 )
                 .into(),
@@ -152,7 +171,7 @@ mod tests {
 
         assert!(matches!(
             check_types(&module),
-            Err(TypeCheckError::WrongArgumentsLength(_))
+            Err(TypeCheckError::FunctionExpected(_))
         ));
     }
 
@@ -197,11 +216,14 @@ mod tests {
         let module = Module::without_validation(
             vec![],
             vec![
-                FunctionDefinition::new(
+                Definition::new(
                     "f",
-                    vec![Argument::new("x", types::Primitive::Float64)],
-                    42.0,
-                    types::Primitive::Float64,
+                    Lambda::new(
+                        vec![Argument::new("x", types::Primitive::Float64)],
+                        42.0,
+                        types::Primitive::Float64,
+                    ),
+                    types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
                 )
                 .into(),
                 Definition::new(
@@ -242,10 +264,7 @@ mod tests {
         let module = Module::without_validation(
             vec![Declaration::new(
                 "x",
-                types::Function::new(
-                    vec![types::Primitive::Float64.into()],
-                    types::Primitive::Float64,
-                ),
+                types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
             )],
             vec![Definition::new("y", Variable::new("x"), types::Primitive::Float64).into()],
             vec![],
@@ -265,21 +284,23 @@ mod tests {
 
             #[test]
             fn check_case_expressions_only_with_default_alternative() {
+                let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
+
                 assert_eq!(
                     check_types(&Module::without_validation(
                         vec![],
-                        vec![FunctionDefinition::new(
+                        vec![Definition::new(
                             "f",
-                            vec![Argument::new(
-                                "x",
-                                types::Algebraic::new(vec![types::Constructor::boxed(vec![])]),
-                            )],
-                            AlgebraicCase::new(
-                                Variable::new("x"),
-                                vec![],
-                                Some(DefaultAlternative::new("x", 42.0)),
+                            Lambda::new(
+                                vec![Argument::new("x", algebraic_type.clone(),)],
+                                AlgebraicCase::new(
+                                    Variable::new("x"),
+                                    vec![],
+                                    Some(DefaultAlternative::new("x", 42.0)),
+                                ),
+                                types::Primitive::Float64,
                             ),
-                            types::Primitive::Float64,
+                            types::Function::new(algebraic_type, types::Primitive::Float64)
                         )
                         .into()],
                         vec![],
@@ -295,15 +316,18 @@ mod tests {
                 assert_eq!(
                     check_types(&Module::without_validation(
                         vec![],
-                        vec![FunctionDefinition::new(
+                        vec![Definition::new(
                             "f",
-                            vec![Argument::new("x", algebraic_type.clone())],
-                            AlgebraicCase::new(
-                                Variable::new("x"),
-                                vec![],
-                                Some(DefaultAlternative::new("y", Variable::new("y"))),
+                            Lambda::new(
+                                vec![Argument::new("x", algebraic_type.clone())],
+                                AlgebraicCase::new(
+                                    Variable::new("x"),
+                                    vec![],
+                                    Some(DefaultAlternative::new("y", Variable::new("y"))),
+                                ),
+                                algebraic_type.clone(),
                             ),
-                            algebraic_type,
+                            types::Function::new(algebraic_type.clone(), algebraic_type),
                         )
                         .into()],
                         vec![],
@@ -319,19 +343,22 @@ mod tests {
                 assert_eq!(
                     check_types(&Module::without_validation(
                         vec![],
-                        vec![FunctionDefinition::new(
+                        vec![Definition::new(
                             "f",
-                            vec![Argument::new("x", algebraic_type.clone())],
-                            AlgebraicCase::new(
-                                Variable::new("x"),
-                                vec![AlgebraicAlternative::new(
-                                    Constructor::new(algebraic_type, 0),
-                                    vec![],
-                                    42.0
-                                )],
-                                None
+                            Lambda::new(
+                                vec![Argument::new("x", algebraic_type.clone())],
+                                AlgebraicCase::new(
+                                    Variable::new("x"),
+                                    vec![AlgebraicAlternative::new(
+                                        Constructor::new(algebraic_type.clone(), 0),
+                                        vec![],
+                                        42.0
+                                    )],
+                                    None
+                                ),
+                                types::Primitive::Float64,
                             ),
-                            types::Primitive::Float64,
+                            types::Function::new(algebraic_type, types::Primitive::Float64)
                         )
                         .into()],
                         vec![],
@@ -349,21 +376,23 @@ mod tests {
                 assert_eq!(
                     check_types(&Module::without_validation(
                         vec![],
-                        vec![FunctionDefinition::new(
+                        vec![Definition::new(
                             "f",
-                            vec![Argument::new("x", algebraic_type.clone())],
-                            AlgebraicCase::new(
-                                Variable::new("x"),
-                                vec![AlgebraicAlternative::new(
-                                    Constructor::new(algebraic_type, 0),
-                                    vec!["y".into()],
-                                    Variable::new("y")
-                                )],
-                                None
+                            Lambda::new(
+                                vec![Argument::new("x", algebraic_type.clone())],
+                                AlgebraicCase::new(
+                                    Variable::new("x"),
+                                    vec![AlgebraicAlternative::new(
+                                        Constructor::new(algebraic_type.clone(), 0),
+                                        vec!["y".into()],
+                                        Variable::new("y")
+                                    )],
+                                    None
+                                ),
+                                types::Primitive::Float64,
                             ),
-                            types::Primitive::Float64,
-                        )
-                        .into()],
+                            types::Function::new(algebraic_type, types::Primitive::Float64)
+                        )],
                         vec![],
                     )),
                     Ok(())
@@ -372,18 +401,19 @@ mod tests {
 
             #[test]
             fn fail_to_check_case_expressions_without_alternatives() {
+                let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
+
                 let module = Module::without_validation(
                     vec![],
-                    vec![FunctionDefinition::new(
+                    vec![Definition::new(
                         "f",
-                        vec![Argument::new(
-                            "x",
-                            types::Algebraic::new(vec![types::Constructor::boxed(vec![])]),
-                        )],
-                        AlgebraicCase::new(Variable::new("x"), vec![], None),
-                        types::Primitive::Float64,
-                    )
-                    .into()],
+                        Lambda::new(
+                            vec![Argument::new("x", algebraic_type.clone())],
+                            AlgebraicCase::new(Variable::new("x"), vec![], None),
+                            types::Primitive::Float64,
+                        ),
+                        types::Function::new(algebraic_type, types::Primitive::Float64),
+                    )],
                     vec![],
                 );
 
@@ -398,31 +428,30 @@ mod tests {
                 let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
                 let module = Module::without_validation(
                     vec![],
-                    vec![FunctionDefinition::new(
+                    vec![Definition::new(
                         "f",
-                        vec![Argument::new(
-                            "x",
-                            types::Algebraic::new(vec![types::Constructor::boxed(vec![])]),
-                        )],
-                        AlgebraicCase::new(
-                            Variable::new("x"),
-                            vec![
-                                AlgebraicAlternative::new(
-                                    Constructor::new(algebraic_type.clone(), 0),
-                                    vec![],
-                                    Variable::new("x"),
-                                ),
-                                AlgebraicAlternative::new(
-                                    Constructor::new(algebraic_type, 0),
-                                    vec![],
-                                    42.0,
-                                ),
-                            ],
-                            None,
+                        Lambda::new(
+                            vec![Argument::new("x", algebraic_type.clone())],
+                            AlgebraicCase::new(
+                                Variable::new("x"),
+                                vec![
+                                    AlgebraicAlternative::new(
+                                        Constructor::new(algebraic_type.clone(), 0),
+                                        vec![],
+                                        Variable::new("x"),
+                                    ),
+                                    AlgebraicAlternative::new(
+                                        Constructor::new(algebraic_type.clone(), 0),
+                                        vec![],
+                                        42.0,
+                                    ),
+                                ],
+                                None,
+                            ),
+                            types::Primitive::Float64,
                         ),
-                        types::Primitive::Float64,
-                    )
-                    .into()],
+                        types::Function::new(algebraic_type, types::Primitive::Float64),
+                    )],
                     vec![],
                 );
 
@@ -434,28 +463,29 @@ mod tests {
 
             #[test]
             fn check_case_expressions_with_recursive_algebraic_types() {
-                let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![
-                    types::Value::Index(0).into(),
-                ])]);
+                let algebraic_type =
+                    types::Algebraic::new(vec![types::Constructor::boxed(vec![Type::Index(0)])]);
 
                 assert_eq!(
                     check_types(&Module::without_validation(
                         vec![],
-                        vec![FunctionDefinition::new(
+                        vec![Definition::new(
                             "f",
-                            vec![Argument::new("x", algebraic_type.clone())],
-                            AlgebraicCase::new(
-                                Variable::new("x"),
-                                vec![AlgebraicAlternative::new(
-                                    Constructor::new(algebraic_type.clone(), 0),
-                                    vec!["y".into()],
-                                    Variable::new("y"),
-                                )],
-                                None,
+                            Lambda::new(
+                                vec![Argument::new("x", algebraic_type.clone())],
+                                AlgebraicCase::new(
+                                    Variable::new("x"),
+                                    vec![AlgebraicAlternative::new(
+                                        Constructor::new(algebraic_type.clone(), 0),
+                                        vec!["y".into()],
+                                        Variable::new("y"),
+                                    )],
+                                    None,
+                                ),
+                                algebraic_type.clone(),
                             ),
-                            algebraic_type,
-                        )
-                        .into()],
+                            types::Function::new(algebraic_type.clone(), algebraic_type)
+                        )],
                         vec![],
                     )),
                     Ok(())
@@ -637,24 +667,23 @@ mod tests {
         #[test]
         fn check_constructor_applications_of_recursive_algebraic_types() {
             let algebraic_type =
-                types::Algebraic::new(vec![types::Constructor::boxed(vec![types::Value::Index(
-                    0,
-                )
-                .into()])]);
+                types::Algebraic::new(vec![types::Constructor::boxed(vec![Type::Index(0)])]);
 
             assert_eq!(
                 check_types(&Module::without_validation(
                     vec![],
-                    vec![FunctionDefinition::new(
+                    vec![Definition::new(
                         "f",
-                        vec![Argument::new("x", algebraic_type.clone())],
-                        ConstructorApplication::new(
-                            Constructor::new(algebraic_type.clone(), 0),
-                            vec![Variable::new("x").into()],
+                        Lambda::new(
+                            vec![Argument::new("x", algebraic_type.clone())],
+                            ConstructorApplication::new(
+                                Constructor::new(algebraic_type.clone(), 0),
+                                vec![Variable::new("x").into()],
+                            ),
+                            algebraic_type.clone(),
                         ),
-                        algebraic_type,
-                    )
-                    .into()],
+                        types::Function::new(algebraic_type.clone(), algebraic_type)
+                    )],
                     vec![]
                 ),),
                 Ok(())
