@@ -92,8 +92,8 @@ impl Lambda {
         )
     }
 
-    pub(crate) fn find_variables(&self) -> HashSet<String> {
-        let mut variables = self.body.find_variables();
+    pub(crate) fn find_free_variables(&self) -> HashSet<String> {
+        let mut variables = self.body.find_free_variables();
 
         for argument in &self.arguments {
             variables.remove(argument.name());
@@ -105,7 +105,7 @@ impl Lambda {
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         let environment = self
             .body
-            .find_variables()
+            .find_free_variables()
             .iter()
             .map(|name| {
                 variables

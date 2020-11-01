@@ -39,10 +39,10 @@ impl Operation {
         )
     }
 
-    pub(crate) fn find_variables(&self) -> HashSet<String> {
-        let mut variables = self.lhs.find_variables();
+    pub(crate) fn find_free_variables(&self) -> HashSet<String> {
+        let mut variables = self.lhs.find_free_variables();
 
-        variables.extend(self.rhs.find_variables());
+        variables.extend(self.rhs.find_free_variables());
 
         variables
     }

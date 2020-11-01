@@ -32,10 +32,10 @@ impl FunctionApplication {
         )
     }
 
-    pub(crate) fn find_variables(&self) -> HashSet<String> {
-        let mut variables = self.function.find_variables();
+    pub(crate) fn find_free_variables(&self) -> HashSet<String> {
+        let mut variables = self.function.find_free_variables();
 
-        variables.extend(self.argument.find_variables());
+        variables.extend(self.argument.find_free_variables());
 
         variables
     }

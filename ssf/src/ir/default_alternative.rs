@@ -35,8 +35,8 @@ impl DefaultAlternative {
         }
     }
 
-    pub(crate) fn find_variables(&self) -> HashSet<String> {
-        let mut variables = self.expression.find_variables();
+    pub(crate) fn find_free_variables(&self) -> HashSet<String> {
+        let mut variables = self.expression.find_free_variables();
 
         variables.remove(&self.variable);
 

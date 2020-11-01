@@ -35,11 +35,11 @@ impl ConstructorApplication {
         )
     }
 
-    pub(crate) fn find_variables(&self) -> HashSet<String> {
+    pub(crate) fn find_free_variables(&self) -> HashSet<String> {
         let mut variables = HashSet::new();
 
         for argument in &self.arguments {
-            variables.extend(argument.find_variables());
+            variables.extend(argument.find_free_variables());
         }
 
         variables

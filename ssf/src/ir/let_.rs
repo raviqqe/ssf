@@ -37,12 +37,12 @@ impl Let {
         Self::new(definitions, self.expression.rename_variables(&names))
     }
 
-    pub(crate) fn find_variables(&self) -> HashSet<String> {
+    pub(crate) fn find_free_variables(&self) -> HashSet<String> {
         let mut all_variables = HashSet::new();
         let mut bound_variables = HashSet::<&str>::new();
 
         for definition in &self.definitions {
-            let mut variables = definition.find_variables();
+            let mut variables = definition.find_free_variables();
 
             for bound_variable in &bound_variables {
                 variables.remove(*bound_variable);
@@ -53,7 +53,7 @@ impl Let {
             bound_variables.insert(definition.name());
         }
 
-        let mut variables = self.expression.find_variables();
+        let mut variables = self.expression.find_free_variables();
 
         for bound_variable in &bound_variables {
             variables.remove(*bound_variable);

@@ -32,8 +32,8 @@ impl PrimitiveAlternative {
         }
     }
 
-    pub(crate) fn find_variables(&self) -> HashSet<String> {
-        self.expression.find_variables()
+    pub(crate) fn find_free_variables(&self) -> HashSet<String> {
+        self.expression.find_free_variables()
     }
 
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
