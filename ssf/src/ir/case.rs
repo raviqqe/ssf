@@ -22,10 +22,10 @@ impl Case {
         }
     }
 
-    pub(crate) fn find_free_variables(&self) -> HashSet<String> {
+    pub(crate) fn find_free_variables(&self, initialized: bool) -> HashSet<String> {
         match self {
-            Self::Algebraic(algebraic_case) => algebraic_case.find_free_variables(),
-            Self::Primitive(primitive_case) => primitive_case.find_free_variables(),
+            Self::Algebraic(algebraic_case) => algebraic_case.find_free_variables(initialized),
+            Self::Primitive(primitive_case) => primitive_case.find_free_variables(initialized),
         }
     }
 

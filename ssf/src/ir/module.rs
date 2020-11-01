@@ -324,7 +324,7 @@ mod tests {
                         types::Function::new(types::Primitive::Float64, types::Primitive::Float64)
                     )
                 ],
-                vec!["y".into(), "f".into()]
+                vec!["f".into(), "y".into()]
             ))
         );
     }

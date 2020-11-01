@@ -42,8 +42,8 @@ impl Definition {
         )
     }
 
-    pub(crate) fn find_free_variables(&self) -> HashSet<String> {
-        self.body.find_free_variables()
+    pub(crate) fn find_free_variables(&self, initialized: bool) -> HashSet<String> {
+        self.body.find_free_variables(initialized)
     }
 
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {

@@ -51,20 +51,20 @@ impl Expression {
         }
     }
 
-    pub(crate) fn find_free_variables(&self) -> HashSet<String> {
+    pub(crate) fn find_free_variables(&self, initialized: bool) -> HashSet<String> {
         match self {
-            Self::Bitcast(bitcast) => bitcast.find_free_variables(),
-            Self::Case(case) => case.find_free_variables(),
+            Self::Bitcast(bitcast) => bitcast.find_free_variables(initialized),
+            Self::Case(case) => case.find_free_variables(initialized),
             Self::ConstructorApplication(constructor_application) => {
-                constructor_application.find_free_variables()
+                constructor_application.find_free_variables(initialized)
             }
             Self::FunctionApplication(function_application) => {
-                function_application.find_free_variables()
+                function_application.find_free_variables(initialized)
             }
-            Self::Lambda(lambda) => lambda.find_free_variables().into(),
-            Self::Let(let_) => let_.find_free_variables(),
-            Self::Operation(operation) => operation.find_free_variables(),
-            Self::Variable(variable) => variable.find_free_variables(),
+            Self::Lambda(lambda) => lambda.find_free_variables(initialized).into(),
+            Self::Let(let_) => let_.find_free_variables(initialized),
+            Self::Operation(operation) => operation.find_free_variables(initialized),
+            Self::Variable(variable) => variable.find_free_variables(initialized),
             Self::Primitive(_) => HashSet::new(),
         }
     }

@@ -51,15 +51,15 @@ impl PrimitiveCase {
         }
     }
 
-    pub(crate) fn find_free_variables(&self) -> HashSet<String> {
-        let mut variables = self.argument.find_free_variables();
+    pub(crate) fn find_free_variables(&self, initialized: bool) -> HashSet<String> {
+        let mut variables = self.argument.find_free_variables(initialized);
 
         for alternative in &self.alternatives {
-            variables.extend(alternative.find_free_variables());
+            variables.extend(alternative.find_free_variables(initialized));
         }
 
         if let Some(default_alternative) = &self.default_alternative {
-            variables.extend(default_alternative.find_free_variables());
+            variables.extend(default_alternative.find_free_variables(initialized));
         }
 
         variables

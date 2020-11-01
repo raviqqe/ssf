@@ -4,37 +4,58 @@ use petgraph::algo::toposort;
 use petgraph::graph::Graph;
 use std::collections::{HashMap, HashSet};
 
-pub fn sort_global_variables(module: &ir::Module) -> Result<Vec<&str>, AnalysisError> {
+pub fn sort_global_variables(module: &ir::Module) -> Result<Vec<String>, AnalysisError> {
+    let mut graph = Graph::<String, ()>::new();
+    let mut name_indices = HashMap::<String, _>::new();
+
+    for definition in module.definitions() {
+        for name in vec![
+            definition.name().into(),
+            get_indirect_name(definition.name()),
+        ] {
+            name_indices.insert(name.clone(), graph.add_node(name));
+        }
+    }
+
+    for definition in module.definitions() {
+        for name in definition.find_free_variables(true) {
+            graph.add_edge(
+                name_indices[name.as_str()],
+                name_indices[definition.name()],
+                (),
+            );
+
+            graph.add_edge(
+                name_indices[&get_indirect_name(&name)],
+                name_indices[definition.name()],
+                (),
+            );
+        }
+
+        for name in definition.find_free_variables(false) {
+            graph.add_edge(
+                name_indices[name.as_str()],
+                name_indices[&get_indirect_name(definition.name())],
+                (),
+            );
+        }
+    }
+
     let global_names = module
         .definitions()
         .iter()
         .map(|definition| definition.name())
         .collect::<HashSet<&str>>();
 
-    let mut graph = Graph::<&str, ()>::new();
-    let mut name_indices = HashMap::<&str, _>::new();
-
-    for definition in module.definitions() {
-        name_indices.insert(definition.name(), graph.add_node(definition.name()));
-    }
-
-    for definition in module.definitions() {
-        for name in definition.find_free_variables() {
-            if global_names.contains(name.as_str()) {
-                graph.add_edge(
-                    name_indices[name.as_str()],
-                    name_indices[definition.name()],
-                    (),
-                );
-            }
-        }
-    }
-
     Ok(toposort(&graph, None)?
         .into_iter()
-        .map(|index| graph[index])
-        .filter(|name| global_names.contains(name))
+        .map(|index| graph[index].clone())
+        .filter(|name| global_names.contains(name.as_str()))
         .collect())
+}
+
+fn get_indirect_name(name: &str) -> String {
+    format!("{}$indirect", name)
 }
 
 #[cfg(test)]
@@ -51,7 +72,7 @@ mod tests {
     }
 
     #[test]
-    fn sort_a_constant() {
+    fn sort_constant() {
         assert_eq!(
             sort_global_variables(&ir::Module::without_validation(
                 vec![],
@@ -74,7 +95,7 @@ mod tests {
                 ],
                 vec![]
             )),
-            Ok(vec!["x", "y"])
+            Ok(vec!["x".into(), "y".into()])
         );
     }
 
@@ -90,7 +111,7 @@ mod tests {
                 ],
                 vec![]
             )),
-            Ok(vec!["x", "y"])
+            Ok(vec!["x".into(), "y".into()])
         );
     }
 
@@ -118,7 +139,7 @@ mod tests {
                 ],
                 vec![]
             )),
-            Ok(vec!["x", "y"])
+            Ok(vec!["x".into(), "f".into(), "y".into()])
         );
     }
 
@@ -164,7 +185,7 @@ mod tests {
                 ],
                 vec![]
             )),
-            Ok(vec!["x", "y"])
+            Ok(vec!["x".into(), "g".into(), "f".into(), "y".into()])
         );
     }
 
@@ -193,6 +214,33 @@ mod tests {
                         .into(),
                     ir::Definition::new("y", ir::Variable::new("x"), types::Primitive::Float64)
                         .into(),
+                ],
+                vec![]
+            )),
+            Err(AnalysisError::CircularInitialization)
+        );
+    }
+
+    #[test]
+    fn fail_to_sort_constant_recursive_through_function() {
+        assert_eq!(
+            sort_global_variables(&ir::Module::without_validation(
+                vec![],
+                vec![
+                    ir::Definition::new(
+                        "x",
+                        ir::FunctionApplication::new(ir::Variable::new("f"), 42.0),
+                        types::Primitive::Float64
+                    ),
+                    ir::Definition::new(
+                        "f",
+                        ir::Lambda::new(
+                            vec![ir::Argument::new("a", types::Primitive::Float64)],
+                            ir::Variable::new("x"),
+                            types::Primitive::Float64
+                        ),
+                        types::Function::new(types::Primitive::Float64, types::Primitive::Float64)
+                    ),
                 ],
                 vec![]
             )),

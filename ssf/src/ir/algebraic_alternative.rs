@@ -49,8 +49,8 @@ impl AlgebraicAlternative {
         }
     }
 
-    pub(crate) fn find_free_variables(&self) -> HashSet<String> {
-        let mut variables = self.expression.find_free_variables();
+    pub(crate) fn find_free_variables(&self, initialized: bool) -> HashSet<String> {
+        let mut variables = self.expression.find_free_variables(initialized);
 
         for element_name in &self.element_names {
             variables.remove(element_name);

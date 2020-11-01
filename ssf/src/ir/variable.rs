@@ -21,7 +21,7 @@ impl Variable {
         }
     }
 
-    pub(crate) fn find_free_variables(&self) -> HashSet<String> {
+    pub(crate) fn find_free_variables(&self, _: bool) -> HashSet<String> {
         vec![self.name.clone()].into_iter().collect()
     }
 }
