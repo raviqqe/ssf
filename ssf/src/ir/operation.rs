@@ -39,21 +39,19 @@ impl Operation {
         )
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
-        let mut variables = self.lhs.find_variables(excluded_variables);
-        variables.extend(self.rhs.find_variables(excluded_variables));
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
+        let mut variables = self.lhs.find_variables();
+
+        variables.extend(self.rhs.find_variables());
+
         variables
     }
 
-    pub(crate) fn infer_environment(
-        &self,
-        variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
-    ) -> Self {
+    pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         Self::new(
             self.operator,
-            self.lhs.infer_environment(variables, global_variables),
-            self.rhs.infer_environment(variables, global_variables),
+            self.lhs.infer_environment(variables),
+            self.rhs.infer_environment(variables),
         )
     }
 

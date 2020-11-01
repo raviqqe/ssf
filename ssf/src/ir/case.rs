@@ -22,25 +22,17 @@ impl Case {
         }
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
         match self {
-            Self::Algebraic(algebraic_case) => algebraic_case.find_variables(excluded_variables),
-            Self::Primitive(primitive_case) => primitive_case.find_variables(excluded_variables),
+            Self::Algebraic(algebraic_case) => algebraic_case.find_variables(),
+            Self::Primitive(primitive_case) => primitive_case.find_variables(),
         }
     }
 
-    pub(crate) fn infer_environment(
-        &self,
-        variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
-    ) -> Self {
+    pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         match self {
-            Self::Algebraic(algebraic_case) => algebraic_case
-                .infer_environment(variables, global_variables)
-                .into(),
-            Self::Primitive(primitive_case) => primitive_case
-                .infer_environment(variables, global_variables)
-                .into(),
+            Self::Algebraic(algebraic_case) => algebraic_case.infer_environment(variables).into(),
+            Self::Primitive(primitive_case) => primitive_case.infer_environment(variables).into(),
         }
     }
 

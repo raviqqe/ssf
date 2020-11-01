@@ -51,41 +51,32 @@ impl PrimitiveCase {
         }
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
-        let mut variables = self.argument.find_variables(excluded_variables);
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
+        let mut variables = self.argument.find_variables();
 
         for alternative in &self.alternatives {
-            variables.extend(alternative.find_variables(excluded_variables));
+            variables.extend(alternative.find_variables());
         }
 
         if let Some(default_alternative) = &self.default_alternative {
-            variables.extend(default_alternative.find_variables(excluded_variables));
+            variables.extend(default_alternative.find_variables());
         }
 
         variables
     }
 
-    pub(crate) fn infer_environment(
-        &self,
-        variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
-    ) -> Self {
+    pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         Self {
-            argument: self
-                .argument
-                .infer_environment(variables, global_variables)
-                .into(),
+            argument: self.argument.infer_environment(variables).into(),
             alternatives: self
                 .alternatives
                 .iter()
-                .map(|alternative| alternative.infer_environment(variables, global_variables))
+                .map(|alternative| alternative.infer_environment(variables))
                 .collect(),
             default_alternative: self
                 .default_alternative
                 .as_ref()
-                .map(|default_alternative| {
-                    default_alternative.infer_environment(variables, global_variables)
-                }),
+                .map(|default_alternative| default_alternative.infer_environment(variables)),
         }
     }
 

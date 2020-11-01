@@ -51,45 +51,37 @@ impl Expression {
         }
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
         match self {
-            Self::Bitcast(bitcast) => bitcast.find_variables(excluded_variables),
-            Self::Case(case) => case.find_variables(excluded_variables),
+            Self::Bitcast(bitcast) => bitcast.find_variables(),
+            Self::Case(case) => case.find_variables(),
             Self::ConstructorApplication(constructor_application) => {
-                constructor_application.find_variables(excluded_variables)
+                constructor_application.find_variables()
             }
             Self::FunctionApplication(function_application) => {
-                function_application.find_variables(excluded_variables)
+                function_application.find_variables()
             }
-            Self::Lambda(lambda) => lambda.find_variables(excluded_variables).into(),
-            Self::Let(let_) => let_.find_variables(excluded_variables),
-            Self::Operation(operation) => operation.find_variables(excluded_variables),
-            Self::Variable(variable) => variable.find_variables(excluded_variables),
+            Self::Lambda(lambda) => lambda.find_variables().into(),
+            Self::Let(let_) => let_.find_variables(),
+            Self::Operation(operation) => operation.find_variables(),
+            Self::Variable(variable) => variable.find_variables(),
             Self::Primitive(_) => HashSet::new(),
         }
     }
 
-    pub(crate) fn infer_environment(
-        &self,
-        variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
-    ) -> Self {
+    pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         match self {
-            Self::Bitcast(bitcast) => bitcast
-                .infer_environment(variables, global_variables)
-                .into(),
-            Self::Case(case) => case.infer_environment(variables, global_variables).into(),
-            Self::ConstructorApplication(constructor_application) => constructor_application
-                .infer_environment(variables, global_variables)
-                .into(),
-            Self::FunctionApplication(function_application) => function_application
-                .infer_environment(variables, global_variables)
-                .into(),
-            Self::Lambda(lambda) => lambda.infer_environment(variables, global_variables).into(),
-            Self::Let(let_) => let_.infer_environment(variables, global_variables).into(),
-            Self::Operation(operation) => operation
-                .infer_environment(variables, global_variables)
-                .into(),
+            Self::Bitcast(bitcast) => bitcast.infer_environment(variables).into(),
+            Self::Case(case) => case.infer_environment(variables).into(),
+            Self::ConstructorApplication(constructor_application) => {
+                constructor_application.infer_environment(variables).into()
+            }
+            Self::FunctionApplication(function_application) => {
+                function_application.infer_environment(variables).into()
+            }
+            Self::Lambda(lambda) => lambda.infer_environment(variables).into(),
+            Self::Let(let_) => let_.infer_environment(variables).into(),
+            Self::Operation(operation) => operation.infer_environment(variables).into(),
             Self::Primitive(_) | Self::Variable(_) => self.clone(),
         }
     }

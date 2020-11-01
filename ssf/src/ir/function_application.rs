@@ -32,22 +32,18 @@ impl FunctionApplication {
         )
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
-        let mut variables = self.function.find_variables(excluded_variables);
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
+        let mut variables = self.function.find_variables();
 
-        variables.extend(self.argument.find_variables(excluded_variables));
+        variables.extend(self.argument.find_variables());
 
         variables
     }
 
-    pub(crate) fn infer_environment(
-        &self,
-        variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
-    ) -> Self {
+    pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         Self::new(
-            self.function.infer_environment(variables, global_variables),
-            self.argument.infer_environment(variables, global_variables),
+            self.function.infer_environment(variables),
+            self.argument.infer_environment(variables),
         )
     }
 

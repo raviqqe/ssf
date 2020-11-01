@@ -92,40 +92,39 @@ impl Lambda {
         )
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
-        let mut excluded_variables = excluded_variables.clone();
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
+        let mut variables = self.body.find_variables();
 
-        excluded_variables.extend(
-            self.arguments
-                .iter()
-                .map(|argument| argument.name().into())
-                .collect::<HashSet<_>>(),
-        );
+        for argument in &self.arguments {
+            variables.remove(argument.name());
+        }
 
-        self.body.find_variables(&excluded_variables)
+        variables
     }
 
-    pub(crate) fn infer_environment(
-        &self,
-        original_variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
-    ) -> Self {
-        let mut variables = original_variables.clone();
-        let mut excluded_variables = global_variables.clone();
+    pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
+        let environment = self
+            .body
+            .find_variables()
+            .iter()
+            .map(|name| {
+                variables
+                    .get(name)
+                    .map(|type_| Argument::new(name, type_.clone()))
+            })
+            .collect::<Option<Vec<_>>>()
+            .unwrap_or(vec![]);
+
+        let mut variables = variables.clone();
 
         for argument in &self.arguments {
             variables.insert(argument.name().into(), argument.type_().clone());
-            excluded_variables.insert(argument.name().into());
         }
 
         Self::with_environment(
-            self.body
-                .find_variables(&excluded_variables)
-                .iter()
-                .map(|name| Argument::new(name, original_variables[name].clone()))
-                .collect(),
+            environment,
             self.arguments.clone(),
-            self.body.infer_environment(&variables, global_variables),
+            self.body.infer_environment(&variables),
             self.result_type.clone(),
         )
     }
@@ -162,7 +161,7 @@ mod tests {
                 42.0,
                 types::Primitive::Float64
             )
-            .infer_environment(&Default::default(), &Default::default()),
+            .infer_environment(&Default::default()),
             Lambda::with_environment(
                 vec![],
                 vec![Argument::new("x", types::Primitive::Float64)],
@@ -184,7 +183,6 @@ mod tests {
                 &vec![("y".into(), types::Primitive::Float64.into())]
                     .drain(..)
                     .collect(),
-                &Default::default()
             ),
             Lambda::with_environment(
                 vec![Argument::new("y", types::Primitive::Float64)],
@@ -207,8 +205,8 @@ mod tests {
                 Variable::new("y"),
                 types::Primitive::Float64
             )
-            .infer_environment(&variables, &Default::default())
-            .infer_environment(&variables, &Default::default()),
+            .infer_environment(&variables)
+            .infer_environment(&variables),
             Lambda::with_environment(
                 vec![Argument::new("y", types::Primitive::Float64)],
                 vec![Argument::new("x", types::Primitive::Float64)],
