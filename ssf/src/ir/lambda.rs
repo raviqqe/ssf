@@ -10,10 +10,12 @@ pub struct Lambda {
     // as its cache.  So it must be safe to clone function definitions inside a
     // module and use it on creation of another module.
     environment: Vec<Argument>,
+    // Arguments should not be empty.
     arguments: Vec<Argument>,
     body: Arc<Expression>,
     result_type: Type,
     type_: types::Function,
+    updatable: bool,
 }
 
 impl Lambda {
@@ -22,39 +24,55 @@ impl Lambda {
         body: impl Into<Expression>,
         result_type: impl Into<Type> + Clone,
     ) -> Self {
-        Self::with_environment(vec![], arguments, body, result_type)
+        Self::with_options(vec![], arguments, body, result_type, false)
     }
 
+    pub fn updatable(
+        arguments: Vec<Argument>,
+        body: impl Into<Expression>,
+        result_type: impl Into<Type> + Clone,
+    ) -> Self {
+        Self::with_options(vec![], arguments, body, result_type, true)
+    }
+
+    pub(crate) fn with_options(
+        environment: Vec<Argument>,
+        arguments: Vec<Argument>,
+        body: impl Into<Expression>,
+        result_type: impl Into<Type> + Clone,
+        updatable: bool,
+    ) -> Self {
+        Self {
+            type_: types::canonicalize(
+                &arguments.iter().rev().skip(1).fold(
+                    types::Function::new(
+                        arguments.iter().last().unwrap().type_().clone(),
+                        result_type.clone(),
+                    )
+                    .into(),
+                    |result, argument| {
+                        types::Function::new(argument.type_().clone(), result).into()
+                    },
+                ),
+            )
+            .into_function()
+            .unwrap(),
+            environment,
+            arguments,
+            body: body.into().into(),
+            result_type: result_type.into(),
+            updatable,
+        }
+    }
+
+    #[cfg(test)]
     pub(crate) fn with_environment(
         environment: Vec<Argument>,
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
         result_type: impl Into<Type> + Clone,
     ) -> Self {
-        Self {
-            type_: if arguments.is_empty() {
-                todo!("thunk not implemented")
-            } else {
-                types::canonicalize(
-                    &arguments.iter().rev().skip(1).fold(
-                        types::Function::new(
-                            arguments.iter().last().unwrap().type_().clone(),
-                            result_type.clone(),
-                        )
-                        .into(),
-                        |result, argument| {
-                            types::Function::new(argument.type_().clone(), result).into()
-                        },
-                    ),
-                )
-                .into_function()
-                .unwrap()
-            },
-            environment,
-            arguments,
-            body: body.into().into(),
-            result_type: result_type.into(),
-        }
+        Self::with_options(environment, arguments, body, result_type, false)
     }
 
     pub fn environment(&self) -> &[Argument] {
@@ -84,11 +102,12 @@ impl Lambda {
             names.remove(argument.name());
         }
 
-        Self::with_environment(
+        Self::with_options(
             self.environment.clone(),
             self.arguments.clone(),
             self.body.rename_variables(&names),
             self.result_type.clone(),
+            self.updatable,
         )
     }
 
@@ -124,11 +143,12 @@ impl Lambda {
             variables.insert(argument.name().into(), argument.type_().clone());
         }
 
-        Self::with_environment(
+        Self::with_options(
             environment,
             self.arguments.clone(),
             self.body.infer_environment(&variables),
             self.result_type.clone(),
+            self.updatable,
         )
     }
 
@@ -147,6 +167,7 @@ impl Lambda {
             body: self.body.convert_types(convert).into(),
             result_type: convert(&self.result_type.clone().into()),
             type_: convert(&self.type_.clone().into()).into_function().unwrap(),
+            updatable: self.updatable,
         }
     }
 }
