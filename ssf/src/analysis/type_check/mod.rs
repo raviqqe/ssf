@@ -196,11 +196,11 @@ mod tests {
             vec![Definition::new(
                 "x",
                 Let::new(
-                    vec![
-                        Definition::new("y", 42.0, types::Primitive::Float64),
+                    Definition::new("y", 42.0, types::Primitive::Float64),
+                    Let::new(
                         Definition::new("z", Variable::new("y"), types::Primitive::Float64),
-                    ],
-                    Variable::new("z"),
+                        Variable::new("z"),
+                    ),
                 ),
                 types::Primitive::Float64,
             )
@@ -229,11 +229,7 @@ mod tests {
                 Definition::new(
                     "x",
                     Let::new(
-                        vec![Definition::new(
-                            "y",
-                            Variable::new("f"),
-                            types::Primitive::Float64,
-                        )],
+                        Definition::new("y", Variable::new("f"), types::Primitive::Float64),
                         Variable::new("y"),
                     ),
                     types::Primitive::Float64,

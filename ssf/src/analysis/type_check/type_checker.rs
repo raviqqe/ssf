@@ -109,10 +109,11 @@ impl TypeChecker {
             Expression::Let(let_) => {
                 let mut variables = variables.clone();
 
-                for definition in let_.definitions() {
-                    self.check_definition(definition, &variables)?;
-                    variables.insert(definition.name(), definition.type_().clone().into());
-                }
+                self.check_definition(let_.definition(), &variables)?;
+                variables.insert(
+                    let_.definition().name(),
+                    let_.definition().type_().clone().into(),
+                );
 
                 self.check_expression(let_.expression(), &variables)
             }

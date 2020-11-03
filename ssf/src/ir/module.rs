@@ -206,7 +206,7 @@ mod tests {
                     Lambda::new(
                         vec![Argument::new("x", types::Primitive::Float64)],
                         Let::new(
-                            vec![Definition::new(
+                            Definition::new(
                                 "g",
                                 Lambda::new(
                                     vec![Argument::new("y", types::Primitive::Float64)],
@@ -217,7 +217,7 @@ mod tests {
                                     types::Primitive::Float64,
                                     types::Primitive::Float64
                                 )
-                            )],
+                            ),
                             42.0
                         ),
                         types::Primitive::Float64
@@ -235,7 +235,7 @@ mod tests {
                         vec![],
                         vec![Argument::new("x", types::Primitive::Float64)],
                         Let::new(
-                            vec![Definition::new(
+                            Definition::new(
                                 "g",
                                 Lambda::with_environment(
                                     vec![Argument::new("x", types::Primitive::Float64)],
@@ -247,7 +247,7 @@ mod tests {
                                     types::Primitive::Float64,
                                     types::Primitive::Float64
                                 )
-                            )],
+                            ),
                             42.0
                         ),
                         types::Primitive::Float64
@@ -339,7 +339,7 @@ mod tests {
                     Lambda::new(
                         vec![Argument::new("x", types::Primitive::Float64)],
                         Let::new(
-                            vec![Definition::new(
+                            Definition::new(
                                 "g",
                                 Lambda::new(
                                     vec![Argument::new("y", types::Primitive::Float64)],
@@ -350,7 +350,7 @@ mod tests {
                                     types::Primitive::Float64,
                                     types::Primitive::Float64
                                 )
-                            )],
+                            ),
                             42.0
                         ),
                         types::Primitive::Float64
@@ -366,7 +366,7 @@ mod tests {
                         vec![],
                         vec![Argument::new("x", types::Primitive::Float64)],
                         Let::new(
-                            vec![Definition::new(
+                            Definition::new(
                                 "g",
                                 Lambda::with_environment(
                                     vec![Argument::new("x", types::Primitive::Float64)],
@@ -378,7 +378,7 @@ mod tests {
                                     types::Primitive::Float64,
                                     types::Primitive::Float64
                                 )
-                            )],
+                            ),
                             42.0
                         ),
                         types::Primitive::Float64
