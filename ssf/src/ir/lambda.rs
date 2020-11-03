@@ -91,6 +91,10 @@ impl Lambda {
         &self.result_type
     }
 
+    pub fn is_updatable(&self) -> bool {
+        self.updatable
+    }
+
     pub fn type_(&self) -> &types::Function {
         &self.type_
     }
