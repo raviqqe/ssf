@@ -389,4 +389,76 @@ mod tests {
             ))
         );
     }
+
+    #[test]
+    fn infer_environment_of_recursive_function_in_let_expression() {
+        assert_eq!(
+            Module::new(
+                vec![],
+                vec![Definition::new(
+                    "f",
+                    Lambda::new(
+                        vec![Argument::new("x", types::Primitive::Float64)],
+                        LetRecursive::new(
+                            vec![Definition::new(
+                                "g",
+                                Lambda::new(
+                                    vec![Argument::new("y", types::Primitive::Float64)],
+                                    FunctionApplication::new(
+                                        Variable::new("g"),
+                                        Variable::new("y")
+                                    ),
+                                    types::Primitive::Float64
+                                ),
+                                types::Function::new(
+                                    types::Primitive::Float64,
+                                    types::Primitive::Float64
+                                )
+                            )],
+                            42.0
+                        ),
+                        types::Primitive::Float64
+                    ),
+                    types::Function::new(types::Primitive::Float64, types::Primitive::Float64)
+                )]
+            ),
+            Ok(Module::without_validation(
+                vec![],
+                vec![Definition::new(
+                    "f",
+                    Lambda::new(
+                        vec![Argument::new("x", types::Primitive::Float64)],
+                        LetRecursive::new(
+                            vec![Definition::new(
+                                "g",
+                                Lambda::with_environment(
+                                    vec![Argument::new(
+                                        "g",
+                                        types::Function::new(
+                                            types::Primitive::Float64,
+                                            types::Primitive::Float64
+                                        )
+                                    )],
+                                    vec![Argument::new("y", types::Primitive::Float64)],
+                                    FunctionApplication::new(
+                                        Variable::new("g"),
+                                        Variable::new("y")
+                                    ),
+                                    types::Primitive::Float64
+                                ),
+                                types::Function::new(
+                                    types::Primitive::Float64,
+                                    types::Primitive::Float64
+                                )
+                            )],
+                            42.0
+                        ),
+                        types::Primitive::Float64
+                    ),
+                    types::Function::new(types::Primitive::Float64, types::Primitive::Float64)
+                )],
+                vec!["f".into()]
+            ))
+        );
+    }
 }

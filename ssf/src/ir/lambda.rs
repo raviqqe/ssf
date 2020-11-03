@@ -111,13 +111,12 @@ impl Lambda {
             .body
             .find_free_variables(false)
             .iter()
-            .map(|name| {
+            .filter_map(|name| {
                 variables
                     .get(name)
                     .map(|type_| Argument::new(name, type_.clone()))
             })
-            .collect::<Option<Vec<_>>>()
-            .unwrap_or(vec![]);
+            .collect();
 
         let mut variables = variables.clone();
 
