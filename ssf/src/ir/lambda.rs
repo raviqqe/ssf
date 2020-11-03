@@ -35,7 +35,7 @@ impl Lambda {
         Self::with_options(vec![], arguments, body, result_type, true)
     }
 
-    pub(crate) fn with_options(
+    fn with_options(
         environment: Vec<Argument>,
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
