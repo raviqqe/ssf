@@ -116,6 +116,19 @@ impl TypeChecker {
 
                 self.check_expression(let_.expression(), &variables)
             }
+            Expression::LetRecursive(let_) => {
+                let mut variables = variables.clone();
+
+                for definition in let_.definitions() {
+                    variables.insert(definition.name(), definition.type_().clone().into());
+                }
+
+                for definition in let_.definitions() {
+                    self.check_definition(definition, &variables)?;
+                }
+
+                self.check_expression(let_.expression(), &variables)
+            }
             Expression::Primitive(primitive) => Ok(self.check_primitive(primitive).into()),
             Expression::Operation(operation) => {
                 let lhs_type = self.check_expression(operation.lhs(), variables)?;
