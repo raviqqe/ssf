@@ -47,6 +47,7 @@ impl FunctionApplication {
 
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         Self::new(
+            // TODO Infer environment for function expressions.
             self.function.clone(),
             self.arguments
                 .iter()
