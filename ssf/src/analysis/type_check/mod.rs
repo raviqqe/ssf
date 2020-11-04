@@ -465,6 +465,35 @@ mod tests {
                     Ok(())
                 );
             }
+
+            #[test]
+            fn fail_for_unmatched_case_type() {
+                let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
+
+                assert!(matches!(
+                    check_types(&Module::without_validation(
+                        vec![],
+                        vec![FunctionDefinition::new(
+                            "f",
+                            vec![Argument::new("x", algebraic_type.clone())],
+                            AlgebraicCase::new(
+                                types::Algebraic::new(vec![types::Constructor::unboxed(vec![])]),
+                                Variable::new("x"),
+                                vec![AlgebraicAlternative::new(
+                                    Constructor::new(algebraic_type, 0),
+                                    vec![],
+                                    42.0
+                                )],
+                                None
+                            ),
+                            types::Primitive::Float64,
+                        )
+                        .into()],
+                        vec![],
+                    )),
+                    Err(TypeCheckError::TypesNotMatched(_, _))
+                ));
+            }
         }
 
         mod primitive {
@@ -534,6 +563,28 @@ mod tests {
                     )),
                     Ok(())
                 );
+            }
+
+            #[test]
+            fn fail_for_unmatched_case_type() {
+                assert!(matches!(
+                    check_types(&Module::without_validation(
+                        vec![],
+                        vec![ValueDefinition::new(
+                            "x",
+                            PrimitiveCase::new(
+                                types::Primitive::Integer64,
+                                42.0,
+                                vec![PrimitiveAlternative::new(42.0, 42.0)],
+                                Some(DefaultAlternative::new("x", 42.0))
+                            ),
+                            types::Primitive::Float64,
+                        )
+                        .into()],
+                        vec![],
+                    )),
+                    Err(TypeCheckError::TypesNotMatched(_, _))
+                ));
             }
         }
     }
