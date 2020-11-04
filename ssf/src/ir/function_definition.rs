@@ -122,6 +122,8 @@ impl FunctionDefinition {
     }
 
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
+        // Do not include this function itself in variables as it can be global.
+
         Self::with_environment(
             self.name.clone(),
             self.body
@@ -136,8 +138,6 @@ impl FunctionDefinition {
             self.arguments.clone(),
             {
                 let mut variables = variables.clone();
-
-                // Do not add this function itself as it can be global.
 
                 for argument in &self.arguments {
                     variables.insert(argument.name().into(), argument.type_().clone());
