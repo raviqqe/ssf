@@ -86,7 +86,7 @@ impl PrimitiveCase {
                 .default_alternative
                 .as_ref()
                 .map(|default_alternative| {
-                    default_alternative.infer_environment(self.type_.clone(), variables)
+                    default_alternative.infer_environment(self.type_, variables)
                 }),
         }
     }
