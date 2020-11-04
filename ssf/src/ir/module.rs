@@ -32,7 +32,7 @@ impl Module {
 
         module.global_variable_initialization_order = sort_global_variables(&module)?
             .into_iter()
-            .map(|string| string.into())
+            .map(|name| name.into())
             .collect();
 
         Ok(module)
