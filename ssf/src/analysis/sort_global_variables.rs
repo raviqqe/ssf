@@ -52,7 +52,10 @@ pub fn sort_global_variables(module: &ir::Module) -> Result<Vec<String>, Analysi
             if names.len() > 1 {
                 Err(AnalysisError::CircularInitialization)
             } else {
-                Ok(names.drain(..).next().unwrap())
+                Ok(names
+                    .drain(..)
+                    .find(|name| value_names.contains(name.as_str()))
+                    .unwrap())
             }
         })
         .rev()
