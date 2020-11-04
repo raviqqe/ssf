@@ -27,6 +27,10 @@ impl PrimitiveCase {
         }
     }
 
+    pub fn type_(&self) -> types::Primitive {
+        self.type_
+    }
+
     pub fn argument(&self) -> &Expression {
         &self.argument
     }

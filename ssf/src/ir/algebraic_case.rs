@@ -27,6 +27,10 @@ impl AlgebraicCase {
         }
     }
 
+    pub fn type_(&self) -> &types::Algebraic {
+        &self.type_
+    }
+
     pub fn argument(&self) -> &Expression {
         &self.argument
     }

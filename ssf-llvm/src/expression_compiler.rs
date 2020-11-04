@@ -416,12 +416,8 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 let argument_pointer = self.builder.build_alloca(argument.get_type(), "");
                 self.builder.build_store(argument_pointer, argument);
 
-                let tag = if algebraic_case.alternatives().is_empty()
-                    || algebraic_case.alternatives()[0]
-                        .constructor()
-                        .algebraic_type()
-                        .is_singleton()
-                {
+                let tag = if algebraic_case.type_().is_singleton() {
+                    // Set a dummy tag value of 0.
                     self.context.i64_type().const_int(0, false)
                 } else {
                     self.builder
@@ -786,11 +782,13 @@ mod tests {
 
                 for algebraic_case in vec![
                     ssf::ir::AlgebraicCase::new(
+                        algebraic_type.clone(),
                         ssf::ir::Variable::new("x"),
                         vec![],
                         Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
                     ),
                     ssf::ir::AlgebraicCase::new(
+                        algebraic_type.clone(),
                         ssf::ir::Variable::new("x"),
                         vec![ssf::ir::AlgebraicAlternative::new(
                             ssf::ir::Constructor::new(algebraic_type.clone(), 0),
@@ -800,6 +798,7 @@ mod tests {
                         None,
                     ),
                     ssf::ir::AlgebraicCase::new(
+                        algebraic_type.clone(),
                         ssf::ir::Variable::new("x"),
                         vec![ssf::ir::AlgebraicAlternative::new(
                             ssf::ir::Constructor::new(algebraic_type.clone(), 1),
@@ -809,6 +808,7 @@ mod tests {
                         None,
                     ),
                     ssf::ir::AlgebraicCase::new(
+                        algebraic_type.clone(),
                         ssf::ir::Variable::new("x"),
                         vec![
                             ssf::ir::AlgebraicAlternative::new(
@@ -825,6 +825,7 @@ mod tests {
                         None,
                     ),
                     ssf::ir::AlgebraicCase::new(
+                        algebraic_type.clone(),
                         ssf::ir::Variable::new("x"),
                         vec![
                             ssf::ir::AlgebraicAlternative::new(
@@ -893,11 +894,13 @@ mod tests {
 
                 for algebraic_case in vec![
                     ssf::ir::AlgebraicCase::new(
+                        algebraic_type.clone(),
                         ssf::ir::Variable::new("x"),
                         vec![],
                         Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
                     ),
                     ssf::ir::AlgebraicCase::new(
+                        algebraic_type.clone(),
                         ssf::ir::Variable::new("x"),
                         vec![ssf::ir::AlgebraicAlternative::new(
                             ssf::ir::Constructor::new(algebraic_type.clone(), 0),
@@ -907,6 +910,7 @@ mod tests {
                         None,
                     ),
                     ssf::ir::AlgebraicCase::new(
+                        algebraic_type.clone(),
                         ssf::ir::Variable::new("x"),
                         vec![ssf::ir::AlgebraicAlternative::new(
                             ssf::ir::Constructor::new(algebraic_type.clone(), 0),
@@ -970,11 +974,13 @@ mod tests {
 
                 for algebraic_case in vec![
                     ssf::ir::AlgebraicCase::new(
+                        algebraic_type.clone(),
                         ssf::ir::Variable::new("x"),
                         vec![],
                         Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
                     ),
                     ssf::ir::AlgebraicCase::new(
+                        algebraic_type.clone(),
                         ssf::ir::Variable::new("x"),
                         vec![ssf::ir::AlgebraicAlternative::new(
                             ssf::ir::Constructor::new(algebraic_type.clone(), 0),
@@ -984,6 +990,7 @@ mod tests {
                         None,
                     ),
                     ssf::ir::AlgebraicCase::new(
+                        algebraic_type.clone(),
                         ssf::ir::Variable::new("x"),
                         vec![ssf::ir::AlgebraicAlternative::new(
                             ssf::ir::Constructor::new(algebraic_type.clone(), 1),
@@ -993,6 +1000,7 @@ mod tests {
                         None,
                     ),
                     ssf::ir::AlgebraicCase::new(
+                        algebraic_type.clone(),
                         ssf::ir::Variable::new("x"),
                         vec![
                             ssf::ir::AlgebraicAlternative::new(
@@ -1009,6 +1017,7 @@ mod tests {
                         None,
                     ),
                     ssf::ir::AlgebraicCase::new(
+                        algebraic_type.clone(),
                         ssf::ir::Variable::new("x"),
                         vec![
                             ssf::ir::AlgebraicAlternative::new(
@@ -1079,21 +1088,25 @@ mod tests {
 
                 for primitive_case in vec![
                     ssf::ir::PrimitiveCase::new(
+                        ssf::types::Primitive::Integer64,
                         ssf::ir::Variable::new("x"),
                         vec![],
                         Some(ssf::ir::DefaultAlternative::new("x", 42)),
                     ),
                     ssf::ir::PrimitiveCase::new(
+                        ssf::types::Primitive::Integer64,
                         ssf::ir::Variable::new("x"),
                         vec![ssf::ir::PrimitiveAlternative::new(0, 42)],
                         None,
                     ),
                     ssf::ir::PrimitiveCase::new(
+                        ssf::types::Primitive::Integer64,
                         ssf::ir::Variable::new("x"),
                         vec![ssf::ir::PrimitiveAlternative::new(0, 42)],
                         Some(ssf::ir::DefaultAlternative::new("x", 42)),
                     ),
                     ssf::ir::PrimitiveCase::new(
+                        ssf::types::Primitive::Integer64,
                         ssf::ir::Variable::new("x"),
                         vec![
                             ssf::ir::PrimitiveAlternative::new(0, 42),
@@ -1102,6 +1115,7 @@ mod tests {
                         None,
                     ),
                     ssf::ir::PrimitiveCase::new(
+                        ssf::types::Primitive::Integer64,
                         ssf::ir::Variable::new("x"),
                         vec![
                             ssf::ir::PrimitiveAlternative::new(0, 42),
@@ -1160,21 +1174,25 @@ mod tests {
 
                 for primitive_case in vec![
                     ssf::ir::PrimitiveCase::new(
+                        ssf::types::Primitive::Float64,
                         ssf::ir::Variable::new("x"),
                         vec![],
                         Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
                     ),
                     ssf::ir::PrimitiveCase::new(
+                        ssf::types::Primitive::Float64,
                         ssf::ir::Variable::new("x"),
                         vec![ssf::ir::PrimitiveAlternative::new(0.0, 42.0)],
                         None,
                     ),
                     ssf::ir::PrimitiveCase::new(
+                        ssf::types::Primitive::Float64,
                         ssf::ir::Variable::new("x"),
                         vec![ssf::ir::PrimitiveAlternative::new(0.0, 42.0)],
                         Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
                     ),
                     ssf::ir::PrimitiveCase::new(
+                        ssf::types::Primitive::Float64,
                         ssf::ir::Variable::new("x"),
                         vec![
                             ssf::ir::PrimitiveAlternative::new(0.0, 42.0),
@@ -1183,6 +1201,7 @@ mod tests {
                         None,
                     ),
                     ssf::ir::PrimitiveCase::new(
+                        ssf::types::Primitive::Float64,
                         ssf::ir::Variable::new("x"),
                         vec![
                             ssf::ir::PrimitiveAlternative::new(0.0, 42.0),
