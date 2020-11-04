@@ -27,7 +27,7 @@ impl FunctionDefinition {
         Self::with_options(name.into(), vec![], arguments, body, result_type, false)
     }
 
-    pub fn updatable(
+    pub fn thunk(
         name: impl Into<String>,
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
