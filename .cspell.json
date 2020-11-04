@@ -15,6 +15,7 @@
     "concat",
     "idempotently",
     "intrinsics",
+    "kosaraju",
     "llvm",
     "malloc",
     "petgraph",
