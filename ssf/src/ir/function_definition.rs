@@ -14,6 +14,7 @@ pub struct FunctionDefinition {
     body: Expression,
     result_type: types::Value,
     type_: types::Function,
+    is_thunk: bool,
 }
 
 impl FunctionDefinition {
@@ -22,6 +23,37 @@ impl FunctionDefinition {
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
         result_type: impl Into<types::Value> + Clone,
+    ) -> Self {
+        Self::with_options(name.into(), vec![], arguments, body, result_type, false)
+    }
+
+    pub fn updatable(
+        name: impl Into<String>,
+        arguments: Vec<Argument>,
+        body: impl Into<Expression>,
+        result_type: impl Into<types::Value> + Clone,
+    ) -> Self {
+        Self::with_options(name.into(), vec![], arguments, body, result_type, true)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn with_environment(
+        name: impl Into<String>,
+        environment: Vec<Argument>,
+        arguments: Vec<Argument>,
+        body: impl Into<Expression>,
+        result_type: impl Into<types::Value> + Clone,
+    ) -> Self {
+        Self::with_options(name, environment, arguments, body, result_type, false)
+    }
+
+    fn with_options(
+        name: impl Into<String>,
+        environment: Vec<Argument>,
+        arguments: Vec<Argument>,
+        body: impl Into<Expression>,
+        result_type: impl Into<types::Value> + Clone,
+        is_thunk: bool,
     ) -> Self {
         Self {
             type_: types::canonicalize(
@@ -37,33 +69,11 @@ impl FunctionDefinition {
             .into_function()
             .unwrap(),
             name: name.into(),
-            environment: vec![],
-            arguments,
-            body: body.into(),
-            result_type: result_type.into(),
-        }
-    }
-
-    pub(crate) fn with_environment(
-        name: impl Into<String>,
-        environment: Vec<Argument>,
-        arguments: Vec<Argument>,
-        body: impl Into<Expression>,
-        result_type: impl Into<types::Value> + Clone,
-    ) -> Self {
-        Self {
-            type_: types::Function::new(
-                arguments
-                    .iter()
-                    .map(|argument| argument.type_().clone())
-                    .collect(),
-                result_type.clone().into(),
-            ),
-            name: name.into(),
             environment,
             arguments,
             body: body.into(),
             result_type: result_type.into(),
+            is_thunk,
         }
     }
 
