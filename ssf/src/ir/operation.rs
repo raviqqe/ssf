@@ -40,9 +40,11 @@ impl Operation {
     }
 
     pub(crate) fn find_variables(&self) -> HashSet<String> {
-        let mut variables = self.lhs.find_variables();
-        variables.extend(self.rhs.find_variables());
-        variables
+        self.lhs
+            .find_variables()
+            .into_iter()
+            .chain(self.rhs.find_variables())
+            .collect()
     }
 
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
