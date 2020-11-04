@@ -16,13 +16,13 @@ pub(crate) fn sort_global_variables(module: &ir::Module) -> Result<Vec<&str>, An
         for name in definition.find_variables() {
             if definition.name() == name {
                 return Err(AnalysisError::CircularInitialization);
+            } else if name_indices.contains_key(name.as_str()) {
+                graph.add_edge(
+                    name_indices[name.as_str()],
+                    name_indices[definition.name()],
+                    (),
+                );
             }
-
-            graph.add_edge(
-                name_indices[name.as_str()],
-                name_indices[definition.name()],
-                (),
-            );
         }
     }
 
@@ -248,6 +248,23 @@ mod tests {
                 vec![]
             )),
             Err(AnalysisError::CircularInitialization)
+        );
+    }
+
+    #[test]
+    fn sort_with_declarations() {
+        assert_eq!(
+            sort_global_variables(&ir::Module::without_validation(
+                vec![ir::Declaration::new("x", types::Primitive::Float64)],
+                vec![ir::ValueDefinition::new(
+                    "y",
+                    ir::Variable::new("x"),
+                    types::Primitive::Float64
+                )
+                .into()],
+                vec![]
+            )),
+            Ok(vec!["y"])
         );
     }
 }
