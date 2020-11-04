@@ -18,23 +18,11 @@ impl Module {
         declarations: Vec<Declaration>,
         definitions: Vec<Definition>,
     ) -> Result<Self, AnalysisError> {
-        let global_variables = declarations
-            .iter()
-            .map(|declaration| declaration.name().into())
-            .chain(
-                definitions
-                    .iter()
-                    .map(|definition| definition.name().into()),
-            )
-            .collect();
-
         let mut module = Self {
             declarations,
             definitions: definitions
                 .iter()
-                .map(|definition| {
-                    definition.infer_environment(&Default::default(), &global_variables)
-                })
+                .map(|definition| definition.infer_environment(&Default::default()))
                 .collect(),
             global_variable_initialization_order: vec![],
         }

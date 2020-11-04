@@ -40,29 +40,21 @@ impl Definition {
         }
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
         match self {
-            Self::FunctionDefinition(function_definition) => {
-                function_definition.find_variables(excluded_variables)
-            }
-            Self::ValueDefinition(value_definition) => {
-                value_definition.find_variables(excluded_variables)
-            }
+            Self::FunctionDefinition(function_definition) => function_definition.find_variables(),
+            Self::ValueDefinition(value_definition) => value_definition.find_variables(),
         }
     }
 
-    pub(crate) fn infer_environment(
-        &self,
-        variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
-    ) -> Self {
+    pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         match self {
-            Self::FunctionDefinition(function_definition) => function_definition
-                .infer_environment(variables, global_variables)
-                .into(),
-            Self::ValueDefinition(value_definition) => value_definition
-                .infer_environment(variables, global_variables)
-                .into(),
+            Self::FunctionDefinition(function_definition) => {
+                function_definition.infer_environment(variables).into()
+            }
+            Self::ValueDefinition(value_definition) => {
+                value_definition.infer_environment(variables).into()
+            }
         }
     }
 

@@ -37,41 +37,44 @@ impl LetValues {
         Self::new(definitions, self.expression.rename_variables(&names))
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
-        let mut excluded_variables = excluded_variables.clone();
-        let mut variables = HashSet::new();
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
+        let mut all_variables = HashSet::new();
+        let mut bound_variables = HashSet::<&str>::new();
 
         for definition in &self.definitions {
-            variables.extend(definition.find_variables(&excluded_variables));
-            excluded_variables.insert(definition.name().into());
+            let mut variables = definition.find_variables();
+
+            for bound_variable in &bound_variables {
+                variables.remove(*bound_variable);
+            }
+
+            all_variables.extend(variables);
+
+            bound_variables.insert(definition.name());
         }
 
-        variables.extend(self.expression.find_variables(&excluded_variables));
+        let mut variables = self.expression.find_variables();
 
-        variables
+        for bound_variable in &bound_variables {
+            variables.remove(*bound_variable);
+        }
+
+        all_variables
     }
 
-    pub(crate) fn infer_environment(
-        &self,
-        variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
-    ) -> Self {
+    pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         let mut variables = variables.clone();
         let mut definitions = vec![];
 
         for value_definition in &self.definitions {
-            definitions.push(value_definition.infer_environment(&variables, global_variables));
+            definitions.push(value_definition.infer_environment(&variables));
             variables.insert(
                 value_definition.name().into(),
                 value_definition.type_().clone().into(),
             );
         }
 
-        Self::new(
-            definitions,
-            self.expression
-                .infer_environment(&variables, global_variables),
-        )
+        Self::new(definitions, self.expression.infer_environment(&variables))
     }
 
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {

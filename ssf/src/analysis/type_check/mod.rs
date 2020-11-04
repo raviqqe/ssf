@@ -265,16 +265,16 @@ mod tests {
 
             #[test]
             fn check_case_expressions_only_with_default_alternative() {
+                let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
+
                 assert_eq!(
                     check_types(&Module::without_validation(
                         vec![],
                         vec![FunctionDefinition::new(
                             "f",
-                            vec![Argument::new(
-                                "x",
-                                types::Algebraic::new(vec![types::Constructor::boxed(vec![])]),
-                            )],
+                            vec![Argument::new("x", algebraic_type.clone(),)],
                             AlgebraicCase::new(
+                                algebraic_type,
                                 Variable::new("x"),
                                 vec![],
                                 Some(DefaultAlternative::new("x", 42.0)),
@@ -299,6 +299,7 @@ mod tests {
                             "f",
                             vec![Argument::new("x", algebraic_type.clone())],
                             AlgebraicCase::new(
+                                algebraic_type.clone(),
                                 Variable::new("x"),
                                 vec![],
                                 Some(DefaultAlternative::new("y", Variable::new("y"))),
@@ -323,6 +324,7 @@ mod tests {
                             "f",
                             vec![Argument::new("x", algebraic_type.clone())],
                             AlgebraicCase::new(
+                                algebraic_type.clone(),
                                 Variable::new("x"),
                                 vec![AlgebraicAlternative::new(
                                     Constructor::new(algebraic_type, 0),
@@ -353,6 +355,7 @@ mod tests {
                             "f",
                             vec![Argument::new("x", algebraic_type.clone())],
                             AlgebraicCase::new(
+                                algebraic_type.clone(),
                                 Variable::new("x"),
                                 vec![AlgebraicAlternative::new(
                                     Constructor::new(algebraic_type, 0),
@@ -372,15 +375,14 @@ mod tests {
 
             #[test]
             fn fail_to_check_case_expressions_without_alternatives() {
+                let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
+
                 let module = Module::without_validation(
                     vec![],
                     vec![FunctionDefinition::new(
                         "f",
-                        vec![Argument::new(
-                            "x",
-                            types::Algebraic::new(vec![types::Constructor::boxed(vec![])]),
-                        )],
-                        AlgebraicCase::new(Variable::new("x"), vec![], None),
+                        vec![Argument::new("x", algebraic_type.clone())],
+                        AlgebraicCase::new(algebraic_type, Variable::new("x"), vec![], None),
                         types::Primitive::Float64,
                     )
                     .into()],
@@ -405,6 +407,7 @@ mod tests {
                             types::Algebraic::new(vec![types::Constructor::boxed(vec![])]),
                         )],
                         AlgebraicCase::new(
+                            algebraic_type.clone(),
                             Variable::new("x"),
                             vec![
                                 AlgebraicAlternative::new(
@@ -445,6 +448,7 @@ mod tests {
                             "f",
                             vec![Argument::new("x", algebraic_type.clone())],
                             AlgebraicCase::new(
+                                algebraic_type.clone(),
                                 Variable::new("x"),
                                 vec![AlgebraicAlternative::new(
                                     Constructor::new(algebraic_type.clone(), 0),
@@ -474,6 +478,7 @@ mod tests {
                         vec![ValueDefinition::new(
                             "x",
                             PrimitiveCase::new(
+                                types::Primitive::Float64,
                                 42.0,
                                 vec![],
                                 Some(DefaultAlternative::new("x", 42.0)),
@@ -495,6 +500,7 @@ mod tests {
                         vec![ValueDefinition::new(
                             "x",
                             PrimitiveCase::new(
+                                types::Primitive::Float64,
                                 42.0,
                                 vec![PrimitiveAlternative::new(42.0, 42.0)],
                                 None
@@ -516,6 +522,7 @@ mod tests {
                         vec![ValueDefinition::new(
                             "x",
                             PrimitiveCase::new(
+                                types::Primitive::Float64,
                                 42.0,
                                 vec![PrimitiveAlternative::new(42.0, 42.0)],
                                 Some(DefaultAlternative::new("x", 42.0))

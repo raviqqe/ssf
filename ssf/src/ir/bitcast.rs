@@ -28,18 +28,13 @@ impl Bitcast {
         Self::new(self.expression.rename_variables(names), self.type_.clone())
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
-        self.expression.find_variables(excluded_variables)
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
+        self.expression.find_variables()
     }
 
-    pub(crate) fn infer_environment(
-        &self,
-        variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
-    ) -> Self {
+    pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         Self::new(
-            self.expression
-                .infer_environment(variables, global_variables),
+            self.expression.infer_environment(variables),
             self.type_.clone(),
         )
     }
