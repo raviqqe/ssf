@@ -30,8 +30,10 @@ impl Module {
 
         check_types(&module)?;
 
-        module.global_variable_initialization_order =
-            sort_global_variables(&module)?.into_iter().collect();
+        module.global_variable_initialization_order = sort_global_variables(&module)?
+            .into_iter()
+            .map(|name| name.into())
+            .collect();
 
         Ok(module)
     }

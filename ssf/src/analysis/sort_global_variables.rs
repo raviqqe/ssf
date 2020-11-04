@@ -4,15 +4,12 @@ use petgraph::algo::kosaraju_scc;
 use petgraph::graph::Graph;
 use std::collections::{HashMap, HashSet};
 
-pub fn sort_global_variables(module: &ir::Module) -> Result<Vec<String>, AnalysisError> {
-    let mut graph = Graph::<String, ()>::new();
-    let mut name_indices = HashMap::<String, _>::new();
+pub(crate) fn sort_global_variables(module: &ir::Module) -> Result<Vec<&str>, AnalysisError> {
+    let mut graph = Graph::<&str, ()>::new();
+    let mut name_indices = HashMap::<&str, _>::new();
 
     for definition in module.definitions() {
-        name_indices.insert(
-            definition.name().into(),
-            graph.add_node(definition.name().into()),
-        );
+        name_indices.insert(definition.name(), graph.add_node(definition.name()));
     }
 
     for definition in module.definitions() {
@@ -41,20 +38,13 @@ pub fn sort_global_variables(module: &ir::Module) -> Result<Vec<String>, Analysi
 
     Ok(kosaraju_scc(&graph)
         .into_iter()
-        .map(|indices| indices.into_iter().map(|index| &graph[index]))
-        .filter(|names| {
-            names
-                .clone()
-                .any(|name| value_names.contains(name.as_str()))
-        })
+        .map(|indices| indices.into_iter().map(|index| graph[index]))
+        .filter(|names| names.clone().any(|name| value_names.contains(name)))
         .map(|mut names| {
             if names.len() > 1 {
                 Err(AnalysisError::CircularInitialization)
             } else {
-                Ok(names
-                    .find(|name| value_names.contains(name.as_str()))
-                    .unwrap()
-                    .into())
+                Ok(names.find(|name| value_names.contains(name)).unwrap())
             }
         })
         .rev()
@@ -82,7 +72,7 @@ mod tests {
                 vec![ir::ValueDefinition::new("x", 42.0, types::Primitive::Float64).into()],
                 vec![]
             )),
-            Ok(vec!["x".into()])
+            Ok(vec!["x"])
         );
     }
 
@@ -102,7 +92,7 @@ mod tests {
                 ],
                 vec![]
             )),
-            Ok(vec!["x".into(), "y".into()])
+            Ok(vec!["x", "y"])
         );
     }
 
@@ -122,7 +112,7 @@ mod tests {
                 ],
                 vec![]
             )),
-            Ok(vec!["x".into(), "y".into()])
+            Ok(vec!["x", "y"])
         );
     }
 
@@ -149,7 +139,7 @@ mod tests {
                 ],
                 vec![]
             )),
-            Ok(vec!["x".into(), "y".into()])
+            Ok(vec!["x", "y"])
         );
     }
 
@@ -189,7 +179,7 @@ mod tests {
                 ],
                 vec![]
             )),
-            Ok(vec!["x".into(), "y".into()])
+            Ok(vec!["x", "y"])
         );
     }
 
