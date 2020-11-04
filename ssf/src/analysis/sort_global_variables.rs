@@ -41,21 +41,20 @@ pub fn sort_global_variables(module: &ir::Module) -> Result<Vec<String>, Analysi
 
     Ok(kosaraju_scc(&graph)
         .into_iter()
-        .map(|indices| {
-            indices
-                .into_iter()
-                .map(|index| graph[index].clone())
-                .collect::<Vec<String>>()
+        .map(|indices| indices.into_iter().map(|index| &graph[index]))
+        .filter(|names| {
+            names
+                .clone()
+                .any(|name| value_names.contains(name.as_str()))
         })
-        .filter(|names| names.iter().any(|name| value_names.contains(name.as_str())))
         .map(|mut names| {
             if names.len() > 1 {
                 Err(AnalysisError::CircularInitialization)
             } else {
                 Ok(names
-                    .drain(..)
                     .find(|name| value_names.contains(name.as_str()))
-                    .unwrap())
+                    .unwrap()
+                    .into())
             }
         })
         .rev()
