@@ -24,7 +24,7 @@ impl FunctionDefinition {
         body: impl Into<Expression>,
         result_type: impl Into<types::Value> + Clone,
     ) -> Self {
-        Self::with_options(name.into(), vec![], arguments, body, result_type, false)
+        Self::with_options(name, vec![], arguments, body, result_type, false)
     }
 
     pub fn thunk(
@@ -33,7 +33,7 @@ impl FunctionDefinition {
         body: impl Into<Expression>,
         result_type: impl Into<types::Value> + Clone,
     ) -> Self {
-        Self::with_options(name.into(), vec![], arguments, body, result_type, true)
+        Self::with_options(name, vec![], arguments, body, result_type, true)
     }
 
     #[cfg(test)]
