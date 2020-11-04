@@ -35,31 +35,26 @@ impl DefaultAlternative {
         }
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
-        let mut excluded_variables = excluded_variables.clone();
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
+        let mut variables = self.expression.find_variables();
 
-        excluded_variables.insert(self.variable.clone());
+        variables.remove(&self.variable);
 
-        self.expression.find_variables(
-            &excluded_variables
-                .iter()
-                .chain(&[self.variable.clone()])
-                .cloned()
-                .collect(),
-        )
+        variables
     }
 
     pub(crate) fn infer_environment(
         &self,
+        type_: impl Into<Type>,
         variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
     ) -> Self {
+        let mut variables = variables.clone();
+
+        variables.insert(self.variable.clone(), type_.into());
+
         Self {
             variable: self.variable.clone(),
-            expression: self
-                .expression
-                .infer_environment(variables, global_variables)
-                .into(),
+            expression: self.expression.infer_environment(&variables).into(),
         }
     }
 

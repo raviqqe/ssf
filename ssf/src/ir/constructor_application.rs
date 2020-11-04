@@ -35,26 +35,22 @@ impl ConstructorApplication {
         )
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
         let mut variables = HashSet::new();
 
         for argument in &self.arguments {
-            variables.extend(argument.find_variables(excluded_variables));
+            variables.extend(argument.find_variables());
         }
 
         variables
     }
 
-    pub(crate) fn infer_environment(
-        &self,
-        variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
-    ) -> Self {
+    pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         Self::new(
             self.constructor.clone(),
             self.arguments
                 .iter()
-                .map(|argument| argument.infer_environment(variables, global_variables))
+                .map(|argument| argument.infer_environment(variables))
                 .collect(),
         )
     }

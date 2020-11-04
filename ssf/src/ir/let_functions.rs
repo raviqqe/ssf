@@ -41,46 +41,33 @@ impl LetFunctions {
         Self::new(definitions, self.expression.rename_variables(&names))
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
-        let mut excluded_variables = excluded_variables.clone();
-
-        excluded_variables.extend(
-            self.definitions
-                .iter()
-                .map(|definition| definition.name().into())
-                .collect::<HashSet<_>>(),
-        );
-
-        let mut variables = self.expression.find_variables(&excluded_variables);
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
+        let mut variables = self.expression.find_variables();
 
         for definition in &self.definitions {
-            variables.extend(definition.find_variables(&excluded_variables));
+            variables.extend(definition.find_variables());
+        }
+
+        for definition in &self.definitions {
+            variables.remove(definition.name());
         }
 
         variables
     }
 
-    pub(crate) fn infer_environment(
-        &self,
-        variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
-    ) -> Self {
+    pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         let mut variables = variables.clone();
 
-        for function_definition in &self.definitions {
-            variables.insert(
-                function_definition.name().into(),
-                function_definition.type_().clone().into(),
-            );
+        for definition in &self.definitions {
+            variables.insert(definition.name().into(), definition.type_().clone().into());
         }
 
         Self::new(
             self.definitions
                 .iter()
-                .map(|definition| definition.infer_environment(&variables, global_variables))
+                .map(|definition| definition.infer_environment(&variables))
                 .collect(),
-            self.expression
-                .infer_environment(&variables, global_variables),
+            self.expression.infer_environment(&variables),
         )
     }
 

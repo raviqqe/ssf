@@ -49,27 +49,31 @@ impl AlgebraicAlternative {
         }
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
-        let mut excluded_variables = excluded_variables.clone();
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
+        let mut variables = self.expression.find_variables();
 
         for element_name in &self.element_names {
-            excluded_variables.insert(element_name.into());
+            variables.remove(element_name);
         }
 
-        self.expression.find_variables(&excluded_variables)
+        variables
     }
 
-    pub(crate) fn infer_environment(
-        &self,
-        variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
-    ) -> Self {
+    pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
+        let mut variables = variables.clone();
+
+        for (name, type_) in self
+            .element_names
+            .iter()
+            .zip(self.constructor.constructor_type().elements())
+        {
+            variables.insert(name.into(), type_.clone());
+        }
+
         Self {
             constructor: self.constructor.clone(),
             element_names: self.element_names.clone(),
-            expression: self
-                .expression
-                .infer_environment(variables, global_variables),
+            expression: self.expression.infer_environment(&variables),
         }
     }
 

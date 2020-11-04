@@ -32,20 +32,14 @@ impl PrimitiveAlternative {
         }
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
-        self.expression.find_variables(&excluded_variables)
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
+        self.expression.find_variables()
     }
 
-    pub(crate) fn infer_environment(
-        &self,
-        variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
-    ) -> Self {
+    pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         Self {
             primitive: self.primitive.clone(),
-            expression: self
-                .expression
-                .infer_environment(variables, global_variables),
+            expression: self.expression.infer_environment(variables),
         }
     }
 

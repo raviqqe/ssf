@@ -109,43 +109,42 @@ impl FunctionDefinition {
         )
     }
 
-    pub(crate) fn find_variables(&self, excluded_variables: &HashSet<String>) -> HashSet<String> {
-        let mut excluded_variables = excluded_variables.clone();
+    pub(crate) fn find_variables(&self) -> HashSet<String> {
+        let mut variables = self.body.find_variables();
 
-        excluded_variables.insert(self.name.clone());
-
-        excluded_variables.extend(
-            self.arguments
-                .iter()
-                .map(|argument| argument.name().into())
-                .collect::<HashSet<_>>(),
-        );
-
-        self.body.find_variables(&excluded_variables)
-    }
-
-    pub(crate) fn infer_environment(
-        &self,
-        original_variables: &HashMap<String, Type>,
-        global_variables: &HashSet<String>,
-    ) -> Self {
-        let mut variables = original_variables.clone();
-        let mut excluded_variables = global_variables.clone();
+        variables.remove(&self.name);
 
         for argument in &self.arguments {
-            variables.insert(argument.name().into(), argument.type_().clone());
-            excluded_variables.insert(argument.name().into());
+            variables.remove(argument.name());
         }
+
+        variables
+    }
+
+    pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
+        // Do not include this function itself in variables as it can be global.
 
         Self::with_environment(
             self.name.clone(),
             self.body
-                .find_variables(&excluded_variables)
+                .find_variables()
                 .iter()
-                .map(|name| Argument::new(name, original_variables[name].clone()))
+                .filter_map(|name| {
+                    variables
+                        .get(name)
+                        .map(|type_| Argument::new(name, type_.clone()))
+                })
                 .collect(),
             self.arguments.clone(),
-            self.body.infer_environment(&variables, global_variables),
+            {
+                let mut variables = variables.clone();
+
+                for argument in &self.arguments {
+                    variables.insert(argument.name().into(), argument.type_().clone());
+                }
+
+                self.body.infer_environment(&variables)
+            },
             self.result_type.clone(),
         )
     }
@@ -186,7 +185,7 @@ mod tests {
                 42.0,
                 types::Primitive::Float64
             )
-            .infer_environment(&Default::default(), &Default::default()),
+            .infer_environment(&Default::default()),
             FunctionDefinition::with_environment(
                 "f",
                 vec![],
@@ -209,8 +208,7 @@ mod tests {
             .infer_environment(
                 &vec![("y".into(), types::Primitive::Float64.into())]
                     .drain(..)
-                    .collect(),
-                &Default::default()
+                    .collect()
             ),
             FunctionDefinition::with_environment(
                 "f",
@@ -235,8 +233,8 @@ mod tests {
                 Variable::new("y"),
                 types::Primitive::Float64
             )
-            .infer_environment(&variables, &Default::default())
-            .infer_environment(&variables, &Default::default()),
+            .infer_environment(&variables)
+            .infer_environment(&variables),
             FunctionDefinition::with_environment(
                 "f",
                 vec![Argument::new("y", types::Primitive::Float64)],
