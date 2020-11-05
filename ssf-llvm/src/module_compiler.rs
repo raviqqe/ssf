@@ -21,7 +21,7 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
         module: &'m inkwell::module::Module<'c>,
         type_compiler: &'t TypeCompiler<'c>,
         compile_configuration: &'c CompileConfiguration,
-    ) -> ModuleCompiler<'c, 'm, 't> {
+    ) -> Self {
         Self {
             context,
             module,

@@ -35,7 +35,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         &self,
         function_definition: &ssf::ir::FunctionDefinition,
     ) -> Result<inkwell::values::FunctionValue, CompileError> {
-        Ok(if function_definition.arguments().is_empty() {
+        Ok(if function_definition.is_thunk() {
             self.compile_thunk(function_definition)?
         } else {
             self.compile_non_thunk(function_definition)?
