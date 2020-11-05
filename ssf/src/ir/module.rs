@@ -90,7 +90,7 @@ impl Module {
                             names.remove(argument.name());
                         }
 
-                        FunctionDefinition::with_environment(
+                        FunctionDefinition::with_options(
                             original_names
                                 .get(function_definition.name())
                                 .cloned()
@@ -99,6 +99,7 @@ impl Module {
                             function_definition.arguments().to_vec(),
                             function_definition.body().rename_variables(&names),
                             function_definition.result_type().clone(),
+                            function_definition.is_thunk(),
                         )
                         .into()
                     }
