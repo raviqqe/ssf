@@ -14,6 +14,7 @@ pub struct FunctionDefinition {
     body: Expression,
     result_type: types::Value,
     type_: types::Function,
+    is_thunk: bool,
 }
 
 impl FunctionDefinition {
@@ -22,6 +23,37 @@ impl FunctionDefinition {
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
         result_type: impl Into<types::Value> + Clone,
+    ) -> Self {
+        Self::with_options(name, vec![], arguments, body, result_type, false)
+    }
+
+    pub fn thunk(
+        name: impl Into<String>,
+        arguments: Vec<Argument>,
+        body: impl Into<Expression>,
+        result_type: impl Into<types::Value> + Clone,
+    ) -> Self {
+        Self::with_options(name, vec![], arguments, body, result_type, true)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn with_environment(
+        name: impl Into<String>,
+        environment: Vec<Argument>,
+        arguments: Vec<Argument>,
+        body: impl Into<Expression>,
+        result_type: impl Into<types::Value> + Clone,
+    ) -> Self {
+        Self::with_options(name, environment, arguments, body, result_type, false)
+    }
+
+    pub(crate) fn with_options(
+        name: impl Into<String>,
+        environment: Vec<Argument>,
+        arguments: Vec<Argument>,
+        body: impl Into<Expression>,
+        result_type: impl Into<types::Value> + Clone,
+        is_thunk: bool,
     ) -> Self {
         Self {
             type_: types::canonicalize(
@@ -37,33 +69,11 @@ impl FunctionDefinition {
             .into_function()
             .unwrap(),
             name: name.into(),
-            environment: vec![],
-            arguments,
-            body: body.into(),
-            result_type: result_type.into(),
-        }
-    }
-
-    pub(crate) fn with_environment(
-        name: impl Into<String>,
-        environment: Vec<Argument>,
-        arguments: Vec<Argument>,
-        body: impl Into<Expression>,
-        result_type: impl Into<types::Value> + Clone,
-    ) -> Self {
-        Self {
-            type_: types::Function::new(
-                arguments
-                    .iter()
-                    .map(|argument| argument.type_().clone())
-                    .collect(),
-                result_type.clone().into(),
-            ),
-            name: name.into(),
             environment,
             arguments,
             body: body.into(),
             result_type: result_type.into(),
+            is_thunk,
         }
     }
 
@@ -91,6 +101,10 @@ impl FunctionDefinition {
         &self.type_
     }
 
+    pub fn is_thunk(&self) -> bool {
+        self.is_thunk
+    }
+
     pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
         let mut names = names.clone();
 
@@ -100,12 +114,13 @@ impl FunctionDefinition {
             names.remove(argument.name());
         }
 
-        Self::with_environment(
+        Self::with_options(
             self.name.clone(),
             self.environment.clone(),
             self.arguments.clone(),
             self.body.rename_variables(&names),
             self.result_type.clone(),
+            self.is_thunk,
         )
     }
 
@@ -124,7 +139,7 @@ impl FunctionDefinition {
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         // Do not include this function itself in variables as it can be global.
 
-        Self::with_environment(
+        Self::with_options(
             self.name.clone(),
             self.body
                 .find_variables()
@@ -146,6 +161,7 @@ impl FunctionDefinition {
                 self.body.infer_environment(&variables)
             },
             self.result_type.clone(),
+            self.is_thunk,
         )
     }
 
@@ -167,6 +183,7 @@ impl FunctionDefinition {
                 .into_value()
                 .unwrap(),
             type_: convert(&self.type_.clone().into()).into_function().unwrap(),
+            is_thunk: self.is_thunk,
         }
     }
 }
