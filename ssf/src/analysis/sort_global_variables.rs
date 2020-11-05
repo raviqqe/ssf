@@ -267,4 +267,25 @@ mod tests {
             Ok(vec!["y"])
         );
     }
+
+    #[test]
+    fn sort_with_recursive_function() {
+        assert_eq!(
+            sort_global_variables(&ir::Module::without_validation(
+                vec![],
+                vec![ir::FunctionDefinition::new(
+                    "f",
+                    vec![ir::Argument::new("x", types::Primitive::Float64)],
+                    ir::FunctionApplication::new(
+                        ir::Variable::new("f"),
+                        vec![ir::Variable::new("x").into()]
+                    ),
+                    types::Primitive::Float64,
+                )
+                .into()],
+                vec![]
+            )),
+            Ok(vec![])
+        );
+    }
 }
