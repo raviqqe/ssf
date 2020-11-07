@@ -4,7 +4,6 @@ use super::function_compiler::FunctionCompiler;
 use super::instruction_compiler::InstructionCompiler;
 use super::type_compiler::TypeCompiler;
 use std::collections::HashMap;
-use std::convert::TryInto;
 
 pub struct ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
     context: &'c inkwell::context::Context,
@@ -672,39 +671,8 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         match variables.get(variable.name()) {
-            Some(value) => Ok(self.unwrap_value(*value)),
+            Some(value) => Ok(*value),
             None => Err(CompileError::VariableNotFound(variable.name().into())),
-        }
-    }
-
-    fn unwrap_value(
-        &self,
-        value: inkwell::values::BasicValueEnum<'c>,
-    ) -> inkwell::values::BasicValueEnum<'c> {
-        match value {
-            inkwell::values::BasicValueEnum::PointerValue(value) => {
-                match value.get_type().get_element_type() {
-                    inkwell::types::AnyTypeEnum::FloatType(_) => self.builder.build_load(value, ""),
-                    inkwell::types::AnyTypeEnum::IntType(_) => self.builder.build_load(value, ""),
-                    inkwell::types::AnyTypeEnum::StructType(struct_type) => {
-                        let is_closure = struct_type
-                            .get_field_type_at_index(0)
-                            .and_then(|field_type| field_type.try_into().ok())
-                            .map(|pointer_type: inkwell::types::PointerType<'c>| {
-                                pointer_type.get_element_type().is_function_type()
-                            })
-                            .unwrap_or(false);
-
-                        if is_closure {
-                            value.into()
-                        } else {
-                            self.builder.build_load(value, "")
-                        }
-                    }
-                    _ => value.into(),
-                }
-            }
-            _ => value,
         }
     }
 
