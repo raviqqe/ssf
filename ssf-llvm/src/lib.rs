@@ -641,14 +641,14 @@ mod tests {
     }
 
     #[test]
-    fn compile_thunk_in_let_functions_expression() {
+    fn compile_thunk_in_let_recursive_expression() {
         compile(
             &ssf::ir::Module::new(
                 vec![],
                 vec![ssf::ir::FunctionDefinition::new(
                     "f",
                     vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                    ssf::ir::LetFunctions::new(
+                    ssf::ir::LetRecursive::new(
                         vec![ssf::ir::FunctionDefinition::new(
                             "g",
                             vec![],
@@ -668,14 +668,14 @@ mod tests {
     }
 
     #[test]
-    fn compile_let_functions_expression_with_free_variable() {
+    fn compile_let_recursive_expression_with_free_variable() {
         compile(
             &ssf::ir::Module::new(
                 vec![],
                 vec![ssf::ir::FunctionDefinition::new(
                     "f",
                     vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                    ssf::ir::LetFunctions::new(
+                    ssf::ir::LetRecursive::new(
                         vec![ssf::ir::FunctionDefinition::new(
                             "g",
                             vec![ssf::ir::Argument::new("y", ssf::types::Primitive::Float64)],
@@ -695,7 +695,7 @@ mod tests {
     }
 
     #[test]
-    fn compile_let_functions_expression_with_with_two_free_variables() {
+    fn compile_let_recursive_expression_with_with_two_free_variables() {
         compile(
             &ssf::ir::Module::new(
                 vec![],
@@ -705,7 +705,7 @@ mod tests {
                         ssf::ir::Argument::new("x", ssf::types::Primitive::Float64),
                         ssf::ir::Argument::new("y", ssf::types::Primitive::Float64),
                     ],
-                    ssf::ir::LetFunctions::new(
+                    ssf::ir::LetRecursive::new(
                         vec![ssf::ir::FunctionDefinition::new(
                             "g",
                             vec![ssf::ir::Argument::new("z", ssf::types::Primitive::Float64)],
@@ -729,18 +729,18 @@ mod tests {
     }
 
     #[test]
-    fn compile_global_variable_reference_in_nested_let_functions_expressions() {
+    fn compile_global_variable_reference_in_nested_let_recursive_expressions() {
         compile(
             &ssf::ir::Module::new(
                 vec![],
                 vec![ssf::ir::FunctionDefinition::new(
                     "f",
                     vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                    ssf::ir::LetFunctions::new(
+                    ssf::ir::LetRecursive::new(
                         vec![ssf::ir::FunctionDefinition::new(
                             "g",
                             vec![ssf::ir::Argument::new("y", ssf::types::Primitive::Float64)],
-                            ssf::ir::LetFunctions::new(
+                            ssf::ir::LetRecursive::new(
                                 vec![ssf::ir::FunctionDefinition::new(
                                     "g",
                                     vec![ssf::ir::Argument::new(

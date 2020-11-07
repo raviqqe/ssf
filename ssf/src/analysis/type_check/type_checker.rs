@@ -144,28 +144,29 @@ impl TypeChecker {
                     )),
                 }
             }
-            Expression::LetFunctions(let_functions) => {
+            Expression::LetRecursive(let_recursive) => {
                 let mut variables = variables.clone();
 
-                for definition in let_functions.definitions() {
+                for definition in let_recursive.definitions() {
                     variables.insert(definition.name(), definition.type_().clone().into());
                 }
 
-                for definition in let_functions.definitions() {
+                for definition in let_recursive.definitions() {
                     self.check_function_definition(definition, &variables)?;
                 }
 
-                self.check_expression(let_functions.expression(), &variables)
+                self.check_expression(let_recursive.expression(), &variables)
             }
-            Expression::LetValues(let_values) => {
+            Expression::Let(let_) => {
+                self.check_equality(
+                    &self.check_expression(let_.bound_expression(), variables)?,
+                    let_.type_(),
+                )?;
+
                 let mut variables = variables.clone();
+                variables.insert(let_.name(), let_.type_().clone());
 
-                for definition in let_values.definitions() {
-                    self.check_value_definition(definition, &variables)?;
-                    variables.insert(definition.name(), definition.type_().clone().into());
-                }
-
-                self.check_expression(let_values.expression(), &variables)
+                self.check_expression(let_.expression(), &variables)
             }
             Expression::Primitive(primitive) => Ok(self.check_primitive(primitive).into()),
             Expression::Operation(operation) => {

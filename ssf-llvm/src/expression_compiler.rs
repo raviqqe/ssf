@@ -186,11 +186,11 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     .left()
                     .unwrap())
             }
-            ssf::ir::Expression::LetFunctions(let_functions) => {
+            ssf::ir::Expression::LetRecursive(let_recursive) => {
                 let mut variables = variables.clone();
                 let mut closures = HashMap::<&str, inkwell::values::PointerValue>::new();
 
-                for definition in let_functions.definitions() {
+                for definition in let_recursive.definitions() {
                     let pointer = self.compile_struct_malloc(
                         self.type_compiler.compile_sized_closure(definition),
                     );
@@ -208,7 +208,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     closures.insert(definition.name(), pointer);
                 }
 
-                for definition in let_functions.definitions() {
+                for definition in let_recursive.definitions() {
                     let closure = closures[definition.name()];
 
                     self.builder.build_store(
@@ -276,19 +276,17 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     }
                 }
 
-                self.compile(let_functions.expression(), &variables)
+                self.compile(let_recursive.expression(), &variables)
             }
-            ssf::ir::Expression::LetValues(let_values) => {
+            ssf::ir::Expression::Let(let_) => {
                 let mut variables = variables.clone();
 
-                for definition in let_values.definitions() {
-                    variables.insert(
-                        definition.name().into(),
-                        self.compile(definition.body(), &variables)?,
-                    );
-                }
+                variables.insert(
+                    let_.name().into(),
+                    self.compile(let_.bound_expression(), &variables)?,
+                );
 
-                self.compile(let_values.expression(), &variables)
+                self.compile(let_.expression(), &variables)
             }
             ssf::ir::Expression::Primitive(primitive) => Ok(self.compile_primitive(primitive)),
             ssf::ir::Expression::Operation(operation) => {

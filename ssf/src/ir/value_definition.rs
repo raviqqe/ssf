@@ -34,14 +34,6 @@ impl ValueDefinition {
         &self.type_
     }
 
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        Self::new(
-            self.name.clone(),
-            self.body.rename_variables(names),
-            self.type_.clone(),
-        )
-    }
-
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         self.body.find_variables()
     }

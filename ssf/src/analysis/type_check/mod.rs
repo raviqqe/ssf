@@ -171,17 +171,21 @@ mod tests {
     }
 
     #[test]
-    fn check_types_of_let_values() {
+    fn check_types_of_let_expression() {
         let module = Module::without_validation(
             vec![],
             vec![ValueDefinition::new(
                 "x",
-                LetValues::new(
-                    vec![
-                        ValueDefinition::new("y", 42.0, types::Primitive::Float64),
-                        ValueDefinition::new("z", Variable::new("y"), types::Primitive::Float64),
-                    ],
-                    Variable::new("z"),
+                Let::new(
+                    "y",
+                    types::Primitive::Float64,
+                    42.0,
+                    Let::new(
+                        "z",
+                        types::Primitive::Float64,
+                        Variable::new("y"),
+                        Variable::new("z"),
+                    ),
                 ),
                 types::Primitive::Float64,
             )
@@ -193,7 +197,7 @@ mod tests {
     }
 
     #[test]
-    fn fail_to_check_types_of_let_values() {
+    fn fail_to_check_types_of_let_expression() {
         let module = Module::without_validation(
             vec![],
             vec![
@@ -206,12 +210,10 @@ mod tests {
                 .into(),
                 ValueDefinition::new(
                     "x",
-                    LetValues::new(
-                        vec![ValueDefinition::new(
-                            "y",
-                            Variable::new("f"),
-                            types::Primitive::Float64,
-                        )],
+                    Let::new(
+                        "y",
+                        types::Primitive::Float64,
+                        Variable::new("f"),
                         Variable::new("y"),
                     ),
                     types::Primitive::Float64,
