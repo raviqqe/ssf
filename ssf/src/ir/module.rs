@@ -130,8 +130,7 @@ mod tests {
                     vec![Argument::new("x", types::Primitive::Float64)],
                     42.0,
                     types::Primitive::Float64
-                )
-                .into()]
+                )]
             )
             .unwrap()
             .rename_global_variables(&vec![("foo".into(), "bar".into())].drain(..).collect()),
@@ -142,8 +141,7 @@ mod tests {
                     vec![Argument::new("x", types::Primitive::Float64)],
                     42.0,
                     types::Primitive::Float64
-                )
-                .into()],
+                )],
             )
         );
     }
@@ -186,8 +184,7 @@ mod tests {
                     vec![Argument::new("foo", types::Primitive::Float64)],
                     Variable::new("foo"),
                     types::Primitive::Float64
-                )
-                .into()]
+                )]
             )
             .unwrap()
             .rename_global_variables(&vec![("foo".into(), "bar".into())].drain(..).collect()),
@@ -198,8 +195,7 @@ mod tests {
                     vec![Argument::new("foo", types::Primitive::Float64)],
                     Variable::new("foo"),
                     types::Primitive::Float64
-                )
-                .into()],
+                )],
             )
         );
     }
@@ -258,8 +254,7 @@ mod tests {
                     vec![Argument::new("x", types::Primitive::Float64)],
                     42.0,
                     types::Primitive::Float64
-                )
-                .into()]
+                )]
             ),
             Ok(Module::without_validation(
                 vec![],
@@ -269,8 +264,7 @@ mod tests {
                     vec![Argument::new("x", types::Primitive::Float64)],
                     42.0,
                     types::Primitive::Float64
-                )
-                .into()],
+                )],
             ))
         );
     }
@@ -380,8 +374,7 @@ mod tests {
                         42.0
                     ),
                     types::Primitive::Float64
-                )
-                .into()]
+                )]
             ),
             Ok(Module::without_validation(
                 vec![],
@@ -408,8 +401,7 @@ mod tests {
                         42.0
                     ),
                     types::Primitive::Float64
-                )
-                .into()],
+                )],
             ))
         );
     }

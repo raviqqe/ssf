@@ -73,8 +73,7 @@ mod tests {
                 vec![Argument::new("x", types::Primitive::Float64)],
                 42.0,
                 types::Primitive::Float64,
-            )
-            .into()],
+            )],
         );
 
         assert_eq!(check_types(&module), Ok(()));
@@ -90,8 +89,7 @@ mod tests {
                     vec![Argument::new("x", types::Primitive::Float64)],
                     42.0,
                     types::Primitive::Float64,
-                )
-                .into(),
+                ),
                 Definition::new(
                     "g",
                     vec![Argument::new("x", types::Primitive::Float64)],
@@ -636,8 +634,7 @@ mod tests {
                             vec![42.0.into()],
                         ),
                         algebraic_type,
-                    )
-                    .into()],
+                    )],
                 )),
                 Ok(())
             );

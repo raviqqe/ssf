@@ -79,8 +79,7 @@ mod tests {
                         vec![42.0.into(), 42.0.into()],
                     ),
                     algebraic_type,
-                )
-                .into()],
+                )],
             )
             .unwrap(),
             &CompileConfiguration::new(Some("custom_malloc".into()), None),
@@ -103,8 +102,7 @@ mod tests {
                         None,
                     ),
                     ssf::types::Primitive::Float64,
-                )
-                .into()],
+                )],
             )
             .unwrap(),
             &CompileConfiguration::new(None, Some("panic".into())),
@@ -131,8 +129,7 @@ mod tests {
                         vec![42.0.into(), 42.0.into()],
                     ),
                     algebraic_type,
-                )
-                .into()],
+                )],
             )
             .unwrap(),
             &COMPILE_CONFIGURATION,
@@ -164,8 +161,7 @@ mod tests {
                         None,
                     ),
                     algebraic_type,
-                )
-                .into()],
+                )],
             )
             .unwrap(),
             &COMPILE_CONFIGURATION,
@@ -191,8 +187,7 @@ mod tests {
                         vec![ssf::ir::Variable::new("x").into()],
                     ),
                     algebraic_type,
-                )
-                .into()],
+                )],
             )
             .unwrap(),
             &COMPILE_CONFIGURATION,
@@ -203,7 +198,7 @@ mod tests {
     #[test]
     fn compile_algebraic_types_with_custom_tags() {
         let algebraic_type = ssf::types::Algebraic::with_tags(
-            vec![(42, ssf::types::Constructor::unboxed(vec![]).into())]
+            vec![(42, ssf::types::Constructor::unboxed(vec![]))]
                 .into_iter()
                 .collect(),
         );
@@ -218,15 +213,14 @@ mod tests {
                         algebraic_type.clone(),
                         ssf::ir::Variable::new("x"),
                         vec![ssf::ir::AlgebraicAlternative::new(
-                            ssf::ir::Constructor::new(algebraic_type.clone(), 42),
+                            ssf::ir::Constructor::new(algebraic_type, 42),
                             vec![],
                             42.0,
                         )],
                         None,
                     ),
                     ssf::types::Primitive::Float64,
-                )
-                .into()],
+                )],
             )
             .unwrap(),
             &COMPILE_CONFIGURATION,
@@ -237,7 +231,7 @@ mod tests {
     #[test]
     fn compile_nested_algebraic_cases() {
         let algebraic_type = ssf::types::Algebraic::new(
-            vec![ssf::types::Constructor::unboxed(vec![]).into()]
+            vec![ssf::types::Constructor::unboxed(vec![])]
                 .into_iter()
                 .collect(),
         );
@@ -258,7 +252,7 @@ mod tests {
                                 algebraic_type.clone(),
                                 ssf::ir::Variable::new("x"),
                                 vec![ssf::ir::AlgebraicAlternative::new(
-                                    ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                                    ssf::ir::Constructor::new(algebraic_type, 0),
                                     vec![],
                                     42.0,
                                 )],
@@ -268,8 +262,7 @@ mod tests {
                         None,
                     ),
                     ssf::types::Primitive::Float64,
-                )
-                .into()],
+                )],
             )
             .unwrap(),
             &COMPILE_CONFIGURATION,
@@ -280,7 +273,7 @@ mod tests {
     #[test]
     fn compile_nested_algebraic_cases_with_default_alternatives() {
         let algebraic_type = ssf::types::Algebraic::new(
-            vec![ssf::types::Constructor::unboxed(vec![]).into()]
+            vec![ssf::types::Constructor::unboxed(vec![])]
                 .into_iter()
                 .collect(),
         );
@@ -301,7 +294,7 @@ mod tests {
                                 algebraic_type.clone(),
                                 ssf::ir::Variable::new("x"),
                                 vec![ssf::ir::AlgebraicAlternative::new(
-                                    ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                                    ssf::ir::Constructor::new(algebraic_type, 0),
                                     vec![],
                                     42.0,
                                 )],
@@ -311,8 +304,7 @@ mod tests {
                         Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
                     ),
                     ssf::types::Primitive::Float64,
-                )
-                .into()],
+                )],
             )
             .unwrap(),
             &COMPILE_CONFIGURATION,
@@ -470,8 +462,7 @@ mod tests {
                         None,
                     ),
                     ssf::types::Primitive::Float64,
-                )
-                .into()],
+                )],
             )
             .unwrap(),
             &CompileConfiguration::new(None, Some("panic".into())),
@@ -502,8 +493,7 @@ mod tests {
                         Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
                     ),
                     ssf::types::Primitive::Float64,
-                )
-                .into()],
+                )],
             )
             .unwrap(),
             &CompileConfiguration::new(None, Some("panic".into())),
@@ -517,8 +507,7 @@ mod tests {
             &ssf::ir::Module::new(
                 vec![],
                 vec![
-                    ssf::ir::Definition::new("f", vec![], 42.0, ssf::types::Primitive::Float64)
-                        .into(),
+                    ssf::ir::Definition::new("f", vec![], 42.0, ssf::types::Primitive::Float64),
                 ],
             )
             .unwrap(),
@@ -566,8 +555,7 @@ mod tests {
                         ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("g"), vec![]),
                     ),
                     ssf::types::Primitive::Float64,
-                )
-                .into()],
+                )],
             )
             .unwrap(),
             &COMPILE_CONFIGURATION,
@@ -593,8 +581,7 @@ mod tests {
                         42.0,
                     ),
                     ssf::types::Primitive::Float64,
-                )
-                .into()],
+                )],
             )
             .unwrap(),
             &COMPILE_CONFIGURATION,
@@ -627,8 +614,7 @@ mod tests {
                         42.0,
                     ),
                     ssf::types::Primitive::Float64,
-                )
-                .into()],
+                )],
             )
             .unwrap(),
             &COMPILE_CONFIGURATION,
@@ -668,8 +654,7 @@ mod tests {
                         42.0,
                     ),
                     ssf::types::Primitive::Float64,
-                )
-                .into()],
+                )],
             )
             .unwrap(),
             &COMPILE_CONFIGURATION,

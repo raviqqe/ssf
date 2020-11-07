@@ -336,7 +336,7 @@ mod tests {
         let module = ssf::ir::Module::new(
             vec![],
             vec![
-                ssf::ir::Definition::new("f", vec![], 42, ssf::types::Primitive::Integer64).into(),
+                ssf::ir::Definition::new("f", vec![], 42, ssf::types::Primitive::Integer64),
             ],
         )
         .unwrap();

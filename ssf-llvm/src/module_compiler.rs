@@ -28,7 +28,7 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
         }
     }
 
-    pub fn compile<'s>(&mut self, ir_module: &'s ssf::ir::Module) -> Result<(), CompileError> {
+    pub fn compile(&mut self, ir_module: &ssf::ir::Module) -> Result<(), CompileError> {
         self.declare_intrinsics();
 
         for declaration in ir_module.declarations() {
