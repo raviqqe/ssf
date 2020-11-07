@@ -112,7 +112,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
                         .build_extract_value(condition, 0, "")
                         .unwrap()
                         .into_pointer_value(),
-                    &[entry_function.get_params()[0]],
+                    &entry_function.get_params(),
                     "",
                 )
                 .try_as_basic_value()
