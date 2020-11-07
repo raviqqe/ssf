@@ -4,14 +4,14 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct LetValues {
+pub struct Let {
     name: String,
     type_: Type,
     bound_expression: Arc<Expression>,
     expression: Arc<Expression>,
 }
 
-impl LetValues {
+impl Let {
     pub fn new(
         name: impl Into<String>,
         type_: impl Into<Type>,

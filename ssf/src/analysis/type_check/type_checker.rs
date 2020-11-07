@@ -157,16 +157,16 @@ impl TypeChecker {
 
                 self.check_expression(let_functions.expression(), &variables)
             }
-            Expression::LetValues(let_values) => {
+            Expression::Let(let_) => {
                 self.check_equality(
-                    &self.check_expression(let_values.bound_expression(), variables)?,
-                    let_values.type_(),
+                    &self.check_expression(let_.bound_expression(), variables)?,
+                    let_.type_(),
                 )?;
 
                 let mut variables = variables.clone();
-                variables.insert(let_values.name(), let_values.type_().clone());
+                variables.insert(let_.name(), let_.type_().clone());
 
-                self.check_expression(let_values.expression(), &variables)
+                self.check_expression(let_.expression(), &variables)
             }
             Expression::Primitive(primitive) => Ok(self.check_primitive(primitive).into()),
             Expression::Operation(operation) => {

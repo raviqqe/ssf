@@ -278,15 +278,15 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
                 self.compile(let_functions.expression(), &variables)
             }
-            ssf::ir::Expression::LetValues(let_values) => {
+            ssf::ir::Expression::Let(let_) => {
                 let mut variables = variables.clone();
 
                 variables.insert(
-                    let_values.name().into(),
-                    self.compile(let_values.bound_expression(), &variables)?,
+                    let_.name().into(),
+                    self.compile(let_.bound_expression(), &variables)?,
                 );
 
-                self.compile(let_values.expression(), &variables)
+                self.compile(let_.expression(), &variables)
             }
             ssf::ir::Expression::Primitive(primitive) => Ok(self.compile_primitive(primitive)),
             ssf::ir::Expression::Operation(operation) => {
