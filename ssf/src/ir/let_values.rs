@@ -1,24 +1,41 @@
 use super::expression::Expression;
-use super::value_definition::ValueDefinition;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct LetValues {
-    definitions: Vec<ValueDefinition>,
-    expression: Box<Expression>,
+    name: String,
+    type_: Type,
+    bound_expression: Arc<Expression>,
+    expression: Arc<Expression>,
 }
 
 impl LetValues {
-    pub fn new(definitions: Vec<ValueDefinition>, expression: impl Into<Expression>) -> Self {
+    pub fn new(
+        name: impl Into<String>,
+        type_: impl Into<Type>,
+        bound_expression: impl Into<Expression>,
+        expression: impl Into<Expression>,
+    ) -> Self {
         Self {
-            definitions,
-            expression: Box::new(expression.into()),
+            name: name.into(),
+            type_: type_.into(),
+            bound_expression: bound_expression.into().into(),
+            expression: expression.into().into(),
         }
     }
 
-    pub fn definitions(&self) -> &[ValueDefinition] {
-        &self.definitions
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn type_(&self) -> &Type {
+        &self.type_
+    }
+
+    pub fn bound_expression(&self) -> &Expression {
+        &self.bound_expression
     }
 
     pub fn expression(&self) -> &Expression {
@@ -26,63 +43,50 @@ impl LetValues {
     }
 
     pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        let mut names = names.clone();
-        let mut definitions = Vec::with_capacity(self.definitions.len());
-
-        for definition in &self.definitions {
-            definitions.push(definition.rename_variables(&names));
-            names.remove(definition.name());
-        }
-
-        Self::new(definitions, self.expression.rename_variables(&names))
+        Self::new(
+            self.name.clone(),
+            self.type_.clone(),
+            self.bound_expression.rename_variables(&names),
+            {
+                let mut names = names.clone();
+                names.remove(&self.name);
+                self.expression.rename_variables(&names)
+            },
+        )
     }
 
     pub(crate) fn find_variables(&self) -> HashSet<String> {
-        let mut all_variables = HashSet::new();
-        let mut bound_variables = HashSet::<&str>::new();
-
-        for definition in &self.definitions {
-            let mut variables = definition.find_variables();
-
-            for bound_variable in &bound_variables {
-                variables.remove(*bound_variable);
-            }
-
-            all_variables.extend(variables);
-
-            bound_variables.insert(definition.name());
-        }
-
-        let mut variables = self.expression.find_variables();
-
-        for bound_variable in &bound_variables {
-            variables.remove(*bound_variable);
-        }
-
-        all_variables
+        self.bound_expression
+            .find_variables()
+            .into_iter()
+            .chain({
+                let mut variables = self.expression.find_variables();
+                variables.remove(&self.name);
+                variables
+            })
+            .collect()
     }
 
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
-        let mut variables = variables.clone();
-        let mut definitions = vec![];
+        Self::new(
+            self.name.clone(),
+            self.type_.clone(),
+            self.bound_expression.infer_environment(&variables),
+            {
+                let mut variables = variables.clone();
 
-        for value_definition in &self.definitions {
-            definitions.push(value_definition.infer_environment(&variables));
-            variables.insert(
-                value_definition.name().into(),
-                value_definition.type_().clone().into(),
-            );
-        }
+                variables.insert(self.name.clone(), self.type_.clone());
 
-        Self::new(definitions, self.expression.infer_environment(&variables))
+                self.expression.infer_environment(&variables)
+            },
+        )
     }
 
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         Self::new(
-            self.definitions
-                .iter()
-                .map(|definition| definition.convert_types(convert))
-                .collect(),
+            self.name.clone(),
+            convert(&self.type_),
+            self.bound_expression.convert_types(convert),
             self.expression.convert_types(convert),
         )
     }

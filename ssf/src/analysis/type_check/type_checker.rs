@@ -158,12 +158,13 @@ impl TypeChecker {
                 self.check_expression(let_functions.expression(), &variables)
             }
             Expression::LetValues(let_values) => {
-                let mut variables = variables.clone();
+                self.check_equality(
+                    &self.check_expression(let_values.bound_expression(), variables)?,
+                    let_values.type_(),
+                );
 
-                for definition in let_values.definitions() {
-                    self.check_value_definition(definition, &variables)?;
-                    variables.insert(definition.name(), definition.type_().clone().into());
-                }
+                let mut variables = variables.clone();
+                variables.insert(let_values.name(), let_values.type_().clone());
 
                 self.check_expression(let_values.expression(), &variables)
             }
