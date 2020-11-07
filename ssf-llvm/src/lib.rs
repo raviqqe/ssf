@@ -506,9 +506,12 @@ mod tests {
         compile(
             &ssf::ir::Module::new(
                 vec![],
-                vec![
-                    ssf::ir::Definition::new("f", vec![], 42.0, ssf::types::Primitive::Float64),
-                ],
+                vec![ssf::ir::Definition::new(
+                    "f",
+                    vec![],
+                    42.0,
+                    ssf::types::Primitive::Float64,
+                )],
             )
             .unwrap(),
             &COMPILE_CONFIGURATION,

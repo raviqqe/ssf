@@ -335,9 +335,12 @@ mod tests {
     fn compile_updatable_closure() {
         let module = ssf::ir::Module::new(
             vec![],
-            vec![
-                ssf::ir::Definition::new("f", vec![], 42, ssf::types::Primitive::Integer64),
-            ],
+            vec![ssf::ir::Definition::new(
+                "f",
+                vec![],
+                42,
+                ssf::types::Primitive::Integer64,
+            )],
         )
         .unwrap();
 
