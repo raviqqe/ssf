@@ -281,12 +281,10 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
             ssf::ir::Expression::LetValues(let_values) => {
                 let mut variables = variables.clone();
 
-                for definition in let_values.definitions() {
-                    variables.insert(
-                        definition.name().into(),
-                        self.compile(definition.body(), &variables)?,
-                    );
-                }
+                variables.insert(
+                    let_values.name().into(),
+                    self.compile(let_values.bound_expression(), &variables)?,
+                );
 
                 self.compile(let_values.expression(), &variables)
             }

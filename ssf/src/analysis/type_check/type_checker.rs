@@ -161,7 +161,7 @@ impl TypeChecker {
                 self.check_equality(
                     &self.check_expression(let_values.bound_expression(), variables)?,
                     let_values.type_(),
-                );
+                )?;
 
                 let mut variables = variables.clone();
                 variables.insert(let_values.name(), let_values.type_().clone());
