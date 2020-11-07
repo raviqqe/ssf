@@ -541,6 +541,35 @@ mod tests {
     }
 
     #[test]
+    fn compile_thunk_evaluation_with_argument() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![
+                    ssf::ir::Definition::thunk(
+                        "f",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        42.0,
+                        ssf::types::Primitive::Float64,
+                    ),
+                    ssf::ir::Definition::new(
+                        "g",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        ssf::ir::FunctionApplication::new(
+                            ssf::ir::Variable::new("f"),
+                            vec![42.0.into()],
+                        ),
+                        ssf::types::Primitive::Float64,
+                    ),
+                ],
+            )
+            .unwrap(),
+            &COMPILE_CONFIGURATION,
+        )
+        .unwrap();
+    }
+
+    #[test]
     fn compile_thunk_in_let_recursive_expression() {
         compile(
             &ssf::ir::Module::new(
