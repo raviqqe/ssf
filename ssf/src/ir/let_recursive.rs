@@ -4,12 +4,12 @@ use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct LetFunctions {
+pub struct LetRecursive {
     definitions: Vec<FunctionDefinition>,
     expression: Box<Expression>,
 }
 
-impl LetFunctions {
+impl LetRecursive {
     pub fn new(definitions: Vec<FunctionDefinition>, expression: impl Into<Expression>) -> Self {
         Self {
             definitions,

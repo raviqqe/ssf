@@ -144,18 +144,18 @@ impl TypeChecker {
                     )),
                 }
             }
-            Expression::LetFunctions(let_functions) => {
+            Expression::LetRecursive(let_recursive) => {
                 let mut variables = variables.clone();
 
-                for definition in let_functions.definitions() {
+                for definition in let_recursive.definitions() {
                     variables.insert(definition.name(), definition.type_().clone().into());
                 }
 
-                for definition in let_functions.definitions() {
+                for definition in let_recursive.definitions() {
                     self.check_function_definition(definition, &variables)?;
                 }
 
-                self.check_expression(let_functions.expression(), &variables)
+                self.check_expression(let_recursive.expression(), &variables)
             }
             Expression::Let(let_) => {
                 self.check_equality(

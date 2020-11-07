@@ -226,7 +226,7 @@ mod tests {
                     FunctionDefinition::new(
                         "f",
                         vec![Argument::new("x", types::Primitive::Float64)],
-                        LetFunctions::new(
+                        LetRecursive::new(
                             vec![FunctionDefinition::new(
                                 "g",
                                 vec![Argument::new("y", types::Primitive::Float64)],
@@ -250,7 +250,7 @@ mod tests {
                         "f",
                         vec![],
                         vec![Argument::new("x", types::Primitive::Float64)],
-                        LetFunctions::new(
+                        LetRecursive::new(
                             vec![FunctionDefinition::with_environment(
                                 "g",
                                 vec![Argument::new("x", types::Primitive::Float64)],
@@ -341,7 +341,7 @@ mod tests {
                     FunctionDefinition::new(
                         "f",
                         vec![Argument::new("x", types::Primitive::Float64)],
-                        LetFunctions::new(
+                        LetRecursive::new(
                             vec![FunctionDefinition::new(
                                 "g",
                                 vec![Argument::new("y", types::Primitive::Float64)],
@@ -363,7 +363,7 @@ mod tests {
                         "f",
                         vec![],
                         vec![Argument::new("x", types::Primitive::Float64)],
-                        LetFunctions::new(
+                        LetRecursive::new(
                             vec![FunctionDefinition::with_environment(
                                 "g",
                                 vec![Argument::new("x", types::Primitive::Float64)],
@@ -390,7 +390,7 @@ mod tests {
                 vec![FunctionDefinition::new(
                     "f",
                     vec![Argument::new("x", types::Primitive::Float64)],
-                    LetFunctions::new(
+                    LetRecursive::new(
                         vec![FunctionDefinition::new(
                             "g",
                             vec![Argument::new("y", types::Primitive::Float64)],
@@ -411,7 +411,7 @@ mod tests {
                 vec![FunctionDefinition::new(
                     "f",
                     vec![Argument::new("x", types::Primitive::Float64)],
-                    LetFunctions::new(
+                    LetRecursive::new(
                         vec![FunctionDefinition::with_environment(
                             "g",
                             vec![Argument::new(

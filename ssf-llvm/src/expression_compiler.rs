@@ -186,11 +186,11 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     .left()
                     .unwrap())
             }
-            ssf::ir::Expression::LetFunctions(let_functions) => {
+            ssf::ir::Expression::LetRecursive(let_recursive) => {
                 let mut variables = variables.clone();
                 let mut closures = HashMap::<&str, inkwell::values::PointerValue>::new();
 
-                for definition in let_functions.definitions() {
+                for definition in let_recursive.definitions() {
                     let pointer = self.compile_struct_malloc(
                         self.type_compiler.compile_sized_closure(definition),
                     );
@@ -208,7 +208,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     closures.insert(definition.name(), pointer);
                 }
 
-                for definition in let_functions.definitions() {
+                for definition in let_recursive.definitions() {
                     let closure = closures[definition.name()];
 
                     self.builder.build_store(
@@ -276,7 +276,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     }
                 }
 
-                self.compile(let_functions.expression(), &variables)
+                self.compile(let_recursive.expression(), &variables)
             }
             ssf::ir::Expression::Let(let_) => {
                 let mut variables = variables.clone();

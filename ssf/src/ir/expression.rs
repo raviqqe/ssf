@@ -4,7 +4,7 @@ use super::case::Case;
 use super::constructor_application::ConstructorApplication;
 use super::function_application::FunctionApplication;
 use super::let_::Let;
-use super::let_functions::LetFunctions;
+use super::let_recursive::LetRecursive;
 use super::operation::Operation;
 use super::primitive::Primitive;
 use super::primitive_case::PrimitiveCase;
@@ -18,7 +18,7 @@ pub enum Expression {
     Case(Case),
     ConstructorApplication(ConstructorApplication),
     FunctionApplication(FunctionApplication),
-    LetFunctions(LetFunctions),
+    LetRecursive(LetRecursive),
     Let(Let),
     Primitive(Primitive),
     Operation(Operation),
@@ -43,7 +43,7 @@ impl Expression {
             Self::FunctionApplication(function_application) => {
                 function_application.rename_variables(names).into()
             }
-            Self::LetFunctions(let_functions) => let_functions.rename_variables(names).into(),
+            Self::LetRecursive(let_recursive) => let_recursive.rename_variables(names).into(),
             Self::Let(let_) => let_.rename_variables(names).into(),
             Self::Operation(operation) => operation.rename_variables(names).into(),
             Self::Variable(variable) => variable.rename_variables(names).into(),
@@ -61,7 +61,7 @@ impl Expression {
             Self::FunctionApplication(function_application) => {
                 function_application.find_variables()
             }
-            Self::LetFunctions(let_functions) => let_functions.find_variables(),
+            Self::LetRecursive(let_recursive) => let_recursive.find_variables(),
             Self::Let(let_) => let_.find_variables(),
             Self::Operation(operation) => operation.find_variables(),
             Self::Variable(variable) => variable.find_variables(),
@@ -79,7 +79,7 @@ impl Expression {
             Self::FunctionApplication(function_application) => {
                 function_application.infer_environment(variables).into()
             }
-            Self::LetFunctions(let_functions) => let_functions.infer_environment(variables).into(),
+            Self::LetRecursive(let_recursive) => let_recursive.infer_environment(variables).into(),
             Self::Let(let_) => let_.infer_environment(variables).into(),
             Self::Operation(operation) => operation.infer_environment(variables).into(),
             Self::Primitive(_) | Self::Variable(_) => self.clone(),
@@ -96,7 +96,7 @@ impl Expression {
             Self::FunctionApplication(function_application) => {
                 function_application.convert_types(convert).into()
             }
-            Self::LetFunctions(let_functions) => let_functions.convert_types(convert).into(),
+            Self::LetRecursive(let_recursive) => let_recursive.convert_types(convert).into(),
             Self::Let(let_) => let_.convert_types(convert).into(),
             Self::Operation(operation) => operation.convert_types(convert).into(),
             Self::Primitive(_) | Self::Variable(_) => self.clone(),
@@ -134,9 +134,9 @@ impl From<FunctionApplication> for Expression {
     }
 }
 
-impl From<LetFunctions> for Expression {
-    fn from(let_functions: LetFunctions) -> Self {
-        Self::LetFunctions(let_functions)
+impl From<LetRecursive> for Expression {
+    fn from(let_recursive: LetRecursive) -> Self {
+        Self::LetRecursive(let_recursive)
     }
 }
 
