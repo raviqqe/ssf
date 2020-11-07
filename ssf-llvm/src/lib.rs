@@ -349,8 +349,7 @@ mod tests {
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
                         42.0,
                         ssf::types::Primitive::Float64,
-                    )
-                    .into(),
+                    ),
                     ssf::ir::Definition::new(
                         "g",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
@@ -359,8 +358,7 @@ mod tests {
                             vec![42.0.into()],
                         ),
                         ssf::types::Primitive::Float64,
-                    )
-                    .into(),
+                    ),
                 ],
             )
             .unwrap(),
