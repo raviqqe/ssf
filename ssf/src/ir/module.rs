@@ -86,7 +86,6 @@ impl Module {
                         definition.result_type().clone(),
                         definition.is_thunk(),
                     )
-                    .into()
                 })
                 .collect(),
         }
