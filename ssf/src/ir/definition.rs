@@ -1,83 +1,264 @@
-use super::function_definition::*;
-use super::value_definition::*;
-use crate::types::Type;
+use super::argument::Argument;
+use super::expression::Expression;
+use crate::types::{self, Type};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Definition {
-    FunctionDefinition(FunctionDefinition),
-    ValueDefinition(ValueDefinition),
+pub struct Definition {
+    name: String,
+    // Environment is inferred on module creation and this field is used just
+    // as its cache.  So it must be safe to clone definitions inside a
+    // module and use it on creation of another module.
+    environment: Vec<Argument>,
+    arguments: Vec<Argument>,
+    body: Expression,
+    result_type: types::Value,
+    type_: types::Function,
+    is_thunk: bool,
 }
 
 impl Definition {
+    pub fn new(
+        name: impl Into<String>,
+        arguments: Vec<Argument>,
+        body: impl Into<Expression>,
+        result_type: impl Into<types::Value> + Clone,
+    ) -> Self {
+        Self::with_options(name, vec![], arguments, body, result_type, false)
+    }
+
+    pub fn thunk(
+        name: impl Into<String>,
+        arguments: Vec<Argument>,
+        body: impl Into<Expression>,
+        result_type: impl Into<types::Value> + Clone,
+    ) -> Self {
+        Self::with_options(name, vec![], arguments, body, result_type, true)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn with_environment(
+        name: impl Into<String>,
+        environment: Vec<Argument>,
+        arguments: Vec<Argument>,
+        body: impl Into<Expression>,
+        result_type: impl Into<types::Value> + Clone,
+    ) -> Self {
+        Self::with_options(name, environment, arguments, body, result_type, false)
+    }
+
+    pub(crate) fn with_options(
+        name: impl Into<String>,
+        environment: Vec<Argument>,
+        arguments: Vec<Argument>,
+        body: impl Into<Expression>,
+        result_type: impl Into<types::Value> + Clone,
+        is_thunk: bool,
+    ) -> Self {
+        Self {
+            type_: types::canonicalize(
+                &types::Function::new(
+                    arguments
+                        .iter()
+                        .map(|argument| argument.type_().clone())
+                        .collect(),
+                    result_type.clone().into(),
+                )
+                .into(),
+            )
+            .into_function()
+            .unwrap(),
+            name: name.into(),
+            environment,
+            arguments,
+            body: body.into(),
+            result_type: result_type.into(),
+            is_thunk,
+        }
+    }
+
     pub fn name(&self) -> &str {
-        match self {
-            Self::FunctionDefinition(function_definition) => function_definition.name(),
-            Self::ValueDefinition(value_definition) => value_definition.name(),
-        }
+        &self.name
     }
 
-    pub fn type_(&self) -> Type {
-        match self {
-            Self::FunctionDefinition(function_definition) => {
-                function_definition.type_().clone().into()
-            }
-            Self::ValueDefinition(value_definition) => value_definition.type_().clone().into(),
-        }
+    pub fn environment(&self) -> &[Argument] {
+        &self.environment
     }
 
-    pub fn to_function_definition(&self) -> Option<&FunctionDefinition> {
-        match self {
-            Self::FunctionDefinition(function_definition) => Some(function_definition),
-            Self::ValueDefinition(_) => None,
-        }
+    pub fn arguments(&self) -> &[Argument] {
+        &self.arguments
     }
 
-    pub fn to_value_definition(&self) -> Option<&ValueDefinition> {
-        match self {
-            Self::FunctionDefinition(_) => None,
-            Self::ValueDefinition(value_definition) => Some(value_definition),
+    pub fn body(&self) -> &Expression {
+        &self.body
+    }
+
+    pub fn result_type(&self) -> &types::Value {
+        &self.result_type
+    }
+
+    pub fn type_(&self) -> &types::Function {
+        &self.type_
+    }
+
+    pub fn is_thunk(&self) -> bool {
+        self.is_thunk
+    }
+
+    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
+        let mut names = names.clone();
+
+        names.remove(self.name.as_str());
+
+        for argument in &self.arguments {
+            names.remove(argument.name());
         }
+
+        Self::with_options(
+            self.name.clone(),
+            self.environment.clone(),
+            self.arguments.clone(),
+            self.body.rename_variables(&names),
+            self.result_type.clone(),
+            self.is_thunk,
+        )
     }
 
     pub(crate) fn find_variables(&self) -> HashSet<String> {
-        match self {
-            Self::FunctionDefinition(function_definition) => function_definition.find_variables(),
-            Self::ValueDefinition(value_definition) => value_definition.find_variables(),
+        let mut variables = self.body.find_variables();
+
+        variables.remove(&self.name);
+
+        for argument in &self.arguments {
+            variables.remove(argument.name());
         }
+
+        variables
     }
 
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
-        match self {
-            Self::FunctionDefinition(function_definition) => {
-                function_definition.infer_environment(variables).into()
-            }
-            Self::ValueDefinition(value_definition) => {
-                value_definition.infer_environment(variables).into()
-            }
-        }
+        // Do not include this function itself in variables as it can be global.
+
+        Self::with_options(
+            self.name.clone(),
+            self.body
+                .find_variables()
+                .iter()
+                .filter_map(|name| {
+                    variables
+                        .get(name)
+                        .map(|type_| Argument::new(name, type_.clone()))
+                })
+                .collect(),
+            self.arguments.clone(),
+            {
+                let mut variables = variables.clone();
+
+                for argument in &self.arguments {
+                    variables.insert(argument.name().into(), argument.type_().clone());
+                }
+
+                self.body.infer_environment(&variables)
+            },
+            self.result_type.clone(),
+            self.is_thunk,
+        )
     }
 
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
-        match self {
-            Self::FunctionDefinition(function_definition) => {
-                function_definition.convert_types(convert).into()
-            }
-            Self::ValueDefinition(value_definition) => {
-                value_definition.convert_types(convert).into()
-            }
+        Self {
+            name: self.name.clone(),
+            environment: self
+                .environment
+                .iter()
+                .map(|argument| argument.convert_types(convert))
+                .collect(),
+            arguments: self
+                .arguments
+                .iter()
+                .map(|argument| argument.convert_types(convert))
+                .collect(),
+            body: self.body.convert_types(convert),
+            result_type: convert(&self.result_type.clone().into())
+                .into_value()
+                .unwrap(),
+            type_: convert(&self.type_.clone().into()).into_function().unwrap(),
+            is_thunk: self.is_thunk,
         }
     }
 }
 
-impl From<FunctionDefinition> for Definition {
-    fn from(function_definition: FunctionDefinition) -> Self {
-        Definition::FunctionDefinition(function_definition)
-    }
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ir::*;
 
-impl From<ValueDefinition> for Definition {
-    fn from(function_definition: ValueDefinition) -> Self {
-        Definition::ValueDefinition(function_definition)
+    #[test]
+    fn infer_empty_environment() {
+        assert_eq!(
+            Definition::new(
+                "f",
+                vec![Argument::new("x", types::Primitive::Float64)],
+                42.0,
+                types::Primitive::Float64
+            )
+            .infer_environment(&Default::default()),
+            Definition::with_environment(
+                "f",
+                vec![],
+                vec![Argument::new("x", types::Primitive::Float64)],
+                42.0,
+                types::Primitive::Float64
+            )
+        );
+    }
+
+    #[test]
+    fn infer_environment() {
+        assert_eq!(
+            Definition::new(
+                "f",
+                vec![Argument::new("x", types::Primitive::Float64)],
+                Variable::new("y"),
+                types::Primitive::Float64
+            )
+            .infer_environment(
+                &vec![("y".into(), types::Primitive::Float64.into())]
+                    .drain(..)
+                    .collect()
+            ),
+            Definition::with_environment(
+                "f",
+                vec![Argument::new("y", types::Primitive::Float64)],
+                vec![Argument::new("x", types::Primitive::Float64)],
+                Variable::new("y"),
+                types::Primitive::Float64
+            )
+        );
+    }
+
+    #[test]
+    fn infer_environment_idempotently() {
+        let variables = vec![("y".into(), types::Primitive::Float64.into())]
+            .drain(..)
+            .collect();
+
+        assert_eq!(
+            Definition::new(
+                "f",
+                vec![Argument::new("x", types::Primitive::Float64)],
+                Variable::new("y"),
+                types::Primitive::Float64
+            )
+            .infer_environment(&variables)
+            .infer_environment(&variables),
+            Definition::with_environment(
+                "f",
+                vec![Argument::new("y", types::Primitive::Float64)],
+                vec![Argument::new("x", types::Primitive::Float64)],
+                Variable::new("y"),
+                types::Primitive::Float64
+            )
+        );
     }
 }

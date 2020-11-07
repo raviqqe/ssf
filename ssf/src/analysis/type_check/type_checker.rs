@@ -15,69 +15,38 @@ impl TypeChecker {
         let mut variables = HashMap::<&str, Type>::new();
 
         for declaration in module.declarations() {
-            variables.insert(declaration.name(), declaration.type_().clone());
+            variables.insert(declaration.name(), declaration.type_().clone().into());
         }
 
         for definition in module.definitions() {
-            match definition {
-                Definition::FunctionDefinition(function_definition) => {
-                    variables.insert(
-                        function_definition.name(),
-                        function_definition.type_().clone().into(),
-                    );
-                }
-                Definition::ValueDefinition(value_definition) => {
-                    variables.insert(
-                        value_definition.name(),
-                        value_definition.type_().clone().into(),
-                    );
-                }
-            }
+            variables.insert(definition.name(), definition.type_().clone().into());
         }
 
         for definition in module.definitions() {
-            match definition {
-                Definition::FunctionDefinition(function_definition) => {
-                    self.check_function_definition(function_definition, &variables)?;
-                }
-                Definition::ValueDefinition(value_definition) => {
-                    self.check_value_definition(value_definition, &variables)?;
-                }
-            };
+            self.check_definition(definition, &variables)?;
         }
 
         Ok(())
     }
 
-    fn check_function_definition(
+    fn check_definition(
         &self,
-        function_definition: &FunctionDefinition,
+        definition: &Definition,
         variables: &HashMap<&str, Type>,
     ) -> Result<(), TypeCheckError> {
         let mut variables = variables.clone();
 
-        for argument in function_definition
+        for argument in definition
             .environment()
             .iter()
-            .chain(function_definition.arguments())
+            .chain(definition.arguments())
         {
             variables.insert(argument.name(), argument.type_().clone());
         }
 
         self.check_equality(
-            &self.check_expression(function_definition.body(), &variables)?,
-            &function_definition.result_type().clone().into(),
-        )
-    }
-
-    fn check_value_definition(
-        &self,
-        value_definition: &ValueDefinition,
-        variables: &HashMap<&str, Type>,
-    ) -> Result<(), TypeCheckError> {
-        self.check_equality(
-            &self.check_expression(value_definition.body(), &variables)?,
-            &value_definition.type_().clone().into(),
+            &self.check_expression(definition.body(), &variables)?,
+            &definition.result_type().clone().into(),
         )
     }
 
@@ -152,7 +121,7 @@ impl TypeChecker {
                 }
 
                 for definition in let_recursive.definitions() {
-                    self.check_function_definition(definition, &variables)?;
+                    self.check_definition(definition, &variables)?;
                 }
 
                 self.check_expression(let_recursive.expression(), &variables)

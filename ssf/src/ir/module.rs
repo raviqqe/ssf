@@ -1,8 +1,6 @@
 use super::declaration::Declaration;
 use super::definition::Definition;
-use super::function_definition::FunctionDefinition;
-use super::value_definition::ValueDefinition;
-use crate::analysis::{check_types, sort_global_variables, AnalysisError};
+use crate::analysis::{check_types, AnalysisError};
 use crate::types::canonicalize;
 use std::collections::HashMap;
 
@@ -10,7 +8,6 @@ use std::collections::HashMap;
 pub struct Module {
     declarations: Vec<Declaration>,
     definitions: Vec<Definition>,
-    global_variable_initialization_order: Vec<String>,
 }
 
 impl Module {
@@ -18,22 +15,16 @@ impl Module {
         declarations: Vec<Declaration>,
         definitions: Vec<Definition>,
     ) -> Result<Self, AnalysisError> {
-        let mut module = Self {
+        let module = Self {
             declarations,
             definitions: definitions
                 .iter()
                 .map(|definition| definition.infer_environment(&Default::default()))
                 .collect(),
-            global_variable_initialization_order: vec![],
         }
         .canonicalize_types();
 
         check_types(&module)?;
-
-        module.global_variable_initialization_order = sort_global_variables(&module)?
-            .into_iter()
-            .map(|name| name.into())
-            .collect();
 
         Ok(module)
     }
@@ -42,12 +33,10 @@ impl Module {
     pub fn without_validation(
         declarations: Vec<Declaration>,
         definitions: Vec<Definition>,
-        global_variable_initialization_order: Vec<String>,
     ) -> Self {
         Self {
             declarations,
             definitions,
-            global_variable_initialization_order,
         }
     }
 
@@ -57,10 +46,6 @@ impl Module {
 
     pub fn definitions(&self) -> &[Definition] {
         &self.definitions
-    }
-
-    pub fn global_variable_initialization_order(&self) -> &[String] {
-        &self.global_variable_initialization_order
     }
 
     pub fn rename_global_variables(&self, names: &HashMap<String, String>) -> Self {
@@ -81,44 +66,28 @@ impl Module {
             definitions: self
                 .definitions
                 .iter()
-                .map(|definition| match definition {
-                    Definition::FunctionDefinition(function_definition) => {
-                        let original_names = names;
-                        let mut names = names.clone();
-
-                        for argument in function_definition.arguments() {
-                            names.remove(argument.name());
-                        }
-
-                        FunctionDefinition::with_options(
-                            original_names
-                                .get(function_definition.name())
-                                .cloned()
-                                .unwrap_or_else(|| function_definition.name().into()),
-                            function_definition.environment().to_vec(),
-                            function_definition.arguments().to_vec(),
-                            function_definition.body().rename_variables(&names),
-                            function_definition.result_type().clone(),
-                            function_definition.is_thunk(),
-                        )
-                        .into()
-                    }
-                    Definition::ValueDefinition(value_definition) => ValueDefinition::new(
+                .map(|definition| {
+                    Definition::with_options(
                         names
-                            .get(value_definition.name())
+                            .get(definition.name())
                             .cloned()
-                            .unwrap_or_else(|| value_definition.name().into()),
-                        value_definition.body().rename_variables(names),
-                        value_definition.type_().clone(),
+                            .unwrap_or_else(|| definition.name().into()),
+                        definition.environment().to_vec(),
+                        definition.arguments().to_vec(),
+                        {
+                            let mut names = names.clone();
+
+                            for argument in definition.arguments() {
+                                names.remove(argument.name());
+                            }
+
+                            definition.body().rename_variables(&names)
+                        },
+                        definition.result_type().clone(),
+                        definition.is_thunk(),
                     )
-                    .into(),
+                    .into()
                 })
-                .collect(),
-            global_variable_initialization_order: self
-                .global_variable_initialization_order
-                .iter()
-                .map(|name| names.get(name).unwrap_or_else(|| name))
-                .cloned()
                 .collect(),
         }
     }
@@ -135,7 +104,6 @@ impl Module {
                 .iter()
                 .map(|definition| definition.convert_types(&canonicalize))
                 .collect(),
-            global_variable_initialization_order: self.global_variable_initialization_order.clone(),
         }
     }
 }
@@ -153,19 +121,30 @@ mod tests {
             Module::new(vec![], vec![])
                 .unwrap()
                 .rename_global_variables(&Default::default()),
-            Module::without_validation(vec![], vec![], vec![])
+            Module::without_validation(vec![], vec![])
         );
         assert_eq!(
             Module::new(
                 vec![],
-                vec![ValueDefinition::new("foo", 42.0, types::Primitive::Float64).into()]
+                vec![Definition::new(
+                    "foo",
+                    vec![Argument::new("x", types::Primitive::Float64)],
+                    42.0,
+                    types::Primitive::Float64
+                )
+                .into()]
             )
             .unwrap()
             .rename_global_variables(&vec![("foo".into(), "bar".into())].drain(..).collect()),
             Module::without_validation(
                 vec![],
-                vec![ValueDefinition::new("bar", 42.0, types::Primitive::Float64).into()],
-                vec!["bar".into()]
+                vec![Definition::new(
+                    "bar",
+                    vec![Argument::new("x", types::Primitive::Float64)],
+                    42.0,
+                    types::Primitive::Float64
+                )
+                .into()],
             )
         );
     }
@@ -174,15 +153,26 @@ mod tests {
     fn rename_declarations() {
         assert_eq!(
             Module::new(
-                vec![Declaration::new("foo", types::Primitive::Float64)],
+                vec![Declaration::new(
+                    "foo",
+                    types::Function::new(
+                        vec![types::Primitive::Float64.into()],
+                        types::Primitive::Float64
+                    )
+                )],
                 vec![]
             )
             .unwrap()
             .rename_global_variables(&vec![("foo".into(), "bar".into())].drain(..).collect()),
             Module::without_validation(
-                vec![Declaration::new("bar", types::Primitive::Float64)],
+                vec![Declaration::new(
+                    "bar",
+                    types::Function::new(
+                        vec![types::Primitive::Float64.into()],
+                        types::Primitive::Float64
+                    )
+                )],
                 vec![],
-                vec![]
             )
         );
     }
@@ -192,7 +182,7 @@ mod tests {
         assert_eq!(
             Module::new(
                 vec![],
-                vec![FunctionDefinition::new(
+                vec![Definition::new(
                     "foo",
                     vec![Argument::new("foo", types::Primitive::Float64)],
                     Variable::new("foo"),
@@ -204,14 +194,13 @@ mod tests {
             .rename_global_variables(&vec![("foo".into(), "bar".into())].drain(..).collect()),
             Module::without_validation(
                 vec![],
-                vec![FunctionDefinition::new(
+                vec![Definition::new(
                     "bar",
                     vec![Argument::new("foo", types::Primitive::Float64)],
                     Variable::new("foo"),
                     types::Primitive::Float64
                 )
                 .into()],
-                vec![]
             )
         );
     }
@@ -221,50 +210,41 @@ mod tests {
         assert_eq!(
             Module::new(
                 vec![],
-                vec![
-                    ValueDefinition::new("y", 42.0, types::Primitive::Float64).into(),
-                    FunctionDefinition::new(
-                        "f",
-                        vec![Argument::new("x", types::Primitive::Float64)],
-                        LetRecursive::new(
-                            vec![FunctionDefinition::new(
-                                "g",
-                                vec![Argument::new("y", types::Primitive::Float64)],
-                                Variable::new("x"),
-                                types::Primitive::Float64
-                            )],
-                            42.0
-                        ),
-                        types::Primitive::Float64
-                    )
-                    .into()
-                ]
+                vec![Definition::new(
+                    "f",
+                    vec![Argument::new("x", types::Primitive::Float64)],
+                    LetRecursive::new(
+                        vec![Definition::new(
+                            "g",
+                            vec![Argument::new("y", types::Primitive::Float64)],
+                            Variable::new("x"),
+                            types::Primitive::Float64
+                        )],
+                        42.0
+                    ),
+                    types::Primitive::Float64
+                )]
             )
             .unwrap()
             .rename_global_variables(&Default::default()),
             Module::without_validation(
                 vec![],
-                vec![
-                    ValueDefinition::new("y", 42.0, types::Primitive::Float64).into(),
-                    FunctionDefinition::with_environment(
-                        "f",
-                        vec![],
-                        vec![Argument::new("x", types::Primitive::Float64)],
-                        LetRecursive::new(
-                            vec![FunctionDefinition::with_environment(
-                                "g",
-                                vec![Argument::new("x", types::Primitive::Float64)],
-                                vec![Argument::new("y", types::Primitive::Float64)],
-                                Variable::new("x"),
-                                types::Primitive::Float64
-                            )],
-                            42.0
-                        ),
-                        types::Primitive::Float64
-                    )
-                    .into()
-                ],
-                vec!["y".into()]
+                vec![Definition::with_environment(
+                    "f",
+                    vec![],
+                    vec![Argument::new("x", types::Primitive::Float64)],
+                    LetRecursive::new(
+                        vec![Definition::with_environment(
+                            "g",
+                            vec![Argument::new("x", types::Primitive::Float64)],
+                            vec![Argument::new("y", types::Primitive::Float64)],
+                            Variable::new("x"),
+                            types::Primitive::Float64
+                        )],
+                        42.0
+                    ),
+                    types::Primitive::Float64
+                )],
             )
         );
     }
@@ -274,7 +254,7 @@ mod tests {
         assert_eq!(
             Module::new(
                 vec![],
-                vec![FunctionDefinition::new(
+                vec![Definition::new(
                     "f",
                     vec![Argument::new("x", types::Primitive::Float64)],
                     42.0,
@@ -284,7 +264,7 @@ mod tests {
             ),
             Ok(Module::without_validation(
                 vec![],
-                vec![FunctionDefinition::with_environment(
+                vec![Definition::with_environment(
                     "f",
                     vec![],
                     vec![Argument::new("x", types::Primitive::Float64)],
@@ -292,7 +272,6 @@ mod tests {
                     types::Primitive::Float64
                 )
                 .into()],
-                vec![]
             ))
         );
     }
@@ -303,30 +282,38 @@ mod tests {
             Module::new(
                 vec![],
                 vec![
-                    ValueDefinition::new("y", 42.0, types::Primitive::Float64).into(),
-                    FunctionDefinition::new(
+                    Definition::new(
+                        "g",
+                        vec![Argument::new("x", types::Primitive::Float64)],
+                        42.0,
+                        types::Primitive::Float64
+                    ),
+                    Definition::new(
                         "f",
                         vec![Argument::new("x", types::Primitive::Float64)],
-                        Variable::new("y"),
+                        FunctionApplication::new(Variable::new("g"), vec![42.0.into()]),
                         types::Primitive::Float64
                     )
-                    .into()
                 ]
             ),
             Ok(Module::without_validation(
                 vec![],
                 vec![
-                    ValueDefinition::new("y", 42.0, types::Primitive::Float64).into(),
-                    FunctionDefinition::with_environment(
+                    Definition::with_environment(
+                        "g",
+                        vec![],
+                        vec![Argument::new("x", types::Primitive::Float64)],
+                        42.0,
+                        types::Primitive::Float64
+                    ),
+                    Definition::with_environment(
                         "f",
                         vec![],
                         vec![Argument::new("x", types::Primitive::Float64)],
-                        Variable::new("y"),
+                        FunctionApplication::new(Variable::new("g"), vec![42.0.into()]),
                         types::Primitive::Float64
                     )
-                    .into()
                 ],
-                vec!["y".into()]
             ))
         );
     }
@@ -336,48 +323,39 @@ mod tests {
         assert_eq!(
             Module::new(
                 vec![],
-                vec![
-                    ValueDefinition::new("y", 42.0, types::Primitive::Float64).into(),
-                    FunctionDefinition::new(
-                        "f",
-                        vec![Argument::new("x", types::Primitive::Float64)],
-                        LetRecursive::new(
-                            vec![FunctionDefinition::new(
-                                "g",
-                                vec![Argument::new("y", types::Primitive::Float64)],
-                                Variable::new("x"),
-                                types::Primitive::Float64
-                            )],
-                            42.0
-                        ),
-                        types::Primitive::Float64
-                    )
-                    .into()
-                ],
+                vec![Definition::new(
+                    "f",
+                    vec![Argument::new("x", types::Primitive::Float64)],
+                    LetRecursive::new(
+                        vec![Definition::new(
+                            "g",
+                            vec![Argument::new("y", types::Primitive::Float64)],
+                            Variable::new("x"),
+                            types::Primitive::Float64
+                        )],
+                        42.0
+                    ),
+                    types::Primitive::Float64
+                )],
             ),
             Ok(Module::without_validation(
                 vec![],
-                vec![
-                    ValueDefinition::new("y", 42.0, types::Primitive::Float64).into(),
-                    FunctionDefinition::with_environment(
-                        "f",
-                        vec![],
-                        vec![Argument::new("x", types::Primitive::Float64)],
-                        LetRecursive::new(
-                            vec![FunctionDefinition::with_environment(
-                                "g",
-                                vec![Argument::new("x", types::Primitive::Float64)],
-                                vec![Argument::new("y", types::Primitive::Float64)],
-                                Variable::new("x"),
-                                types::Primitive::Float64
-                            )],
-                            42.0
-                        ),
-                        types::Primitive::Float64
-                    )
-                    .into()
-                ],
-                vec!["y".into()]
+                vec![Definition::with_environment(
+                    "f",
+                    vec![],
+                    vec![Argument::new("x", types::Primitive::Float64)],
+                    LetRecursive::new(
+                        vec![Definition::with_environment(
+                            "g",
+                            vec![Argument::new("x", types::Primitive::Float64)],
+                            vec![Argument::new("y", types::Primitive::Float64)],
+                            Variable::new("x"),
+                            types::Primitive::Float64
+                        )],
+                        42.0
+                    ),
+                    types::Primitive::Float64
+                )],
             ))
         );
     }
@@ -387,11 +365,11 @@ mod tests {
         assert_eq!(
             Module::new(
                 vec![],
-                vec![FunctionDefinition::new(
+                vec![Definition::new(
                     "f",
                     vec![Argument::new("x", types::Primitive::Float64)],
                     LetRecursive::new(
-                        vec![FunctionDefinition::new(
+                        vec![Definition::new(
                             "g",
                             vec![Argument::new("y", types::Primitive::Float64)],
                             FunctionApplication::new(
@@ -408,11 +386,11 @@ mod tests {
             ),
             Ok(Module::without_validation(
                 vec![],
-                vec![FunctionDefinition::new(
+                vec![Definition::new(
                     "f",
                     vec![Argument::new("x", types::Primitive::Float64)],
                     LetRecursive::new(
-                        vec![FunctionDefinition::with_environment(
+                        vec![Definition::with_environment(
                             "g",
                             vec![Argument::new(
                                 "g",
@@ -433,7 +411,6 @@ mod tests {
                     types::Primitive::Float64
                 )
                 .into()],
-                vec![]
             ))
         );
     }
