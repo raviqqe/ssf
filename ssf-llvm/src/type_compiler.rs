@@ -87,14 +87,14 @@ impl<'c> TypeCompiler<'c> {
 
     pub fn compile_sized_closure(
         &self,
-        function_definition: &ssf::ir::FunctionDefinition,
+        definition: &ssf::ir::Definition,
     ) -> inkwell::types::StructType<'c> {
         self.context.struct_type(
             &[
-                self.compile_entry_function(function_definition.type_())
+                self.compile_entry_function(definition.type_())
                     .ptr_type(inkwell::AddressSpace::Generic)
                     .into(),
-                self.compile_payload(function_definition).into(),
+                self.compile_payload(definition).into(),
             ],
             false,
         )
@@ -115,17 +115,14 @@ impl<'c> TypeCompiler<'c> {
         )
     }
 
-    fn compile_payload(
-        &self,
-        function_definition: &ssf::ir::FunctionDefinition,
-    ) -> inkwell::types::StructType {
+    fn compile_payload(&self, definition: &ssf::ir::Definition) -> inkwell::types::StructType {
         let size = max(
             self.target_machine
                 .get_target_data()
-                .get_store_size(&self.compile_environment(function_definition)),
+                .get_store_size(&self.compile_environment(definition)),
             self.target_machine
                 .get_target_data()
-                .get_store_size(&self.compile_value(function_definition.result_type())),
+                .get_store_size(&self.compile_value(definition.result_type())),
         );
 
         self.context.struct_type(
@@ -138,10 +135,10 @@ impl<'c> TypeCompiler<'c> {
 
     pub fn compile_environment(
         &self,
-        function_definition: &ssf::ir::FunctionDefinition,
+        definition: &ssf::ir::Definition,
     ) -> inkwell::types::StructType<'c> {
         self.context.struct_type(
-            &function_definition
+            &definition
                 .environment()
                 .iter()
                 .map(|argument| self.compile(argument.type_()))
@@ -338,19 +335,17 @@ mod tests {
     fn compile_updatable_closure() {
         let module = ssf::ir::Module::new(
             vec![],
-            vec![ssf::ir::FunctionDefinition::new(
+            vec![ssf::ir::Definition::new(
                 "f",
                 vec![],
                 42,
                 ssf::types::Primitive::Integer64,
-            )
-            .into()],
+            )],
         )
         .unwrap();
 
         let context = inkwell::context::Context::create();
 
-        TypeCompiler::new(&context)
-            .compile_sized_closure(module.definitions()[0].to_function_definition().unwrap());
+        TypeCompiler::new(&context).compile_sized_closure(&module.definitions()[0]);
     }
 }

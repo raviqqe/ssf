@@ -4,7 +4,6 @@ use super::function_compiler::FunctionCompiler;
 use super::instruction_compiler::InstructionCompiler;
 use super::type_compiler::TypeCompiler;
 use std::collections::HashMap;
-use std::convert::TryInto;
 
 pub struct ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
     context: &'c inkwell::context::Context,
@@ -672,39 +671,8 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         match variables.get(variable.name()) {
-            Some(value) => Ok(self.unwrap_value(*value)),
+            Some(value) => Ok(*value),
             None => Err(CompileError::VariableNotFound(variable.name().into())),
-        }
-    }
-
-    fn unwrap_value(
-        &self,
-        value: inkwell::values::BasicValueEnum<'c>,
-    ) -> inkwell::values::BasicValueEnum<'c> {
-        match value {
-            inkwell::values::BasicValueEnum::PointerValue(value) => {
-                match value.get_type().get_element_type() {
-                    inkwell::types::AnyTypeEnum::FloatType(_) => self.builder.build_load(value, ""),
-                    inkwell::types::AnyTypeEnum::IntType(_) => self.builder.build_load(value, ""),
-                    inkwell::types::AnyTypeEnum::StructType(struct_type) => {
-                        let is_closure = struct_type
-                            .get_field_type_at_index(0)
-                            .and_then(|field_type| field_type.try_into().ok())
-                            .map(|pointer_type: inkwell::types::PointerType<'c>| {
-                                pointer_type.get_element_type().is_function_type()
-                            })
-                            .unwrap_or(false);
-
-                        if is_closure {
-                            value.into()
-                        } else {
-                            self.builder.build_load(value, "")
-                        }
-                    }
-                    _ => value.into(),
-                }
-            }
-            _ => value,
         }
     }
 
@@ -758,6 +726,12 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use lazy_static::lazy_static;
+
+    lazy_static! {
+        static ref COMPILE_CONFIGURATION: CompileConfiguration =
+            CompileConfiguration::new(None, None);
+    }
 
     mod case_expressions {
         use super::*;
@@ -767,7 +741,6 @@ mod tests {
 
             #[test]
             fn compile_algebraic_case_expression_with_multiple_constructors() {
-                let compile_configuration = CompileConfiguration::new("", vec![], None, None);
                 let algebraic_type = ssf::types::Algebraic::new(vec![
                     ssf::types::Constructor::boxed(vec![]),
                     ssf::types::Constructor::boxed(vec![ssf::types::Primitive::Float64.into()]),
@@ -852,10 +825,10 @@ mod tests {
                             &module,
                             &type_compiler,
                             &HashMap::new(),
-                            &compile_configuration,
+                            &COMPILE_CONFIGURATION,
                         ),
                         &type_compiler,
-                        &compile_configuration,
+                        &COMPILE_CONFIGURATION,
                     )
                     .compile(
                         &algebraic_case.into(),
@@ -881,7 +854,6 @@ mod tests {
 
             #[test]
             fn compile_algebraic_case_expression_with_single_constructors() {
-                let compile_configuration = CompileConfiguration::new("", vec![], None, None);
                 let algebraic_type =
                     ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![])]);
 
@@ -930,10 +902,10 @@ mod tests {
                             &module,
                             &type_compiler,
                             &HashMap::new(),
-                            &compile_configuration,
+                            &COMPILE_CONFIGURATION,
                         ),
                         &type_compiler,
-                        &compile_configuration,
+                        &COMPILE_CONFIGURATION,
                     )
                     .compile(
                         &algebraic_case.into(),
@@ -959,7 +931,6 @@ mod tests {
 
             #[test]
             fn compile_algebraic_case_expression_with_unboxed_constructors() {
-                let compile_configuration = CompileConfiguration::new("", vec![], None, None);
                 let algebraic_type = ssf::types::Algebraic::new(vec![
                     ssf::types::Constructor::unboxed(vec![]),
                     ssf::types::Constructor::unboxed(vec![ssf::types::Primitive::Float64.into()]),
@@ -1044,10 +1015,10 @@ mod tests {
                             &module,
                             &type_compiler,
                             &HashMap::new(),
-                            &compile_configuration,
+                            &COMPILE_CONFIGURATION,
                         ),
                         &type_compiler,
-                        &compile_configuration,
+                        &COMPILE_CONFIGURATION,
                     )
                     .compile(
                         &algebraic_case.into(),
@@ -1077,8 +1048,6 @@ mod tests {
 
             #[test]
             fn compile_integer_case_expression() {
-                let compile_configuration = CompileConfiguration::new("", vec![], None, None);
-
                 for primitive_case in vec![
                     ssf::ir::PrimitiveCase::new(
                         ssf::types::Primitive::Integer64,
@@ -1142,10 +1111,10 @@ mod tests {
                                 &module,
                                 &type_compiler,
                                 &HashMap::new(),
-                                &compile_configuration,
+                                &COMPILE_CONFIGURATION,
                             ),
                             &type_compiler,
-                            &compile_configuration,
+                            &COMPILE_CONFIGURATION,
                         )
                         .compile(
                             &primitive_case.into(),
@@ -1163,8 +1132,6 @@ mod tests {
 
             #[test]
             fn compile_float_case_expression() {
-                let compile_configuration = CompileConfiguration::new("", vec![], None, None);
-
                 for primitive_case in vec![
                     ssf::ir::PrimitiveCase::new(
                         ssf::types::Primitive::Float64,
@@ -1227,10 +1194,10 @@ mod tests {
                                 &module,
                                 &type_compiler,
                                 &HashMap::new(),
-                                &compile_configuration,
+                                &COMPILE_CONFIGURATION,
                             ),
                             &type_compiler,
-                            &compile_configuration,
+                            &COMPILE_CONFIGURATION,
                         )
                         .compile(
                             &primitive_case.into(),
@@ -1253,7 +1220,6 @@ mod tests {
 
         #[test]
         fn compile_boxed_constructor_applications() {
-            let compile_configuration = CompileConfiguration::new("", vec![], None, None);
             let algebraic_type = ssf::types::Algebraic::new(vec![
                 ssf::types::Constructor::boxed(vec![]),
                 ssf::types::Constructor::boxed(vec![ssf::types::Primitive::Float64.into()]),
@@ -1274,7 +1240,7 @@ mod tests {
                 let module = context.create_module("");
 
                 module.add_function(
-                    compile_configuration.malloc_function_name(),
+                    COMPILE_CONFIGURATION.malloc_function_name(),
                     context
                         .i8_type()
                         .ptr_type(inkwell::AddressSpace::Generic)
@@ -1302,10 +1268,10 @@ mod tests {
                             &module,
                             &type_compiler,
                             &HashMap::new(),
-                            &compile_configuration,
+                            &COMPILE_CONFIGURATION,
                         ),
                         &type_compiler,
-                        &compile_configuration,
+                        &COMPILE_CONFIGURATION,
                     )
                     .compile(&constructor_application.into(), &HashMap::new())
                     .unwrap(),
@@ -1318,7 +1284,6 @@ mod tests {
 
         #[test]
         fn compile_unboxed_constructor_applications() {
-            let compile_configuration = CompileConfiguration::new("", vec![], None, None);
             let algebraic_type = ssf::types::Algebraic::new(vec![
                 ssf::types::Constructor::unboxed(vec![]),
                 ssf::types::Constructor::unboxed(vec![ssf::types::Primitive::Float64.into()]),
@@ -1339,7 +1304,7 @@ mod tests {
                 let module = context.create_module("");
 
                 module.add_function(
-                    compile_configuration.malloc_function_name(),
+                    COMPILE_CONFIGURATION.malloc_function_name(),
                     context
                         .i8_type()
                         .ptr_type(inkwell::AddressSpace::Generic)
@@ -1367,10 +1332,10 @@ mod tests {
                             &module,
                             &type_compiler,
                             &HashMap::new(),
-                            &compile_configuration,
+                            &COMPILE_CONFIGURATION,
                         ),
                         &type_compiler,
-                        &compile_configuration,
+                        &COMPILE_CONFIGURATION,
                     )
                     .compile(&constructor_application.into(), &HashMap::new())
                     .unwrap(),

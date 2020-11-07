@@ -1,23 +1,23 @@
+use super::definition::Definition;
 use super::expression::Expression;
-use super::function_definition::FunctionDefinition;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct LetRecursive {
-    definitions: Vec<FunctionDefinition>,
+    definitions: Vec<Definition>,
     expression: Box<Expression>,
 }
 
 impl LetRecursive {
-    pub fn new(definitions: Vec<FunctionDefinition>, expression: impl Into<Expression>) -> Self {
+    pub fn new(definitions: Vec<Definition>, expression: impl Into<Expression>) -> Self {
         Self {
             definitions,
             expression: Box::new(expression.into()),
         }
     }
 
-    pub fn definitions(&self) -> &[FunctionDefinition] {
+    pub fn definitions(&self) -> &[Definition] {
         &self.definitions
     }
 

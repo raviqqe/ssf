@@ -9,4 +9,5 @@ edition = "2018"
 [dependencies]
 # Specify features instead of doing a branch because it's force-pushed.
 inkwell = { git = "https://github.com/TheDan64/inkwell", features = ["llvm10-0"] }
+lazy_static = "1"
 ssf = { path = "../ssf" }

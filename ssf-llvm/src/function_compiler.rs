@@ -33,30 +33,30 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
 
     pub fn compile(
         &self,
-        function_definition: &ssf::ir::FunctionDefinition,
+        definition: &ssf::ir::Definition,
     ) -> Result<inkwell::values::FunctionValue, CompileError> {
-        Ok(if function_definition.is_thunk() {
-            self.compile_thunk(function_definition)?
+        Ok(if definition.is_thunk() {
+            self.compile_thunk(definition)?
         } else {
-            self.compile_non_thunk(function_definition)?
+            self.compile_non_thunk(definition)?
         })
     }
 
     fn compile_non_thunk(
         &self,
-        function_definition: &ssf::ir::FunctionDefinition,
+        definition: &ssf::ir::Definition,
     ) -> Result<inkwell::values::FunctionValue, CompileError> {
         let entry_function = self.module.add_function(
-            &Self::generate_closure_entry_name(function_definition.name()),
+            &Self::generate_closure_entry_name(definition.name()),
             self.type_compiler
-                .compile_entry_function(function_definition.type_()),
+                .compile_entry_function(definition.type_()),
             None,
         );
 
         let builder = self.context.create_builder();
         builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
 
-        builder.build_return(Some(&self.compile_body(&builder, function_definition)?));
+        builder.build_return(Some(&self.compile_body(&builder, definition)?));
 
         entry_function.verify(true);
 
@@ -65,12 +65,12 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
 
     fn compile_thunk(
         &self,
-        function_definition: &ssf::ir::FunctionDefinition,
+        definition: &ssf::ir::Definition,
     ) -> Result<inkwell::values::FunctionValue, CompileError> {
         let entry_function = self.module.add_function(
-            &Self::generate_closure_entry_name(function_definition.name()),
+            &Self::generate_closure_entry_name(definition.name()),
             self.type_compiler
-                .compile_entry_function(function_definition.type_()),
+                .compile_entry_function(definition.type_()),
             None,
         );
 
@@ -83,7 +83,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
             .build_cmpxchg(
                 entry_pointer,
                 entry_function.as_global_value().as_pointer_value(),
-                self.compile_locked_entry(function_definition)
+                self.compile_locked_entry(definition)
                     .as_global_value()
                     .as_pointer_value(),
                 inkwell::AtomicOrdering::SequentiallyConsistent,
@@ -122,7 +122,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
 
         builder.position_at_end(then_block);
 
-        let result = self.compile_body(&builder, function_definition)?;
+        let result = self.compile_body(&builder, definition)?;
 
         builder.build_store(
             builder
@@ -138,7 +138,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         InstructionCompiler::compile_atomic_store(
             &builder,
             entry_pointer,
-            self.compile_normal_entry(function_definition)
+            self.compile_normal_entry(definition)
                 .as_global_value()
                 .as_pointer_value(),
         );
@@ -153,7 +153,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     fn compile_body(
         &self,
         builder: &inkwell::builder::Builder<'c>,
-        function_definition: &ssf::ir::FunctionDefinition,
+        definition: &ssf::ir::Definition,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         let entry_function = builder.get_insert_block().unwrap().get_parent().unwrap();
 
@@ -161,7 +161,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
             .build_bitcast(
                 entry_function.get_params()[0],
                 self.type_compiler
-                    .compile_environment(function_definition)
+                    .compile_environment(definition)
                     .ptr_type(inkwell::AddressSpace::Generic),
                 "",
             )
@@ -173,7 +173,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
             .map(|(name, value)| (name.into(), value.as_pointer_value().into()))
             .collect::<HashMap<String, inkwell::values::BasicValueEnum>>();
 
-        for (index, free_variable) in function_definition.environment().iter().enumerate() {
+        for (index, free_variable) in definition.environment().iter().enumerate() {
             variables.insert(
                 free_variable.name().into(),
                 builder.build_load(
@@ -192,7 +192,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
             );
         }
 
-        for (index, argument) in function_definition.arguments().iter().enumerate() {
+        for (index, argument) in definition.arguments().iter().enumerate() {
             variables.insert(
                 argument.name().into(),
                 entry_function.get_params()[index + 1],
@@ -207,17 +207,17 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
             self.type_compiler,
             self.compile_configuration,
         )
-        .compile(&function_definition.body(), &variables)?)
+        .compile(&definition.body(), &variables)?)
     }
 
     fn compile_normal_entry(
         &self,
-        function_definition: &ssf::ir::FunctionDefinition,
+        definition: &ssf::ir::Definition,
     ) -> inkwell::values::FunctionValue<'c> {
         let entry_function = self.module.add_function(
-            &Self::generate_normal_entry_name(function_definition.name()),
+            &Self::generate_normal_entry_name(definition.name()),
             self.type_compiler
-                .compile_entry_function(function_definition.type_()),
+                .compile_entry_function(definition.type_()),
             None,
         );
 
@@ -233,12 +233,12 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
 
     fn compile_locked_entry(
         &self,
-        function_definition: &ssf::ir::FunctionDefinition,
+        definition: &ssf::ir::Definition,
     ) -> inkwell::values::FunctionValue<'c> {
         let entry_function = self.module.add_function(
-            &Self::generate_locked_entry_name(function_definition.name()),
+            &Self::generate_locked_entry_name(definition.name()),
             self.type_compiler
-                .compile_entry_function(function_definition.type_()),
+                .compile_entry_function(definition.type_()),
             None,
         );
 
