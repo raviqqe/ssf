@@ -152,10 +152,7 @@ mod tests {
             Module::new(
                 vec![Declaration::new(
                     "foo",
-                    types::Function::new(
-                        vec![types::Primitive::Float64.into()],
-                        types::Primitive::Float64
-                    )
+                    types::Function::new(types::Primitive::Float64, types::Primitive::Float64)
                 )],
                 vec![]
             )
@@ -164,10 +161,7 @@ mod tests {
             Module::without_validation(
                 vec![Declaration::new(
                     "bar",
-                    types::Function::new(
-                        vec![types::Primitive::Float64.into()],
-                        types::Primitive::Float64
-                    )
+                    types::Function::new(types::Primitive::Float64, types::Primitive::Float64)
                 )],
                 vec![],
             )
@@ -284,7 +278,7 @@ mod tests {
                     Definition::new(
                         "f",
                         vec![Argument::new("x", types::Primitive::Float64)],
-                        FunctionApplication::new(Variable::new("g"), vec![42.0.into()]),
+                        FunctionApplication::new(Variable::new("g"), 42.0),
                         types::Primitive::Float64
                     )
                 ]
@@ -303,7 +297,7 @@ mod tests {
                         "f",
                         vec![],
                         vec![Argument::new("x", types::Primitive::Float64)],
-                        FunctionApplication::new(Variable::new("g"), vec![42.0.into()]),
+                        FunctionApplication::new(Variable::new("g"), 42.0),
                         types::Primitive::Float64
                     )
                 ],
@@ -365,10 +359,7 @@ mod tests {
                         vec![Definition::new(
                             "g",
                             vec![Argument::new("y", types::Primitive::Float64)],
-                            FunctionApplication::new(
-                                Variable::new("g"),
-                                vec![Variable::new("y").into()]
-                            ),
+                            FunctionApplication::new(Variable::new("g"), Variable::new("y")),
                             types::Primitive::Float64
                         )],
                         42.0
@@ -387,15 +378,12 @@ mod tests {
                             vec![Argument::new(
                                 "g",
                                 types::Function::new(
-                                    vec![types::Primitive::Float64.into()],
+                                    types::Primitive::Float64,
                                     types::Primitive::Float64
                                 )
                             )],
                             vec![Argument::new("y", types::Primitive::Float64)],
-                            FunctionApplication::new(
-                                Variable::new("g"),
-                                vec![Variable::new("y").into()]
-                            ),
+                            FunctionApplication::new(Variable::new("g"), Variable::new("y")),
                             types::Primitive::Float64
                         )],
                         42.0

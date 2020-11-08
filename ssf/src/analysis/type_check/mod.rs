@@ -14,7 +14,7 @@ mod tests {
     use super::check_types;
     use super::error::*;
     use crate::ir::*;
-    use crate::types;
+    use crate::types::{self, Type};
 
     #[test]
     fn check_types_with_empty_modules() {
@@ -119,7 +119,7 @@ mod tests {
                 Definition::new(
                     "g",
                     vec![Argument::new("x", types::Primitive::Float64)],
-                    FunctionApplication::new(Variable::new("f"), vec![42.0.into()]),
+                    FunctionApplication::new(Variable::new("f"), 42.0),
                     types::Primitive::Float64,
                 ),
             ],
@@ -142,7 +142,10 @@ mod tests {
                 Definition::new(
                     "g",
                     vec![Argument::new("x", types::Primitive::Float64)],
-                    FunctionApplication::new(Variable::new("f"), vec![42.0.into(), 42.0.into()]),
+                    FunctionApplication::new(
+                        FunctionApplication::new(Variable::new("f"), 42.0),
+                        42.0,
+                    ),
                     types::Primitive::Float64,
                 ),
             ],
@@ -150,7 +153,7 @@ mod tests {
 
         assert!(matches!(
             check_types(&module),
-            Err(TypeCheckError::WrongArgumentsLength(_))
+            Err(TypeCheckError::FunctionExpected(_))
         ));
     }
 
@@ -233,15 +236,12 @@ mod tests {
         let module = Module::without_validation(
             vec![Declaration::new(
                 "f",
-                types::Function::new(
-                    vec![types::Primitive::Float64.into()],
-                    types::Primitive::Float64,
-                ),
+                types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
             )],
             vec![Definition::new(
                 "g",
                 vec![Argument::new("x", types::Primitive::Float64)],
-                FunctionApplication::new(Variable::new("f"), vec![Variable::new("x").into()]),
+                FunctionApplication::new(Variable::new("f"), Variable::new("x")),
                 types::Primitive::Float64,
             )],
         );
@@ -253,10 +253,7 @@ mod tests {
         let module = Module::without_validation(
             vec![Declaration::new(
                 "f",
-                types::Function::new(
-                    vec![types::Primitive::Float64.into()],
-                    types::Primitive::Float64,
-                ),
+                types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
             )],
             vec![Definition::new(
                 "g",
@@ -697,10 +694,7 @@ mod tests {
         #[test]
         fn check_constructor_applications_of_recursive_algebraic_types() {
             let algebraic_type =
-                types::Algebraic::new(vec![types::Constructor::boxed(vec![Type::Index(
-                    0,
-                )
-                .into()])]);
+                types::Algebraic::new(vec![types::Constructor::boxed(vec![Type::Index(0).into()])]);
 
             assert_eq!(
                 check_types(&Module::without_validation(
