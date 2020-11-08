@@ -181,7 +181,7 @@ impl Definition {
                 .map(|argument| argument.convert_types(convert))
                 .collect(),
             body: self.body.convert_types(convert),
-            result_type: convert(&self.result_type.clone().into()),
+            result_type: convert(&self.result_type.clone()),
             type_: convert(&self.type_.clone().into()).into_function().unwrap(),
             is_thunk: self.is_thunk,
         }

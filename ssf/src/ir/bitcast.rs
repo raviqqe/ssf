@@ -42,7 +42,7 @@ impl Bitcast {
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         Self::new(
             self.expression.convert_types(convert),
-            convert(&self.type_.clone().into()),
+            convert(&self.type_.clone()),
         )
     }
 }

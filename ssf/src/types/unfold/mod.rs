@@ -34,48 +34,43 @@ mod tests {
     fn unfold_() {
         for (type_, unfolded_type) in &[
             (
-                Algebraic::new(vec![Constructor::boxed(vec![Type::Index(0).into()])]).into(),
+                Algebraic::new(vec![Constructor::boxed(vec![Type::Index(0)])]),
                 Algebraic::new(vec![Constructor::boxed(vec![Algebraic::new(vec![
-                    Constructor::boxed(vec![Type::Index(0).into()]),
+                    Constructor::boxed(vec![Type::Index(0)]),
                 ])
-                .into()])])
-                .into(),
+                .into()])]),
             ),
             (
                 Algebraic::new(vec![Constructor::unboxed(vec![Algebraic::new(vec![
-                    Constructor::boxed(vec![Type::Index(1).into()]),
+                    Constructor::boxed(vec![Type::Index(1)]),
                 ])
-                .into()])])
-                .into(),
+                .into()])]),
                 Algebraic::new(vec![Constructor::unboxed(vec![Algebraic::new(vec![
                     Constructor::boxed(vec![Algebraic::new(vec![Constructor::unboxed(vec![
-                        Type::Index(1).into(),
+                        Type::Index(1),
                     ])])
                     .into()]),
                 ])
-                .into()])])
-                .into(),
+                .into()])]),
             ),
             (
                 Algebraic::new(vec![Constructor::boxed(vec![Algebraic::new(vec![
                     Constructor::unboxed(vec![]),
                     Constructor::unboxed(vec![Algebraic::new(vec![Constructor::boxed(vec![
-                        Type::Index(2).into(),
+                        Type::Index(2),
                     ])])
                     .into()]),
                 ])
-                .into()])])
-                .into(),
+                .into()])]),
                 Algebraic::new(vec![Constructor::boxed(vec![Algebraic::new(vec![
                     Constructor::unboxed(vec![]),
                     Constructor::unboxed(vec![Algebraic::new(vec![Constructor::boxed(vec![
-                        Algebraic::new(vec![Constructor::boxed(vec![Type::Index(2).into()])])
+                        Algebraic::new(vec![Constructor::boxed(vec![Type::Index(2)])])
                             .into(),
                     ])])
                     .into()]),
                 ])
-                .into()])])
-                .into(),
+                .into()])]),
             ),
         ] {
             assert_eq!(&unfold(type_), unfolded_type);

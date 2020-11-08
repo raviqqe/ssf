@@ -85,29 +85,29 @@ mod tests {
                 Algebraic::new(vec![Constructor::boxed(vec![Primitive::Float64.into()])]).into(),
             ),
             (
-                Algebraic::new(vec![Constructor::boxed(vec![Type::Index(0).into()])]).into(),
+                Algebraic::new(vec![Constructor::boxed(vec![Type::Index(0)])]).into(),
                 Algebraic::new(vec![Constructor::boxed(vec![Algebraic::new(vec![
-                    Constructor::boxed(vec![Type::Index(0).into()]),
+                    Constructor::boxed(vec![Type::Index(0)]),
                 ])
                 .into()])])
                 .into(),
             ),
             (
-                Algebraic::new(vec![Constructor::boxed(vec![Type::Index(0).into()])]).into(),
+                Algebraic::new(vec![Constructor::boxed(vec![Type::Index(0)])]).into(),
                 Algebraic::new(vec![Constructor::boxed(vec![Algebraic::new(vec![
-                    Constructor::boxed(vec![Type::Index(1).into()]),
+                    Constructor::boxed(vec![Type::Index(1)]),
                 ])
                 .into()])])
                 .into(),
             ),
             (
                 Algebraic::new(vec![Constructor::boxed(vec![Algebraic::new(vec![
-                    Constructor::boxed(vec![Type::Index(0).into()]),
+                    Constructor::boxed(vec![Type::Index(0)]),
                 ])
                 .into()])])
                 .into(),
                 Algebraic::new(vec![Constructor::boxed(vec![Algebraic::new(vec![
-                    Constructor::boxed(vec![Type::Index(1).into()]),
+                    Constructor::boxed(vec![Type::Index(1)]),
                 ])
                 .into()])])
                 .into(),

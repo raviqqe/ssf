@@ -46,7 +46,7 @@ impl TypeChecker {
 
         self.check_equality(
             &self.check_expression(definition.body(), &variables)?,
-            &definition.result_type().clone().into(),
+            &definition.result_type().clone(),
         )
     }
 
@@ -58,7 +58,7 @@ impl TypeChecker {
         match expression {
             Expression::Bitcast(bitcast) => {
                 self.check_expression(bitcast.expression(), variables)?;
-                Ok(bitcast.type_().clone().into())
+                Ok(bitcast.type_().clone())
             }
             Expression::Case(case) => self.check_case(case, variables),
             Expression::ConstructorApplication(constructor_application) => {
@@ -95,7 +95,7 @@ impl TypeChecker {
                             function_type.argument(),
                         )?;
 
-                        Ok(function_type.result().clone().into())
+                        Ok(function_type.result().clone())
                     }
                     _ => Err(TypeCheckError::FunctionExpected(
                         function_application.function().clone(),
