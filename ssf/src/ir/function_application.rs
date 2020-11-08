@@ -25,6 +25,16 @@ impl FunctionApplication {
         &self.argument
     }
 
+    pub fn first_function(&self) -> &Expression {
+        let mut function: &Expression = &self.function;
+
+        while let Expression::FunctionApplication(function_application) = function {
+            function = function_application.function();
+        }
+
+        function
+    }
+
     pub fn arguments(&self) -> impl IntoIterator<Item = &Expression> {
         let mut arguments = vec![self.argument()];
         let mut expression = self;
@@ -73,6 +83,20 @@ impl FunctionApplication {
 mod tests {
     use super::super::variable::Variable;
     use super::*;
+
+    #[test]
+    fn first_function() {
+        assert_eq!(
+            FunctionApplication::new(Variable::new("f"), 42.0).first_function(),
+            &Variable::new("f").into()
+        );
+
+        assert_eq!(
+            FunctionApplication::new(FunctionApplication::new(Variable::new("f"), 1.0), 2.0)
+                .first_function(),
+            &Variable::new("f").into()
+        );
+    }
 
     #[test]
     fn arguments() {
