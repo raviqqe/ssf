@@ -399,21 +399,12 @@ mod tests {
                     "f",
                     Lambda::new(
                         vec![Argument::new("x", types::Primitive::Float64)],
-                        LetRecursive::new(
-                            vec![Definition::new(
+                        LetFunctions::new(
+                            vec![FunctionDefinition::new(
                                 "g",
-                                Lambda::new(
-                                    vec![Argument::new("y", types::Primitive::Float64)],
-                                    FunctionApplication::new(
-                                        Variable::new("g"),
-                                        Variable::new("y")
-                                    ),
-                                    types::Primitive::Float64
-                                ),
-                                types::Function::new(
-                                    types::Primitive::Float64,
-                                    types::Primitive::Float64
-                                )
+                                vec![Argument::new("y", types::Primitive::Float64)],
+                                FunctionApplication::new(Variable::new("g"), Variable::new("y")),
+                                types::Primitive::Float64,
                             )],
                             42.0
                         ),
@@ -428,28 +419,19 @@ mod tests {
                     "f",
                     Lambda::new(
                         vec![Argument::new("x", types::Primitive::Float64)],
-                        LetRecursive::new(
-                            vec![Definition::new(
+                        LetFunctions::new(
+                            vec![FunctionDefinition::with_environment(
                                 "g",
-                                Lambda::with_environment(
-                                    vec![Argument::new(
-                                        "g",
-                                        types::Function::new(
-                                            types::Primitive::Float64,
-                                            types::Primitive::Float64
-                                        )
-                                    )],
-                                    vec![Argument::new("y", types::Primitive::Float64)],
-                                    FunctionApplication::new(
-                                        Variable::new("g"),
-                                        Variable::new("y")
-                                    ),
-                                    types::Primitive::Float64
-                                ),
-                                types::Function::new(
-                                    types::Primitive::Float64,
-                                    types::Primitive::Float64
-                                )
+                                vec![Argument::new(
+                                    "g",
+                                    types::Function::new(
+                                        types::Primitive::Float64,
+                                        types::Primitive::Float64
+                                    )
+                                )],
+                                vec![Argument::new("y", types::Primitive::Float64)],
+                                FunctionApplication::new(Variable::new("g"), Variable::new("y")),
+                                types::Primitive::Float64,
                             )],
                             42.0
                         ),

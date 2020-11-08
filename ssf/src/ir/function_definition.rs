@@ -5,7 +5,8 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Lambda {
+pub struct FunctionDefinition {
+    name: String,
     // Environment is inferred on module creation and this field is used just
     // as its cache.  So it must be safe to clone function definitions inside a
     // module and use it on creation of another module.
@@ -18,24 +19,27 @@ pub struct Lambda {
     updatable: bool,
 }
 
-impl Lambda {
+impl FunctionDefinition {
     pub fn new(
+        name: impl Into<String>,
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
         result_type: impl Into<Type> + Clone,
     ) -> Self {
-        Self::with_options(vec![], arguments, body, result_type, false)
+        Self::with_options(name, vec![], arguments, body, result_type, false)
     }
 
     pub fn updatable(
+        name: impl Into<String>,
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
         result_type: impl Into<Type> + Clone,
     ) -> Self {
-        Self::with_options(vec![], arguments, body, result_type, true)
+        Self::with_options(name, vec![], arguments, body, result_type, true)
     }
 
     fn with_options(
+        name: impl Into<String>,
         environment: Vec<Argument>,
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
@@ -43,6 +47,7 @@ impl Lambda {
         updatable: bool,
     ) -> Self {
         Self {
+            name: name.into(),
             type_: types::canonicalize(
                 &arguments.iter().rev().skip(1).fold(
                     types::Function::new(
@@ -67,12 +72,17 @@ impl Lambda {
 
     #[cfg(test)]
     pub(crate) fn with_environment(
+        name: impl Into<String>,
         environment: Vec<Argument>,
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
         result_type: impl Into<Type> + Clone,
     ) -> Self {
-        Self::with_options(environment, arguments, body, result_type, false)
+        Self::with_options(name, environment, arguments, body, result_type, false)
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
     pub fn environment(&self) -> &[Argument] {
@@ -102,11 +112,14 @@ impl Lambda {
     pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
         let mut names = names.clone();
 
+        names.remove(&self.name);
+
         for argument in &self.arguments {
             names.remove(argument.name());
         }
 
         Self::with_options(
+            self.name.clone(),
             self.environment.clone(),
             self.arguments.clone(),
             self.body.rename_variables(&names),
@@ -121,6 +134,8 @@ impl Lambda {
         } else {
             let mut variables = self.body.find_free_variables(initialized);
 
+            variables.remove(&self.name);
+
             for argument in &self.arguments {
                 variables.remove(argument.name());
             }
@@ -130,27 +145,27 @@ impl Lambda {
     }
 
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
-        let environment = self
-            .body
-            .find_free_variables(false)
-            .iter()
-            .filter_map(|name| {
-                variables
-                    .get(name)
-                    .map(|type_| Argument::new(name, type_.clone()))
-            })
-            .collect();
-
-        let mut variables = variables.clone();
-
-        for argument in &self.arguments {
-            variables.insert(argument.name().into(), argument.type_().clone());
-        }
-
         Self::with_options(
-            environment,
+            self.name.clone(),
+            self.body
+                .find_free_variables(false)
+                .iter()
+                .filter_map(|name| {
+                    variables
+                        .get(name)
+                        .map(|type_| Argument::new(name, type_.clone()))
+                })
+                .collect(),
             self.arguments.clone(),
-            self.body.infer_environment(&variables),
+            {
+                let mut variables = variables.clone();
+
+                for argument in &self.arguments {
+                    variables.insert(argument.name().into(), argument.type_().clone());
+                }
+
+                self.body.infer_environment(&variables)
+            },
             self.result_type.clone(),
             self.updatable,
         )
@@ -158,6 +173,7 @@ impl Lambda {
 
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         Self {
+            name: self.name.clone(),
             environment: self
                 .environment
                 .iter()
@@ -184,13 +200,15 @@ mod tests {
     #[test]
     fn infer_empty_environment() {
         assert_eq!(
-            Lambda::new(
+            FunctionDefinition::new(
+                "f",
                 vec![Argument::new("x", types::Primitive::Float64)],
                 42.0,
                 types::Primitive::Float64
             )
             .infer_environment(&Default::default()),
-            Lambda::with_environment(
+            FunctionDefinition::with_environment(
+                "f",
                 vec![],
                 vec![Argument::new("x", types::Primitive::Float64)],
                 42.0,
@@ -202,7 +220,8 @@ mod tests {
     #[test]
     fn infer_environment() {
         assert_eq!(
-            Lambda::new(
+            FunctionDefinition::new(
+                "f",
                 vec![Argument::new("x", types::Primitive::Float64)],
                 Variable::new("y"),
                 types::Primitive::Float64
@@ -212,7 +231,8 @@ mod tests {
                     .drain(..)
                     .collect(),
             ),
-            Lambda::with_environment(
+            FunctionDefinition::with_environment(
+                "f",
                 vec![Argument::new("y", types::Primitive::Float64)],
                 vec![Argument::new("x", types::Primitive::Float64)],
                 Variable::new("y"),
@@ -228,14 +248,16 @@ mod tests {
             .collect();
 
         assert_eq!(
-            Lambda::new(
+            FunctionDefinition::new(
+                "f",
                 vec![Argument::new("x", types::Primitive::Float64)],
                 Variable::new("y"),
                 types::Primitive::Float64
             )
             .infer_environment(&variables)
             .infer_environment(&variables),
-            Lambda::with_environment(
+            FunctionDefinition::with_environment(
+                "f",
                 vec![Argument::new("y", types::Primitive::Float64)],
                 vec![Argument::new("x", types::Primitive::Float64)],
                 Variable::new("y"),

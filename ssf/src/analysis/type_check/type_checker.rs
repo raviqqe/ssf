@@ -92,20 +92,6 @@ impl TypeChecker {
                     )),
                 }
             }
-            Expression::Lambda(lambda) => {
-                let mut variables = variables.clone();
-
-                for argument in lambda.arguments() {
-                    variables.insert(argument.name(), argument.type_().clone().into());
-                }
-
-                self.check_equality(
-                    &self.check_expression(lambda.body(), &variables)?,
-                    lambda.result_type(),
-                )?;
-
-                Ok(lambda.type_().clone().into())
-            }
             Expression::Let(let_) => {
                 let mut variables = variables.clone();
 
@@ -117,7 +103,7 @@ impl TypeChecker {
 
                 self.check_expression(let_.expression(), &variables)
             }
-            Expression::LetRecursive(let_) => {
+            Expression::LetFunctions(let_) => {
                 let mut variables = variables.clone();
 
                 for definition in let_.definitions() {
@@ -125,7 +111,16 @@ impl TypeChecker {
                 }
 
                 for definition in let_.definitions() {
-                    self.check_definition(definition, &variables)?;
+                    let mut variables = variables.clone();
+
+                    for argument in definition.arguments() {
+                        variables.insert(argument.name().into(), argument.type_().clone());
+                    }
+
+                    self.check_equality(
+                        &self.check_expression(definition.body(), &variables)?,
+                        definition.result_type(),
+                    )?;
                 }
 
                 self.check_expression(let_.expression(), &variables)

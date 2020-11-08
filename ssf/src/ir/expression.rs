@@ -3,9 +3,8 @@ use super::bitcast::Bitcast;
 use super::case::Case;
 use super::constructor_application::ConstructorApplication;
 use super::function_application::FunctionApplication;
-use super::lambda::Lambda;
 use super::let_::Let;
-use super::let_recursive::LetRecursive;
+use super::let_functions::LetFunctions;
 use super::operation::Operation;
 use super::primitive::Primitive;
 use super::primitive_case::PrimitiveCase;
@@ -19,9 +18,8 @@ pub enum Expression {
     Case(Case),
     ConstructorApplication(ConstructorApplication),
     FunctionApplication(FunctionApplication),
-    Lambda(Lambda),
     Let(Let),
-    LetRecursive(LetRecursive),
+    LetFunctions(LetFunctions),
     Primitive(Primitive),
     Operation(Operation),
     Variable(Variable),
@@ -45,9 +43,8 @@ impl Expression {
             Self::FunctionApplication(function_application) => {
                 function_application.rename_variables(names).into()
             }
-            Self::Lambda(lambda) => lambda.rename_variables(names).into(),
             Self::Let(let_) => let_.rename_variables(names).into(),
-            Self::LetRecursive(let_) => let_.rename_variables(names).into(),
+            Self::LetFunctions(let_) => let_.rename_variables(names).into(),
             Self::Operation(operation) => operation.rename_variables(names).into(),
             Self::Variable(variable) => variable.rename_variables(names).into(),
             Self::Primitive(_) => self.clone(),
@@ -64,9 +61,8 @@ impl Expression {
             Self::FunctionApplication(function_application) => {
                 function_application.find_free_variables(initialized)
             }
-            Self::Lambda(lambda) => lambda.find_free_variables(initialized).into(),
             Self::Let(let_) => let_.find_free_variables(initialized),
-            Self::LetRecursive(let_) => let_.find_free_variables(initialized),
+            Self::LetFunctions(let_) => let_.find_free_variables(initialized),
             Self::Operation(operation) => operation.find_free_variables(initialized),
             Self::Variable(variable) => variable.find_free_variables(initialized),
             Self::Primitive(_) => HashSet::new(),
@@ -83,9 +79,8 @@ impl Expression {
             Self::FunctionApplication(function_application) => {
                 function_application.infer_environment(variables).into()
             }
-            Self::Lambda(lambda) => lambda.infer_environment(variables).into(),
             Self::Let(let_) => let_.infer_environment(variables).into(),
-            Self::LetRecursive(let_) => let_.infer_environment(variables).into(),
+            Self::LetFunctions(let_) => let_.infer_environment(variables).into(),
             Self::Operation(operation) => operation.infer_environment(variables).into(),
             Self::Primitive(_) | Self::Variable(_) => self.clone(),
         }
@@ -101,9 +96,8 @@ impl Expression {
             Self::FunctionApplication(function_application) => {
                 function_application.convert_types(convert).into()
             }
-            Self::Lambda(lambda) => lambda.convert_types(convert).into(),
             Self::Let(let_) => let_.convert_types(convert).into(),
-            Self::LetRecursive(let_) => let_.convert_types(convert).into(),
+            Self::LetFunctions(let_) => let_.convert_types(convert).into(),
             Self::Operation(operation) => operation.convert_types(convert).into(),
             Self::Primitive(_) | Self::Variable(_) => self.clone(),
         }
@@ -140,21 +134,15 @@ impl From<FunctionApplication> for Expression {
     }
 }
 
-impl From<Lambda> for Expression {
-    fn from(lambda: Lambda) -> Self {
-        Self::Lambda(lambda)
-    }
-}
-
 impl From<Let> for Expression {
     fn from(let_: Let) -> Self {
         Self::Let(let_)
     }
 }
 
-impl From<LetRecursive> for Expression {
-    fn from(let_: LetRecursive) -> Self {
-        Self::LetRecursive(let_)
+impl From<LetFunctions> for Expression {
+    fn from(let_: LetFunctions) -> Self {
+        Self::LetFunctions(let_)
     }
 }
 
