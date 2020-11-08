@@ -12,7 +12,7 @@ pub struct Definition {
     environment: Vec<Argument>,
     arguments: Vec<Argument>,
     body: Expression,
-    result_type: types::Value,
+    result_type: Type,
     type_: types::Function,
     is_thunk: bool,
 }
@@ -22,7 +22,7 @@ impl Definition {
         name: impl Into<String>,
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
-        result_type: impl Into<types::Value> + Clone,
+        result_type: impl Into<Type> + Clone,
     ) -> Self {
         Self::with_options(name, vec![], arguments, body, result_type, false)
     }
@@ -31,7 +31,7 @@ impl Definition {
         name: impl Into<String>,
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
-        result_type: impl Into<types::Value> + Clone,
+        result_type: impl Into<Type> + Clone,
     ) -> Self {
         Self::with_options(name, vec![], arguments, body, result_type, true)
     }
@@ -42,7 +42,7 @@ impl Definition {
         environment: Vec<Argument>,
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
-        result_type: impl Into<types::Value> + Clone,
+        result_type: impl Into<Type> + Clone,
     ) -> Self {
         Self::with_options(name, environment, arguments, body, result_type, false)
     }
@@ -52,19 +52,21 @@ impl Definition {
         environment: Vec<Argument>,
         arguments: Vec<Argument>,
         body: impl Into<Expression>,
-        result_type: impl Into<types::Value> + Clone,
+        result_type: impl Into<Type> + Clone,
         is_thunk: bool,
     ) -> Self {
         Self {
             type_: types::canonicalize(
-                &types::Function::new(
-                    arguments
-                        .iter()
-                        .map(|argument| argument.type_().clone())
-                        .collect(),
-                    result_type.clone().into(),
-                )
-                .into(),
+                &arguments.iter().rev().skip(1).fold(
+                    types::Function::new(
+                        arguments.iter().last().unwrap().type_().clone(),
+                        result_type.clone(),
+                    )
+                    .into(),
+                    |result, argument| {
+                        types::Function::new(argument.type_().clone(), result).into()
+                    },
+                ),
             )
             .into_function()
             .unwrap(),
@@ -93,7 +95,7 @@ impl Definition {
         &self.body
     }
 
-    pub fn result_type(&self) -> &types::Value {
+    pub fn result_type(&self) -> &Type {
         &self.result_type
     }
 
@@ -179,9 +181,7 @@ impl Definition {
                 .map(|argument| argument.convert_types(convert))
                 .collect(),
             body: self.body.convert_types(convert),
-            result_type: convert(&self.result_type.clone().into())
-                .into_value()
-                .unwrap(),
+            result_type: convert(&self.result_type.clone().into()),
             type_: convert(&self.type_.clone().into()).into_function().unwrap(),
             is_thunk: self.is_thunk,
         }

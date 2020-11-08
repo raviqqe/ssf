@@ -88,27 +88,16 @@ impl TypeChecker {
                     .into())
             }
             Expression::FunctionApplication(function_application) => {
-                match self.check_variable(function_application.function(), variables)? {
+                match self.check_expression(function_application.function(), variables)? {
                     Type::Function(function_type) => {
-                        if function_type.arguments().len() != function_application.arguments().len()
-                        {
-                            return Err(TypeCheckError::WrongArgumentsLength(expression.clone()));
-                        }
-
-                        for (argument, expected_type) in function_application
-                            .arguments()
-                            .iter()
-                            .zip(function_type.arguments())
-                        {
-                            self.check_equality(
-                                &self.check_expression(argument, variables)?,
-                                expected_type,
-                            )?;
-                        }
+                        self.check_equality(
+                            &self.check_expression(function_application.argument(), variables)?,
+                            function_type.argument(),
+                        )?;
 
                         Ok(function_type.result().clone().into())
                     }
-                    Type::Value(_) => Err(TypeCheckError::FunctionExpected(
+                    _ => Err(TypeCheckError::FunctionExpected(
                         function_application.function().clone(),
                     )),
                 }

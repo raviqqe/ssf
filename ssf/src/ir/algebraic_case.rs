@@ -94,8 +94,6 @@ impl AlgebraicCase {
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         Self {
             type_: convert(&self.type_.clone().into())
-                .into_value()
-                .unwrap()
                 .into_algebraic()
                 .unwrap(),
             argument: self.argument.convert_types(convert).into(),

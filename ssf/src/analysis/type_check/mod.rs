@@ -442,7 +442,7 @@ mod tests {
             #[test]
             fn check_case_expressions_with_recursive_algebraic_types() {
                 let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![
-                    types::Value::Index(0).into(),
+                    Type::Index(0).into(),
                 ])]);
 
                 assert_eq!(
@@ -697,7 +697,7 @@ mod tests {
         #[test]
         fn check_constructor_applications_of_recursive_algebraic_types() {
             let algebraic_type =
-                types::Algebraic::new(vec![types::Constructor::boxed(vec![types::Value::Index(
+                types::Algebraic::new(vec![types::Constructor::boxed(vec![Type::Index(
                     0,
                 )
                 .into()])]);

@@ -31,8 +31,6 @@ impl Constructor {
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         Self::new(
             convert(&self.type_.clone().into())
-                .into_value()
-                .unwrap()
                 .into_algebraic()
                 .unwrap(),
             self.tag,
