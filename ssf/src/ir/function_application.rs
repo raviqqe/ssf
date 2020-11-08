@@ -25,6 +25,20 @@ impl FunctionApplication {
         &self.argument
     }
 
+    pub fn arguments(&self) -> impl IntoIterator<Item = &Expression> {
+        let mut arguments = vec![self.argument()];
+        let mut expression = self;
+
+        while let Expression::FunctionApplication(function_application) = expression.function() {
+            arguments.push(function_application.argument());
+            expression = function_application;
+        }
+
+        arguments.reverse();
+
+        arguments
+    }
+
     pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
         Self::new(
             self.function.rename_variables(names),
@@ -52,5 +66,32 @@ impl FunctionApplication {
             self.function.convert_types(convert),
             self.argument.convert_types(convert),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::variable::Variable;
+    use super::*;
+
+    #[test]
+    fn arguments() {
+        assert_eq!(
+            FunctionApplication::new(Variable::new("f"), 42.0)
+                .arguments()
+                .into_iter()
+                .cloned()
+                .collect::<Vec<_>>(),
+            vec![42.0.into()]
+        );
+
+        assert_eq!(
+            FunctionApplication::new(FunctionApplication::new(Variable::new("f"), 1.0), 2.0)
+                .arguments()
+                .into_iter()
+                .cloned()
+                .collect::<Vec<_>>(),
+            vec![1.0.into(), 2.0.into()]
+        );
     }
 }
