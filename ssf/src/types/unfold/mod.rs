@@ -65,8 +65,7 @@ mod tests {
                 Algebraic::new(vec![Constructor::boxed(vec![Algebraic::new(vec![
                     Constructor::unboxed(vec![]),
                     Constructor::unboxed(vec![Algebraic::new(vec![Constructor::boxed(vec![
-                        Algebraic::new(vec![Constructor::boxed(vec![Type::Index(2)])])
-                            .into(),
+                        Algebraic::new(vec![Constructor::boxed(vec![Type::Index(2)])]).into(),
                     ])])
                     .into()]),
                 ])

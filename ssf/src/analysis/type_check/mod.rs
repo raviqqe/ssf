@@ -438,9 +438,8 @@ mod tests {
 
             #[test]
             fn check_case_expressions_with_recursive_algebraic_types() {
-                let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![
-                    Type::Index(0),
-                ])]);
+                let algebraic_type =
+                    types::Algebraic::new(vec![types::Constructor::boxed(vec![Type::Index(0)])]);
 
                 assert_eq!(
                     check_types(&Module::without_validation(
