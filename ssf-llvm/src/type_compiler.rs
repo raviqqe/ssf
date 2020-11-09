@@ -30,23 +30,17 @@ impl<'c> TypeCompiler<'c> {
         }
     }
 
-    fn compile(&self, type_: &ssf::types::Type) -> inkwell::types::BasicTypeEnum<'c> {
+    pub fn compile(&self, type_: &ssf::types::Type) -> inkwell::types::BasicTypeEnum<'c> {
         match type_ {
-            ssf::types::Type::Function(function) => self
-                .compile_unsized_closure(function)
-                .ptr_type(inkwell::AddressSpace::Generic)
-                .into(),
-            ssf::types::Type::Value(value) => self.compile_value(value),
-        }
-    }
-
-    pub fn compile_value(&self, value: &ssf::types::Value) -> inkwell::types::BasicTypeEnum<'c> {
-        match value {
-            ssf::types::Value::Algebraic(algebraic) => {
+            ssf::types::Type::Algebraic(algebraic) => {
                 self.compile_algebraic(algebraic, None).into()
             }
-            ssf::types::Value::Index(_) => unreachable!(),
-            ssf::types::Value::Primitive(primitive) => self.compile_primitive(primitive),
+            ssf::types::Type::Function(_) => self
+                .compile_unsized_closure()
+                .ptr_type(inkwell::AddressSpace::Generic)
+                .into(),
+            ssf::types::Type::Index(_) => unreachable!(),
+            ssf::types::Type::Primitive(primitive) => self.compile_primitive(primitive),
         }
     }
 
@@ -91,24 +85,23 @@ impl<'c> TypeCompiler<'c> {
     ) -> inkwell::types::StructType<'c> {
         self.context.struct_type(
             &[
-                self.compile_entry_function(definition.type_())
+                self.compile_entry_function(definition)
                     .ptr_type(inkwell::AddressSpace::Generic)
                     .into(),
+                self.compile_arity(),
                 self.compile_payload(definition).into(),
             ],
             false,
         )
     }
 
-    pub fn compile_unsized_closure(
-        &self,
-        function: &ssf::types::Function,
-    ) -> inkwell::types::StructType<'c> {
+    pub fn compile_unsized_closure(&self) -> inkwell::types::StructType<'c> {
         self.context.struct_type(
             &[
-                self.compile_entry_function(function)
+                self.compile_untyped_entry_function()
                     .ptr_type(inkwell::AddressSpace::Generic)
                     .into(),
+                self.compile_arity(),
                 self.compile_unsized_environment().into(),
             ],
             false,
@@ -122,7 +115,7 @@ impl<'c> TypeCompiler<'c> {
                 .get_store_size(&self.compile_environment(definition)),
             self.target_machine
                 .get_target_data()
-                .get_store_size(&self.compile_value(definition.result_type())),
+                .get_store_size(&self.compile(definition.result_type())),
         );
 
         self.context.struct_type(
@@ -151,25 +144,30 @@ impl<'c> TypeCompiler<'c> {
         self.context.struct_type(&[], false)
     }
 
-    pub fn compile_entry_function(
+    pub fn compile_untyped_entry_function(&self) -> inkwell::types::FunctionType<'c> {
+        self.context.void_type().fn_type(&[], false)
+    }
+
+    pub fn compile_entry_function<'a>(
         &self,
-        function: &ssf::types::Function,
+        definition: &ssf::ir::Definition,
     ) -> inkwell::types::FunctionType<'c> {
-        let mut arguments = vec![self
-            .compile_unsized_environment()
-            .ptr_type(inkwell::AddressSpace::Generic)
-            .into()];
-
-        arguments.extend_from_slice(
-            &function
-                .arguments()
-                .iter()
-                .map(|type_| self.compile(type_))
-                .collect::<Vec<_>>(),
-        );
-
-        self.compile_value(function.result())
-            .fn_type(&arguments, false)
+        self.compile(definition.result_type()).fn_type(
+            &vec![self
+                .compile_unsized_environment()
+                .ptr_type(inkwell::AddressSpace::Generic)
+                .into()]
+            .into_iter()
+            .chain(
+                definition
+                    .arguments()
+                    .iter()
+                    .map(|argument| self.compile(argument.type_()))
+                    .collect::<Vec<_>>(),
+            )
+            .collect::<Vec<_>>(),
+            false,
+        )
     }
 
     fn compile_constructor(
@@ -224,6 +222,10 @@ impl<'c> TypeCompiler<'c> {
             )
             .into()
     }
+
+    fn compile_arity(&self) -> inkwell::types::BasicTypeEnum<'c> {
+        self.context.i64_type().into()
+    }
 }
 
 #[cfg(test)]
@@ -241,7 +243,7 @@ mod tests {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile(
             &ssf::types::Function::new(
-                vec![ssf::types::Primitive::Float64.into()],
+                ssf::types::Primitive::Float64,
                 ssf::types::Primitive::Float64,
             )
             .into(),
@@ -253,20 +255,12 @@ mod tests {
         let context = inkwell::context::Context::create();
         let compiler = TypeCompiler::new(&context);
         let type_ = ssf::types::Function::new(
-            vec![ssf::types::Primitive::Float64.into()],
+            ssf::types::Primitive::Float64,
             ssf::types::Primitive::Float64,
         )
         .into();
 
         assert_eq!(compiler.compile(&type_), compiler.compile(&type_));
-    }
-
-    #[test]
-    fn compile_function_type_with_no_argument() {
-        let context = inkwell::context::Context::create();
-
-        TypeCompiler::new(&context)
-            .compile(&ssf::types::Function::new(vec![], ssf::types::Primitive::Float64).into());
     }
 
     #[test]
@@ -297,7 +291,7 @@ mod tests {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile(
             &ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
-                ssf::types::Value::Index(0).into(),
+                ssf::types::Type::Index(0).into(),
             ])])
             .into(),
         );
@@ -308,7 +302,7 @@ mod tests {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile_algebraic(
             &ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
-                ssf::types::Value::Index(0).into(),
+                ssf::types::Type::Index(0).into(),
             ])]),
             Some(0),
         );
@@ -322,7 +316,7 @@ mod tests {
         let compile_type = || {
             compiler.compile(
                 &ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
-                    ssf::types::Value::Index(0).into(),
+                    ssf::types::Type::Index(0).into(),
                 ])])
                 .into(),
             )
@@ -337,7 +331,10 @@ mod tests {
             vec![],
             vec![ssf::ir::Definition::new(
                 "f",
-                vec![],
+                vec![ssf::ir::Argument::new(
+                    "x",
+                    ssf::types::Primitive::Integer64,
+                )],
                 42,
                 ssf::types::Primitive::Integer64,
             )],

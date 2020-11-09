@@ -41,7 +41,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         match expression {
             ssf::ir::Expression::Bitcast(bitcast) => Ok(self.builder.build_bitcast(
                 self.compile(bitcast.expression(), variables)?,
-                self.type_compiler.compile_value(bitcast.type_()),
+                self.type_compiler.compile(bitcast.type_()),
                 "",
             )),
             ssf::ir::Expression::Case(case) => self.compile_case(case, variables),
@@ -135,7 +135,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
             }
             ssf::ir::Expression::FunctionApplication(function_application) => {
                 let closure = self
-                    .compile_variable(function_application.function(), variables)?
+                    .compile(function_application.first_function(), variables)?
                     .into_pointer_value();
 
                 let mut arguments = vec![self.builder.build_bitcast(
@@ -144,7 +144,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                             closure,
                             &[
                                 self.context.i32_type().const_int(0, false),
-                                self.context.i32_type().const_int(1, false),
+                                self.context.i32_type().const_int(2, false),
                             ],
                             "",
                         )
@@ -199,7 +199,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         self.builder.build_bitcast(
                             pointer,
                             self.type_compiler
-                                .compile_unsized_closure(definition.type_())
+                                .compile_unsized_closure()
                                 .ptr_type(inkwell::AddressSpace::Generic),
                             "",
                         ),
@@ -235,7 +235,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                                     closure,
                                     &[
                                         self.context.i32_type().const_int(0, false),
-                                        self.context.i32_type().const_int(1, false),
+                                        self.context.i32_type().const_int(2, false),
                                     ],
                                     "",
                                 )
@@ -835,7 +835,7 @@ mod tests {
                         &vec![(
                             "x".into(),
                             type_compiler
-                                .compile_value(&algebraic_type.clone().into())
+                                .compile(&algebraic_type.clone().into())
                                 .into_struct_type()
                                 .get_undef()
                                 .into(),
@@ -912,7 +912,7 @@ mod tests {
                         &vec![(
                             "x".into(),
                             type_compiler
-                                .compile_value(&algebraic_type.clone().into())
+                                .compile(&algebraic_type.clone().into())
                                 .into_struct_type()
                                 .get_undef()
                                 .into(),
@@ -1025,7 +1025,7 @@ mod tests {
                         &vec![(
                             "x".into(),
                             type_compiler
-                                .compile_value(&algebraic_type.clone().into())
+                                .compile(&algebraic_type.clone().into())
                                 .into_struct_type()
                                 .get_undef()
                                 .into(),
@@ -1092,8 +1092,7 @@ mod tests {
                     let function = module.add_function(
                         "",
                         context.i64_type().fn_type(
-                            &[type_compiler
-                                .compile_value(&ssf::types::Primitive::Integer64.into())],
+                            &[type_compiler.compile(&ssf::types::Primitive::Integer64.into())],
                             false,
                         ),
                         None,
@@ -1176,7 +1175,7 @@ mod tests {
                     let function = module.add_function(
                         "",
                         context.f64_type().fn_type(
-                            &[type_compiler.compile_value(&ssf::types::Primitive::Float64.into())],
+                            &[type_compiler.compile(&ssf::types::Primitive::Float64.into())],
                             false,
                         ),
                         None,

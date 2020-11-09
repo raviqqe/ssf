@@ -48,8 +48,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     ) -> Result<inkwell::values::FunctionValue, CompileError> {
         let entry_function = self.module.add_function(
             &Self::generate_closure_entry_name(definition.name()),
-            self.type_compiler
-                .compile_entry_function(definition.type_()),
+            self.type_compiler.compile_entry_function(definition),
             None,
         );
 
@@ -69,8 +68,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     ) -> Result<inkwell::values::FunctionValue, CompileError> {
         let entry_function = self.module.add_function(
             &Self::generate_closure_entry_name(definition.name()),
-            self.type_compiler
-                .compile_entry_function(definition.type_()),
+            self.type_compiler.compile_entry_function(definition),
             None,
         );
 
@@ -216,8 +214,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     ) -> inkwell::values::FunctionValue<'c> {
         let entry_function = self.module.add_function(
             &Self::generate_normal_entry_name(definition.name()),
-            self.type_compiler
-                .compile_entry_function(definition.type_()),
+            self.type_compiler.compile_entry_function(definition),
             None,
         );
 
@@ -237,8 +234,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     ) -> inkwell::values::FunctionValue<'c> {
         let entry_function = self.module.add_function(
             &Self::generate_locked_entry_name(definition.name()),
-            self.type_compiler
-                .compile_entry_function(definition.type_()),
+            self.type_compiler.compile_entry_function(definition),
             None,
         );
 

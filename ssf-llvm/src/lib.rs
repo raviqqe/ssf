@@ -141,7 +141,7 @@ mod tests {
     fn compile_recursive_field_access_of_algebraic_types() {
         let algebraic_type =
             ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
-                ssf::types::Value::Index(0).into(),
+                ssf::types::Type::Index(0).into(),
             ])]);
 
         compile(
@@ -173,7 +173,7 @@ mod tests {
     fn compile_constructor_applications_of_recursive_algebraic_types() {
         let algebraic_type =
             ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
-                ssf::types::Value::Index(0).into(),
+                ssf::types::Type::Index(0).into(),
             ])]);
 
         compile(
@@ -345,10 +345,7 @@ mod tests {
                     ssf::ir::Definition::new(
                         "g",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                        ssf::ir::FunctionApplication::new(
-                            ssf::ir::Variable::new("f"),
-                            vec![42.0.into()],
-                        ),
+                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("f"), 42.0),
                         ssf::types::Primitive::Float64,
                     ),
                 ],
@@ -508,7 +505,7 @@ mod tests {
                 vec![],
                 vec![ssf::ir::Definition::new(
                     "f",
-                    vec![],
+                    vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
                     42.0,
                     ssf::types::Primitive::Float64,
                 )],
@@ -525,11 +522,16 @@ mod tests {
             &ssf::ir::Module::new(
                 vec![],
                 vec![
-                    ssf::ir::Definition::thunk("f", vec![], 42.0, ssf::types::Primitive::Float64),
+                    ssf::ir::Definition::thunk(
+                        "f",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        42.0,
+                        ssf::types::Primitive::Float64,
+                    ),
                     ssf::ir::Definition::new(
                         "g",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("f"), vec![]),
+                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("f"), 42.0),
                         ssf::types::Primitive::Float64,
                     ),
                 ],
@@ -555,10 +557,7 @@ mod tests {
                     ssf::ir::Definition::new(
                         "g",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                        ssf::ir::FunctionApplication::new(
-                            ssf::ir::Variable::new("f"),
-                            vec![42.0.into()],
-                        ),
+                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("f"), 42.0),
                         ssf::types::Primitive::Float64,
                     ),
                 ],
@@ -578,13 +577,13 @@ mod tests {
                     "f",
                     vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
                     ssf::ir::LetRecursive::new(
-                        vec![ssf::ir::Definition::new(
+                        vec![ssf::ir::Definition::thunk(
                             "g",
-                            vec![],
+                            vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
                             ssf::ir::Variable::new("x"),
                             ssf::types::Primitive::Float64,
                         )],
-                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("g"), vec![]),
+                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("g"), 42.0),
                     ),
                     ssf::types::Primitive::Float64,
                 )],
@@ -675,7 +674,7 @@ mod tests {
                                     )],
                                     ssf::ir::FunctionApplication::new(
                                         ssf::ir::Variable::new("f"),
-                                        vec![42.0.into()],
+                                        42.0,
                                     ),
                                     ssf::types::Primitive::Float64,
                                 )],

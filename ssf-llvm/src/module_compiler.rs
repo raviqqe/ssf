@@ -32,7 +32,7 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
         self.declare_intrinsics();
 
         for declaration in ir_module.declarations() {
-            self.declare_function(declaration.name(), declaration.type_());
+            self.declare_function(declaration.name());
         }
 
         for definition in ir_module.definitions() {
@@ -48,14 +48,11 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
         Ok(())
     }
 
-    fn declare_function(&mut self, name: &str, type_: &ssf::types::Function) {
+    fn declare_function(&mut self, name: &str) {
         self.global_variables.insert(
             name.into(),
-            self.module.add_global(
-                self.type_compiler.compile_unsized_closure(type_),
-                None,
-                name,
-            ),
+            self.module
+                .add_global(self.type_compiler.compile_unsized_closure(), None, name),
         );
     }
 
@@ -91,7 +88,7 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
                 .as_global_value()
                 .as_pointer_value()
                 .into(),
-                closure_type.get_field_types()[1]
+                closure_type.get_field_types()[2]
                     .into_struct_type()
                     .get_undef()
                     .into(),
