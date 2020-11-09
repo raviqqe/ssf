@@ -3,8 +3,8 @@
     "adt",
     "adts",
     "algebraics",
-    "algo",
     "alloca",
+    "arity",
     "bitcast",
     "bitcode",
     "bitcodes",
@@ -15,11 +15,8 @@
     "concat",
     "idempotently",
     "intrinsics",
-    "kosaraju",
     "llvm",
     "malloc",
-    "petgraph",
-    "reloc",
-    "toposort"
+    "reloc"
   ]
 }
