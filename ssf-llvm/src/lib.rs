@@ -141,7 +141,7 @@ mod tests {
     fn compile_recursive_field_access_of_algebraic_types() {
         let algebraic_type =
             ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
-                ssf::types::Type::Index(0).into(),
+                ssf::types::Type::Index(0),
             ])]);
 
         compile(
@@ -173,7 +173,7 @@ mod tests {
     fn compile_constructor_applications_of_recursive_algebraic_types() {
         let algebraic_type =
             ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
-                ssf::types::Type::Index(0).into(),
+                ssf::types::Type::Index(0),
             ])]);
 
         compile(

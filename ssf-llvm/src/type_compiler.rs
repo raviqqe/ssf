@@ -148,7 +148,7 @@ impl<'c> TypeCompiler<'c> {
         self.context.void_type().fn_type(&[], false)
     }
 
-    pub fn compile_entry_function<'a>(
+    pub fn compile_entry_function(
         &self,
         definition: &ssf::ir::Definition,
     ) -> inkwell::types::FunctionType<'c> {
@@ -291,7 +291,7 @@ mod tests {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile(
             &ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
-                ssf::types::Type::Index(0).into(),
+                ssf::types::Type::Index(0),
             ])])
             .into(),
         );
@@ -302,7 +302,7 @@ mod tests {
         let context = inkwell::context::Context::create();
         TypeCompiler::new(&context).compile_algebraic(
             &ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
-                ssf::types::Type::Index(0).into(),
+                ssf::types::Type::Index(0),
             ])]),
             Some(0),
         );
@@ -316,7 +316,7 @@ mod tests {
         let compile_type = || {
             compiler.compile(
                 &ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
-                    ssf::types::Type::Index(0).into(),
+                    ssf::types::Type::Index(0),
                 ])])
                 .into(),
             )
