@@ -692,4 +692,36 @@ mod tests {
         )
         .unwrap();
     }
+
+    #[test]
+    fn compile_partial_application() {
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![
+                    ssf::ir::Definition::new(
+                        "f",
+                        vec![
+                            ssf::ir::Argument::new("x", ssf::types::Primitive::Float64),
+                            ssf::ir::Argument::new("y", ssf::types::Primitive::Float64),
+                        ],
+                        42.0,
+                        ssf::types::Primitive::Float64,
+                    ),
+                    ssf::ir::Definition::new(
+                        "g",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("f"), 42.0),
+                        ssf::types::Function::new(
+                            ssf::types::Primitive::Float64,
+                            ssf::types::Primitive::Float64,
+                        ),
+                    ),
+                ],
+            )
+            .unwrap(),
+            &COMPILE_CONFIGURATION,
+        )
+        .unwrap();
+    }
 }
