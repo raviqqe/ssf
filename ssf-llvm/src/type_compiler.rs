@@ -88,7 +88,7 @@ impl<'c> TypeCompiler<'c> {
                 self.compile_entry_function(definition)
                     .ptr_type(inkwell::AddressSpace::Generic)
                     .into(),
-                self.compile_arity(),
+                self.compile_arity().into(),
                 self.compile_payload(definition).into(),
             ],
             false,
@@ -101,7 +101,7 @@ impl<'c> TypeCompiler<'c> {
                 self.compile_untyped_entry_function()
                     .ptr_type(inkwell::AddressSpace::Generic)
                     .into(),
-                self.compile_arity(),
+                self.compile_arity().into(),
                 self.compile_unsized_environment().into(),
             ],
             false,
@@ -223,8 +223,8 @@ impl<'c> TypeCompiler<'c> {
             .into()
     }
 
-    fn compile_arity(&self) -> inkwell::types::BasicTypeEnum<'c> {
-        self.context.i64_type().into()
+    pub fn compile_arity(&self) -> inkwell::types::IntType<'c> {
+        self.context.i64_type()
     }
 }
 
