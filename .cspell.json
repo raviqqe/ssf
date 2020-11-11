@@ -17,6 +17,7 @@
     "intrinsics",
     "llvm",
     "malloc",
-    "reloc"
+    "reloc",
+    "uncurried"
   ]
 }
