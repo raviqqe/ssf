@@ -134,56 +134,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 Ok(self.builder.build_load(algebraic_pointer, ""))
             }
             ssf::ir::Expression::FunctionApplication(function_application) => {
-                let closure = self
-                    .compile(function_application.first_function(), variables)?
-                    .into_pointer_value();
-
-                let mut arguments = vec![self.builder.build_bitcast(
-                    unsafe {
-                        self.builder.build_gep(
-                            closure,
-                            &[
-                                self.context.i32_type().const_int(0, false),
-                                self.context.i32_type().const_int(2, false),
-                            ],
-                            "",
-                        )
-                    },
-                    self.type_compiler
-                        .compile_unsized_environment()
-                        .ptr_type(inkwell::AddressSpace::Generic),
-                    "",
-                )];
-
-                for argument in function_application.arguments() {
-                    arguments.push(self.compile(argument, variables)?);
-                }
-
-                let entry_pointer = unsafe {
-                    self.builder.build_gep(
-                        closure,
-                        &[
-                            self.context.i32_type().const_int(0, false),
-                            self.context.i32_type().const_int(0, false),
-                        ],
-                        "",
-                    )
-                };
-
-                // Entry functions of thunks need to be loaded atomically
-                // to make thunk update thread-safe.
-                // TODO Use load instructions for normal functions.
-                Ok(self
-                    .builder
-                    .build_call(
-                        InstructionCompiler::compile_atomic_load(&self.builder, entry_pointer)
-                            .into_pointer_value(),
-                        &arguments,
-                        "",
-                    )
-                    .try_as_basic_value()
-                    .left()
-                    .unwrap())
+                self.compile_function_application(function_application, variables)
             }
             ssf::ir::Expression::LetRecursive(let_recursive) => {
                 let mut variables = variables.clone();
@@ -614,6 +565,63 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 Ok(phi.as_basic_value())
             }
         }
+    }
+
+    fn compile_function_application(
+        &self,
+        function_application: &ssf::ir::FunctionApplication,
+        variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
+    ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
+        let closure = self
+            .compile(function_application.first_function(), variables)?
+            .into_pointer_value();
+
+        let mut arguments = vec![self.builder.build_bitcast(
+            unsafe {
+                self.builder.build_gep(
+                    closure,
+                    &[
+                        self.context.i32_type().const_int(0, false),
+                        self.context.i32_type().const_int(2, false),
+                    ],
+                    "",
+                )
+            },
+            self.type_compiler
+                .compile_unsized_environment()
+                .ptr_type(inkwell::AddressSpace::Generic),
+            "",
+        )];
+
+        for argument in function_application.arguments() {
+            arguments.push(self.compile(argument, variables)?);
+        }
+
+        let entry_pointer = unsafe {
+            self.builder.build_gep(
+                closure,
+                &[
+                    self.context.i32_type().const_int(0, false),
+                    self.context.i32_type().const_int(0, false),
+                ],
+                "",
+            )
+        };
+
+        // Entry functions of thunks need to be loaded atomically
+        // to make thunk update thread-safe.
+        // TODO Use load instructions for normal functions.
+        Ok(self
+            .builder
+            .build_call(
+                InstructionCompiler::compile_atomic_load(&self.builder, entry_pointer)
+                    .into_pointer_value(),
+                &arguments,
+                "",
+            )
+            .try_as_basic_value()
+            .left()
+            .unwrap())
     }
 
     fn compile_integer_comparison_operations(
