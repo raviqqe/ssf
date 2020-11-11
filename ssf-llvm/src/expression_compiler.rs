@@ -150,7 +150,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         self.builder.build_bitcast(
                             pointer,
                             self.type_compiler
-                                .compile_unsized_closure()
+                                .compile_unsized_closure(definition.type_())
                                 .ptr_type(inkwell::AddressSpace::Generic),
                             "",
                         ),

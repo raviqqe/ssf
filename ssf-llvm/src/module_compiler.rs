@@ -32,7 +32,7 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
         self.declare_intrinsics();
 
         for declaration in ir_module.declarations() {
-            self.declare_function(declaration.name());
+            self.declare_function(declaration);
         }
 
         for definition in ir_module.definitions() {
@@ -48,11 +48,15 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
         Ok(())
     }
 
-    fn declare_function(&mut self, name: &str) {
+    fn declare_function(&mut self, declaration: &ssf::ir::Declaration) {
         self.global_variables.insert(
-            name.into(),
-            self.module
-                .add_global(self.type_compiler.compile_unsized_closure(), None, name),
+            declaration.name().into(),
+            self.module.add_global(
+                self.type_compiler
+                    .compile_unsized_closure(declaration.type_()),
+                None,
+                declaration.name(),
+            ),
         );
     }
 

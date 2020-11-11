@@ -35,8 +35,8 @@ impl<'c> TypeCompiler<'c> {
             ssf::types::Type::Algebraic(algebraic) => {
                 self.compile_algebraic(algebraic, None).into()
             }
-            ssf::types::Type::Function(_) => self
-                .compile_unsized_closure()
+            ssf::types::Type::Function(function) => self
+                .compile_unsized_closure(function)
                 .ptr_type(inkwell::AddressSpace::Generic)
                 .into(),
             ssf::types::Type::Index(_) => unreachable!(),
@@ -95,10 +95,13 @@ impl<'c> TypeCompiler<'c> {
         )
     }
 
-    pub fn compile_unsized_closure(&self) -> inkwell::types::StructType<'c> {
+    pub fn compile_unsized_closure(
+        &self,
+        type_: &ssf::types::Function,
+    ) -> inkwell::types::StructType<'c> {
         self.context.struct_type(
             &[
-                self.compile_untyped_entry_function()
+                self.compile_uncurried_entry_function(type_)
                     .ptr_type(inkwell::AddressSpace::Generic)
                     .into(),
                 self.compile_arity().into(),
@@ -144,8 +147,26 @@ impl<'c> TypeCompiler<'c> {
         self.context.struct_type(&[], false)
     }
 
-    pub fn compile_untyped_entry_function(&self) -> inkwell::types::FunctionType<'c> {
-        self.context.void_type().fn_type(&[], false)
+    pub fn compile_uncurried_entry_function(
+        &self,
+        type_: &ssf::types::Function,
+    ) -> inkwell::types::FunctionType<'c> {
+        self.compile(type_.result()).fn_type(
+            &vec![self
+                .compile_unsized_environment()
+                .ptr_type(inkwell::AddressSpace::Generic)
+                .into()]
+            .into_iter()
+            .chain(
+                type_
+                    .arguments()
+                    .into_iter()
+                    .map(|type_| self.compile(type_))
+                    .collect::<Vec<_>>(),
+            )
+            .collect::<Vec<_>>(),
+            false,
+        )
     }
 
     pub fn compile_entry_function(
