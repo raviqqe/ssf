@@ -83,15 +83,9 @@ impl<'c> TypeCompiler<'c> {
         &self,
         definition: &ssf::ir::Definition,
     ) -> inkwell::types::StructType<'c> {
-        self.context.struct_type(
-            &[
-                self.compile_entry_function(definition)
-                    .ptr_type(inkwell::AddressSpace::Generic)
-                    .into(),
-                self.compile_arity().into(),
-                self.compile_payload(definition).into(),
-            ],
-            false,
+        self.compile_closure_struct(
+            self.compile_entry_function(definition),
+            self.compile_payload(definition),
         )
     }
 
@@ -99,19 +93,30 @@ impl<'c> TypeCompiler<'c> {
         &self,
         type_: &ssf::types::Function,
     ) -> inkwell::types::StructType<'c> {
+        self.compile_closure_struct(
+            self.compile_uncurried_entry_function(type_),
+            self.compile_unsized_environment(),
+        )
+    }
+
+    fn compile_closure_struct(
+        &self,
+        entry_function: inkwell::types::FunctionType<'c>,
+        environment: inkwell::types::StructType<'c>,
+    ) -> inkwell::types::StructType<'c> {
         self.context.struct_type(
             &[
-                self.compile_uncurried_entry_function(type_)
+                entry_function
                     .ptr_type(inkwell::AddressSpace::Generic)
                     .into(),
                 self.compile_arity().into(),
-                self.compile_unsized_environment().into(),
+                environment.into(),
             ],
             false,
         )
     }
 
-    fn compile_payload(&self, definition: &ssf::ir::Definition) -> inkwell::types::StructType {
+    fn compile_payload(&self, definition: &ssf::ir::Definition) -> inkwell::types::StructType<'c> {
         let size = max(
             self.target_machine
                 .get_target_data()
@@ -147,11 +152,34 @@ impl<'c> TypeCompiler<'c> {
         self.context.struct_type(&[], false)
     }
 
+    pub fn compile_curried_entry_function(
+        &self,
+        type_: inkwell::types::FunctionType<'c>,
+        arity: usize,
+    ) -> inkwell::types::FunctionType<'c> {
+        if arity == (type_.count_param_types() as usize) - 1 {
+            type_
+        } else {
+            self.compile_closure_struct(
+                type_.get_return_type().unwrap().fn_type(
+                    &vec![type_.get_param_types()[0]]
+                        .into_iter()
+                        .chain(type_.get_param_types()[arity + 1..].iter().copied())
+                        .collect::<Vec<_>>(),
+                    false,
+                ),
+                self.compile_unsized_environment(),
+            )
+            .ptr_type(inkwell::AddressSpace::Generic)
+            .fn_type(&type_.get_param_types()[..arity + 1], false)
+        }
+    }
+
     pub fn compile_uncurried_entry_function(
         &self,
         type_: &ssf::types::Function,
     ) -> inkwell::types::FunctionType<'c> {
-        self.compile(type_.result()).fn_type(
+        self.compile(type_.last_result()).fn_type(
             &vec![self
                 .compile_unsized_environment()
                 .ptr_type(inkwell::AddressSpace::Generic)

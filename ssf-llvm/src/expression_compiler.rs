@@ -133,9 +133,16 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
                 Ok(self.builder.build_load(algebraic_pointer, ""))
             }
-            ssf::ir::Expression::FunctionApplication(function_application) => {
-                self.compile_function_application(function_application, variables)
-            }
+            ssf::ir::Expression::FunctionApplication(function_application) => self
+                .compile_closure_call(
+                    self.compile(function_application.first_function(), variables)?
+                        .into_pointer_value(),
+                    &function_application
+                        .arguments()
+                        .into_iter()
+                        .map(|argument| self.compile(argument, variables))
+                        .collect::<Result<Vec<_>, _>>()?,
+                ),
             ssf::ir::Expression::LetRecursive(let_recursive) => {
                 let mut variables = variables.clone();
                 let mut closures = HashMap::<&str, inkwell::values::PointerValue>::new();
@@ -567,16 +574,13 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         }
     }
 
-    fn compile_function_application(
+    // Closures' entry points are always uncurried.
+    fn compile_closure_call(
         &self,
-        function_application: &ssf::ir::FunctionApplication,
-        variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
+        closure: inkwell::values::PointerValue<'c>,
+        arguments: &[inkwell::values::BasicValueEnum<'c>],
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
-        let closure = self
-            .compile(function_application.first_function(), variables)?
-            .into_pointer_value();
-
-        let mut arguments = vec![self.builder.build_bitcast(
+        let entry_arguments = vec![self.builder.build_bitcast(
             unsafe {
                 self.builder.build_gep(
                     closure,
@@ -591,13 +595,14 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 .compile_unsized_environment()
                 .ptr_type(inkwell::AddressSpace::Generic),
             "",
-        )];
+        )]
+        .into_iter()
+        .chain(arguments.iter().copied())
+        .collect::<Vec<_>>();
 
-        for argument in function_application.arguments() {
-            arguments.push(self.compile(argument, variables)?);
-        }
-
-        let entry_pointer = unsafe {
+        // Entry functions of thunks need to be loaded atomically
+        // to make thunk update thread-safe.
+        let entry_pointer = InstructionCompiler::compile_atomic_load(&self.builder, unsafe {
             self.builder.build_gep(
                 closure,
                 &[
@@ -606,22 +611,114 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 ],
                 "",
             )
-        };
+        })
+        .into_pointer_value();
 
-        // Entry functions of thunks need to be loaded atomically
-        // to make thunk update thread-safe.
-        // TODO Use load instructions for normal functions.
-        Ok(self
+        let switch_block = self.builder.get_insert_block().unwrap();
+        let phi_block = self.append_basic_block("phi");
+
+        let cases = (1..arguments.len() + 1)
+            .map(|arity| {
+                let block = self.append_basic_block(&format!("arity{}", arity));
+                self.builder.position_at_end(block);
+
+                let mut value = self
+                    .builder
+                    .build_call(
+                        self.builder
+                            .build_bitcast(
+                                entry_pointer,
+                                self.type_compiler
+                                    .compile_curried_entry_function(
+                                        entry_pointer
+                                            .get_type()
+                                            .get_element_type()
+                                            .into_function_type(),
+                                        arity,
+                                    )
+                                    .ptr_type(inkwell::AddressSpace::Generic),
+                                "",
+                            )
+                            .into_pointer_value(),
+                        &entry_arguments[..arity + 1],
+                        "",
+                    )
+                    .try_as_basic_value()
+                    .left()
+                    .unwrap();
+
+                if arity != arguments.len() {
+                    value =
+                        self.compile_closure_call(value.into_pointer_value(), &arguments[arity..])?;
+                }
+
+                self.builder.build_unconditional_branch(phi_block);
+
+                Ok((
+                    arity,
+                    block,
+                    value,
+                    self.builder.get_insert_block().unwrap(),
+                ))
+            })
+            .collect::<Result<Vec<_>, CompileError>>()?;
+
+        let default_block = self.append_basic_block("make_closure");
+        self.builder.position_at_end(default_block);
+        // TODO make closure
+        self.compile_unreachable();
+
+        self.builder.position_at_end(switch_block);
+        self.builder.build_switch(
+            self.builder
+                .build_load(
+                    self.builder
+                        .build_bitcast(
+                            unsafe {
+                                self.builder.build_gep(
+                                    closure,
+                                    &[
+                                        self.context.i32_type().const_int(0, false),
+                                        self.context.i32_type().const_int(1, false),
+                                    ],
+                                    "",
+                                )
+                            },
+                            self.type_compiler
+                                .compile_arity()
+                                .ptr_type(inkwell::AddressSpace::Generic),
+                            "",
+                        )
+                        .into_pointer_value(),
+                    "",
+                )
+                .into_int_value(),
+            default_block,
+            &cases
+                .iter()
+                .map(|(arity, block, _, _)| {
+                    (
+                        self.type_compiler
+                            .compile_arity()
+                            .const_int(*arity as u64, false),
+                        *block,
+                    )
+                })
+                .collect::<Vec<_>>(),
+        );
+
+        self.builder.position_at_end(phi_block);
+        let phi = self
             .builder
-            .build_call(
-                InstructionCompiler::compile_atomic_load(&self.builder, entry_pointer)
-                    .into_pointer_value(),
-                &arguments,
-                "",
-            )
-            .try_as_basic_value()
-            .left()
-            .unwrap())
+            .build_phi(cases.get(0).unwrap().2.get_type(), "");
+        phi.add_incoming(
+            &cases
+                .iter()
+                .map(|(_, _, value, block)| (value as &dyn inkwell::values::BasicValue<'c>, *block))
+                .collect::<Vec<_>>(),
+        );
+
+        Ok(phi.as_basic_value())
     }
 
     fn compile_integer_comparison_operations(
