@@ -168,69 +168,19 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 for definition in let_recursive.definitions() {
                     let closure = closures[definition.name()];
 
-                    self.builder.build_store(
-                        unsafe {
-                            self.builder.build_gep(
-                                closure,
-                                &[
-                                    self.context.i32_type().const_int(0, false),
-                                    self.context.i32_type().const_int(0, false),
-                                ],
-                                "",
-                            )
-                        },
-                        self.function_compiler
-                            .compile(definition)?
-                            .as_global_value()
-                            .as_pointer_value(),
-                    );
-
-                    let environment = self
-                        .builder
-                        .build_bitcast(
-                            unsafe {
-                                self.builder.build_gep(
-                                    closure,
-                                    &[
-                                        self.context.i32_type().const_int(0, false),
-                                        self.context.i32_type().const_int(2, false),
-                                    ],
-                                    "",
-                                )
-                            },
-                            self.type_compiler
-                                .compile_environment(definition)
-                                .ptr_type(inkwell::AddressSpace::Generic),
-                            "",
-                        )
-                        .into_pointer_value();
-
-                    for (index, &&value) in definition
-                        .environment()
-                        .iter()
-                        .map(|argument| {
-                            variables.get(argument.name()).ok_or_else(|| {
-                                CompileError::VariableNotFound(argument.name().into())
+                    self.compile_store_closure_content(
+                        closure,
+                        self.function_compiler.compile(definition)?,
+                        &definition
+                            .environment()
+                            .iter()
+                            .map(|argument| {
+                                variables.get(argument.name()).copied().ok_or_else(|| {
+                                    CompileError::VariableNotFound(argument.name().into())
+                                })
                             })
-                        })
-                        .collect::<Result<Vec<_>, _>>()?
-                        .iter()
-                        .enumerate()
-                    {
-                        self.builder.build_store(
-                            unsafe {
-                                self.builder.build_gep(
-                                    environment,
-                                    &[
-                                        self.context.i32_type().const_int(0, false),
-                                        self.context.i32_type().const_int(index as u64, false),
-                                    ],
-                                    "",
-                                )
-                            },
-                            value,
-                        );
-                    }
+                            .collect::<Result<Vec<_>, _>>()?,
+                    )?;
                 }
 
                 self.compile(let_recursive.expression(), &variables)
@@ -779,6 +729,79 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
             Some(value) => Ok(*value),
             None => Err(CompileError::VariableNotFound(variable.name().into())),
         }
+    }
+
+    fn compile_store_closure_content(
+        &self,
+        closure_pointer: inkwell::values::PointerValue<'c>,
+        entry_function: inkwell::values::FunctionValue<'c>,
+        environment_values: &[inkwell::values::BasicValueEnum<'c>],
+    ) -> Result<(), CompileError> {
+        let environment_type = self.type_compiler.compile_environment_from_elements(
+            environment_values.iter().map(|value| value.get_type()),
+        );
+
+        let closure = self
+            .builder
+            .build_insert_value(
+                self.type_compiler
+                    .compile_closure_struct(entry_function.get_type(), environment_type)
+                    .get_undef(),
+                entry_function.as_global_value().as_pointer_value(),
+                0,
+                "",
+            )
+            .unwrap();
+
+        let closure = self
+            .builder
+            .build_insert_value(
+                closure,
+                self.type_compiler
+                    .compile_arity()
+                    .const_int(entry_function.count_params() as u64, false),
+                1,
+                "",
+            )
+            .unwrap();
+
+        let closure = self
+            .builder
+            .build_insert_value(
+                closure,
+                {
+                    let mut environment = environment_type.get_undef();
+
+                    for (index, value) in environment_values.iter().copied().enumerate() {
+                        environment = self
+                            .builder
+                            .build_insert_value(environment, value, index as u32, "")
+                            .unwrap()
+                            .into_struct_value();
+                    }
+
+                    environment
+                },
+                2,
+                "",
+            )
+            .unwrap();
+
+        self.builder.build_store(
+            self.builder
+                .build_bitcast(
+                    closure_pointer,
+                    closure
+                        .into_struct_value()
+                        .get_type()
+                        .ptr_type(inkwell::AddressSpace::Generic),
+                    "",
+                )
+                .into_pointer_value(),
+            closure,
+        );
+
+        Ok(())
     }
 
     fn append_basic_block(&self, name: &str) -> inkwell::basic_block::BasicBlock<'c> {

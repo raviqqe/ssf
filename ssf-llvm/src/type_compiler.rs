@@ -99,7 +99,7 @@ impl<'c> TypeCompiler<'c> {
         )
     }
 
-    fn compile_closure_struct(
+    pub fn compile_closure_struct(
         &self,
         entry_function: inkwell::types::FunctionType<'c>,
         environment: inkwell::types::StructType<'c>,
@@ -138,14 +138,21 @@ impl<'c> TypeCompiler<'c> {
         &self,
         definition: &ssf::ir::Definition,
     ) -> inkwell::types::StructType<'c> {
-        self.context.struct_type(
-            &definition
+        self.compile_environment_from_elements(
+            definition
                 .environment()
                 .iter()
                 .map(|argument| self.compile(argument.type_()))
                 .collect::<Vec<_>>(),
-            false,
         )
+    }
+
+    pub fn compile_environment_from_elements(
+        &self,
+        types: impl IntoIterator<Item = inkwell::types::BasicTypeEnum<'c>>,
+    ) -> inkwell::types::StructType<'c> {
+        self.context
+            .struct_type(&types.into_iter().collect::<Vec<_>>(), false)
     }
 
     pub fn compile_unsized_environment(&self) -> inkwell::types::StructType<'c> {

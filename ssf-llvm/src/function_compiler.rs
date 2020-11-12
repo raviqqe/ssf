@@ -34,7 +34,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     pub fn compile(
         &self,
         definition: &ssf::ir::Definition,
-    ) -> Result<inkwell::values::FunctionValue, CompileError> {
+    ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
         Ok(if definition.is_thunk() {
             self.compile_thunk(definition)?
         } else {
@@ -45,7 +45,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     fn compile_non_thunk(
         &self,
         definition: &ssf::ir::Definition,
-    ) -> Result<inkwell::values::FunctionValue, CompileError> {
+    ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
         let entry_function = self.module.add_function(
             &Self::generate_closure_entry_name(definition.name()),
             self.type_compiler.compile_entry_function(definition),
@@ -65,7 +65,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     fn compile_thunk(
         &self,
         definition: &ssf::ir::Definition,
-    ) -> Result<inkwell::values::FunctionValue, CompileError> {
+    ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
         let entry_function = self.module.add_function(
             &Self::generate_closure_entry_name(definition.name()),
             self.type_compiler.compile_entry_function(definition),
