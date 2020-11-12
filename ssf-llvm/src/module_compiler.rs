@@ -92,6 +92,10 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
                 .as_global_value()
                 .as_pointer_value()
                 .into(),
+                self.type_compiler
+                    .compile_arity()
+                    .const_int(definition.arguments().len() as u64, false)
+                    .into(),
                 closure_type.get_field_types()[2]
                     .into_struct_type()
                     .get_undef()

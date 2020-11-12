@@ -759,7 +759,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 closure,
                 self.type_compiler
                     .compile_arity()
-                    .const_int(entry_function.count_params() as u64, false),
+                    .const_int(entry_function.count_params() as u64 - 1, false),
                 1,
                 "",
             )
