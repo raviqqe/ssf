@@ -525,7 +525,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
     }
 
     // Closures' entry points are always uncurried.
-    fn compile_closure_call(
+    pub fn compile_closure_call(
         &self,
         closure: inkwell::values::PointerValue<'c>,
         arguments: &[inkwell::values::BasicValueEnum<'c>],
@@ -615,8 +615,40 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
         let default_block = self.append_basic_block("make_closure");
         self.builder.position_at_end(default_block);
-        // TODO make closure
-        self.compile_unreachable();
+
+        if arguments.len() < 2 {
+            self.compile_unreachable();
+        } else {
+            let environment_values = vec![closure.into()]
+                .into_iter()
+                .chain(arguments.iter().copied())
+                .collect::<Vec<_>>();
+
+            let environment_type = self.type_compiler.compile_environment_from_elements(
+                environment_values.iter().map(|value| value.get_type()),
+            );
+            let function = self.function_compiler.compile_partial_application(
+                closure
+                    .get_type()
+                    .get_element_type()
+                    .into_struct_type()
+                    .get_field_type_at_index(0)
+                    .unwrap()
+                    .into_pointer_type()
+                    .get_element_type()
+                    .into_function_type(),
+                environment_type,
+            )?;
+
+            let closure = self.compile_struct_malloc(
+                self.type_compiler
+                    .compile_closure_struct(function.get_type(), environment_type),
+            );
+
+            self.compile_store_closure_content(closure, function, &environment_values)?;
+
+            self.builder.build_return(Some(&closure));
+        }
 
         self.builder.position_at_end(switch_block);
         self.builder.build_switch(

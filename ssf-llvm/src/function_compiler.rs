@@ -42,6 +42,69 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         })
     }
 
+    pub fn compile_partial_application(
+        &self,
+        function_type: inkwell::types::FunctionType<'c>,
+        environment_type: inkwell::types::StructType<'c>,
+    ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
+        let entry_function = self
+            .module
+            .add_function("partial_application", function_type, None);
+
+        let builder = self.context.create_builder();
+        builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
+
+        builder.build_return(Some(&self.compile_partial_application_body(
+            &builder,
+            entry_function,
+            environment_type,
+        )?));
+
+        entry_function.verify(true);
+
+        Ok(entry_function)
+    }
+
+    fn compile_partial_application_body(
+        &self,
+        builder: &inkwell::builder::Builder<'c>,
+        entry_function: inkwell::values::FunctionValue<'c>,
+        environment_type: inkwell::types::StructType<'c>,
+    ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
+        let environment = builder
+            .build_load(
+                builder
+                    .build_bitcast(
+                        entry_function.get_params()[0],
+                        environment_type.ptr_type(inkwell::AddressSpace::Generic),
+                        "",
+                    )
+                    .into_pointer_value(),
+                "",
+            )
+            .into_struct_value();
+
+        builder.build_unreachable();
+        // TODO Cache partial application functions.
+        // Ok(ExpressionCompiler::new(
+        //     self.context,
+        //     self.module,
+        //     &builder,
+        //     self,
+        //     self.type_compiler,
+        //     self.compile_configuration,
+        // )
+        // .compile_closure_call(
+        //     builder
+        //         .build_extract_value(environment, 0, "")
+        //         .unwrap()
+        //         .into_pointer_value(),
+        //     &(1..environment.get_type().count_fields())
+        //         .map(|index| builder.build_extract_value(environment, index, "").unwrap())
+        //         .collect::<Vec<_>>(),
+        // )?)
+    }
+
     fn compile_non_thunk(
         &self,
         definition: &ssf::ir::Definition,
