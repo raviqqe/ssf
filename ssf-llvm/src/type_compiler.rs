@@ -133,7 +133,11 @@ impl<'c> TypeCompiler<'c> {
         );
 
         self.context.struct_type(
-            &(0..((size as isize - 1) / 8 + 1))
+            &(0..if size == 0 {
+                0
+            } else {
+                (size as isize - 1) / 8 + 1
+            })
                 .map(|_| self.context.i64_type().into())
                 .collect::<Vec<_>>(),
             false,
@@ -268,6 +272,7 @@ impl<'c> TypeCompiler<'c> {
         &self,
         algebraic_type: &ssf::types::Algebraic,
     ) -> inkwell::types::BasicTypeEnum<'c> {
+        // TODO Use i64 array type.
         self.context
             .i8_type()
             .array_type(

@@ -106,19 +106,19 @@ impl<'c> FunctionCompiler<'c> {
             )
             .unwrap();
 
-        let then_block = self.context.append_basic_block(entry_function, "then");
-        let else_block = self.context.append_basic_block(entry_function, "else");
+        let lock_success_block = self.context.append_basic_block(entry_function, "then");
+        let lock_failure_block = self.context.append_basic_block(entry_function, "else");
 
         builder.build_conditional_branch(
             builder
                 .build_extract_value(condition, 1, "")
                 .unwrap()
                 .into_int_value(),
-            then_block,
-            else_block,
+            lock_success_block,
+            lock_failure_block,
         );
 
-        builder.position_at_end(else_block);
+        builder.position_at_end(lock_failure_block);
 
         builder.build_return(Some(
             &builder
@@ -135,7 +135,7 @@ impl<'c> FunctionCompiler<'c> {
                 .unwrap(),
         ));
 
-        builder.position_at_end(then_block);
+        builder.position_at_end(lock_success_block);
 
         let result = self.compile_body(builder.clone(), definition)?;
 
@@ -344,7 +344,7 @@ impl<'c> FunctionCompiler<'c> {
         unsafe {
             builder.build_gep(
                 base_pointer,
-                &[self.context.i64_type().const_int(-1i64 as u64, true)],
+                &[self.context.i64_type().const_int(-2i64 as u64, true)],
                 "",
             )
         }
