@@ -1,3 +1,4 @@
+use super::closure_operation_compiler::ClosureOperationCompiler;
 use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::function_application_compiler::FunctionApplicationCompiler;
@@ -14,6 +15,7 @@ pub struct ExpressionCompiler<'c> {
     function_compiler: Arc<FunctionCompiler<'c>>,
     function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
     type_compiler: Arc<TypeCompiler<'c>>,
+    closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
     malloc_compiler: Arc<MallocCompiler<'c>>,
     compile_configuration: Arc<CompileConfiguration>,
 }
@@ -27,6 +29,7 @@ impl<'c> ExpressionCompiler<'c> {
         function_compiler: Arc<FunctionCompiler<'c>>,
         function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
         type_compiler: Arc<TypeCompiler<'c>>,
+        closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
         malloc_compiler: Arc<MallocCompiler<'c>>,
         compile_configuration: Arc<CompileConfiguration>,
     ) -> Arc<Self> {
@@ -37,6 +40,7 @@ impl<'c> ExpressionCompiler<'c> {
             function_compiler,
             function_application_compiler,
             type_compiler,
+            closure_operation_compiler,
             malloc_compiler,
             compile_configuration,
         }
@@ -181,19 +185,21 @@ impl<'c> ExpressionCompiler<'c> {
                 for definition in let_recursive.definitions() {
                     let closure = closures[definition.name()];
 
-                    self.compile_store_closure_content(
-                        closure,
-                        self.function_compiler.compile(definition)?,
-                        &definition
-                            .environment()
-                            .iter()
-                            .map(|argument| {
-                                variables.get(argument.name()).copied().ok_or_else(|| {
-                                    CompileError::VariableNotFound(argument.name().into())
+                    self.closure_operation_compiler
+                        .compile_store_closure_content(
+                            self.builder.clone(),
+                            closure,
+                            self.function_compiler.compile(definition)?,
+                            &definition
+                                .environment()
+                                .iter()
+                                .map(|argument| {
+                                    variables.get(argument.name()).copied().ok_or_else(|| {
+                                        CompileError::VariableNotFound(argument.name().into())
+                                    })
                                 })
-                            })
-                            .collect::<Result<Vec<_>, _>>()?,
-                    )?;
+                                .collect::<Result<Vec<_>, _>>()?,
+                        )?;
                 }
 
                 self.compile(let_recursive.expression(), &variables)
@@ -599,79 +605,6 @@ impl<'c> ExpressionCompiler<'c> {
         }
     }
 
-    fn compile_store_closure_content(
-        &self,
-        closure_pointer: inkwell::values::PointerValue<'c>,
-        entry_function: inkwell::values::FunctionValue<'c>,
-        environment_values: &[inkwell::values::BasicValueEnum<'c>],
-    ) -> Result<(), CompileError> {
-        let environment_type = self
-            .type_compiler
-            .compile_raw_environment(environment_values.iter().map(|value| value.get_type()));
-
-        let closure = self
-            .builder
-            .build_insert_value(
-                self.type_compiler
-                    .compile_raw_closure(entry_function.get_type(), environment_type)
-                    .get_undef(),
-                entry_function.as_global_value().as_pointer_value(),
-                0,
-                "",
-            )
-            .unwrap();
-
-        let closure = self
-            .builder
-            .build_insert_value(
-                closure,
-                self.type_compiler
-                    .compile_arity()
-                    .const_int(entry_function.count_params() as u64 - 1, false),
-                1,
-                "",
-            )
-            .unwrap();
-
-        let closure = self
-            .builder
-            .build_insert_value(
-                closure,
-                {
-                    let mut environment = environment_type.get_undef();
-
-                    for (index, value) in environment_values.iter().copied().enumerate() {
-                        environment = self
-                            .builder
-                            .build_insert_value(environment, value, index as u32, "")
-                            .unwrap()
-                            .into_struct_value();
-                    }
-
-                    environment
-                },
-                2,
-                "",
-            )
-            .unwrap();
-
-        self.builder.build_store(
-            self.builder
-                .build_bitcast(
-                    closure_pointer,
-                    closure
-                        .into_struct_value()
-                        .get_type()
-                        .ptr_type(inkwell::AddressSpace::Generic),
-                    "",
-                )
-                .into_pointer_value(),
-            closure,
-        );
-
-        Ok(())
-    }
-
     fn append_basic_block(&self, name: &str) -> inkwell::basic_block::BasicBlock<'c> {
         self.context.append_basic_block(
             self.builder
@@ -739,11 +672,14 @@ mod tests {
         builder.position_at_end(context.append_basic_block(function, "entry"));
 
         let type_compiler = TypeCompiler::new(&context);
+        let closure_operation_compiler =
+            ClosureOperationCompiler::new(context, type_compiler.clone());
         let malloc_compiler = MallocCompiler::new(module.clone(), COMPILE_CONFIGURATION.clone());
         let function_application_compiler = FunctionApplicationCompiler::new(
             &context,
             module.clone(),
             type_compiler.clone(),
+            closure_operation_compiler.clone(),
             malloc_compiler.clone(),
         );
 
@@ -757,12 +693,14 @@ mod tests {
                     module.clone(),
                     function_application_compiler.clone(),
                     type_compiler.clone(),
+                    closure_operation_compiler.clone(),
                     malloc_compiler.clone(),
                     HashMap::new(),
                     COMPILE_CONFIGURATION.clone(),
                 ),
                 function_application_compiler.clone(),
                 type_compiler.clone(),
+                closure_operation_compiler.clone(),
                 malloc_compiler.clone(),
                 COMPILE_CONFIGURATION.clone(),
             ),

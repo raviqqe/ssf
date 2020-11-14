@@ -1,3 +1,4 @@
+use super::closure_operation_compiler::ClosureOperationCompiler;
 use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::function_application_compiler::FunctionApplicationCompiler;
@@ -11,6 +12,7 @@ pub struct ModuleCompiler<'c> {
     context: &'c inkwell::context::Context,
     module: Arc<inkwell::module::Module<'c>>,
     type_compiler: Arc<TypeCompiler<'c>>,
+    closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
     malloc_compiler: Arc<MallocCompiler<'c>>,
     compile_configuration: Arc<CompileConfiguration>,
 }
@@ -20,6 +22,7 @@ impl<'c> ModuleCompiler<'c> {
         context: &'c inkwell::context::Context,
         module: Arc<inkwell::module::Module<'c>>,
         type_compiler: Arc<TypeCompiler<'c>>,
+        closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
         malloc_compiler: Arc<MallocCompiler<'c>>,
         compile_configuration: Arc<CompileConfiguration>,
     ) -> Self {
@@ -27,6 +30,7 @@ impl<'c> ModuleCompiler<'c> {
             context,
             module,
             type_compiler,
+            closure_operation_compiler,
             malloc_compiler,
             compile_configuration,
         }
@@ -106,9 +110,11 @@ impl<'c> ModuleCompiler<'c> {
                         self.context,
                         self.module.clone(),
                         self.type_compiler.clone(),
+                        self.closure_operation_compiler.clone(),
                         self.malloc_compiler.clone(),
                     ),
                     self.type_compiler.clone(),
+                    self.closure_operation_compiler.clone(),
                     self.malloc_compiler.clone(),
                     global_variables.clone(),
                     self.compile_configuration.clone(),

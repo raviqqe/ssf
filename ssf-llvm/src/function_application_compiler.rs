@@ -1,5 +1,5 @@
+use super::closure_operation_compiler::ClosureOperationCompiler;
 use super::error::CompileError;
-use super::instruction_compiler::InstructionCompiler;
 use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
 use super::utilities;
@@ -10,6 +10,7 @@ pub struct FunctionApplicationCompiler<'c> {
     context: &'c inkwell::context::Context,
     module: Arc<inkwell::module::Module<'c>>,
     type_compiler: Arc<TypeCompiler<'c>>,
+    closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
     malloc_compiler: Arc<MallocCompiler<'c>>,
 }
 
@@ -18,12 +19,14 @@ impl<'c> FunctionApplicationCompiler<'c> {
         context: &'c inkwell::context::Context,
         module: Arc<inkwell::module::Module<'c>>,
         type_compiler: Arc<TypeCompiler<'c>>,
+        closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
         malloc_compiler: Arc<MallocCompiler<'c>>,
     ) -> Arc<Self> {
         Self {
             context,
             module,
             type_compiler,
+            closure_operation_compiler,
             malloc_compiler,
         }
         .into()
@@ -71,7 +74,8 @@ impl<'c> FunctionApplicationCompiler<'c> {
 
         builder.position_at_end(switch_block);
         builder.build_switch(
-            self.compile_load_arity(&builder, closure),
+            self.closure_operation_compiler
+                .compile_load_arity(&builder, closure),
             default_block,
             &cases
                 .iter()
@@ -145,7 +149,8 @@ impl<'c> FunctionApplicationCompiler<'c> {
         builder.build_conditional_branch(
             builder.build_int_compare(
                 inkwell::IntPredicate::EQ,
-                self.compile_load_arity(&builder, closure),
+                self.closure_operation_compiler
+                    .compile_load_arity(&builder, closure),
                 self.type_compiler
                     .compile_arity()
                     .const_int(arguments.len() as u64, false),
@@ -176,7 +181,9 @@ impl<'c> FunctionApplicationCompiler<'c> {
         closure: inkwell::values::PointerValue<'c>,
         arguments: &[inkwell::values::BasicValueEnum<'c>],
     ) -> inkwell::values::BasicValueEnum<'c> {
-        let entry_pointer = self.compile_load_entry_pointer(&builder, closure);
+        let entry_pointer = self
+            .closure_operation_compiler
+            .compile_load_entry_pointer(&builder, closure);
 
         builder
             .build_call(
@@ -195,10 +202,12 @@ impl<'c> FunctionApplicationCompiler<'c> {
                         "",
                     )
                     .into_pointer_value(),
-                &vec![self.compile_load_environment(&builder, closure)]
-                    .into_iter()
-                    .chain(arguments.iter().copied())
-                    .collect::<Vec<_>>(),
+                &vec![self
+                    .closure_operation_compiler
+                    .compile_load_environment(&builder, closure)]
+                .into_iter()
+                .chain(arguments.iter().copied())
+                .collect::<Vec<_>>(),
                 "",
             )
             .try_as_basic_value()
@@ -257,12 +266,13 @@ impl<'c> FunctionApplicationCompiler<'c> {
                     .compile_raw_closure(function.get_type(), environment_type),
             );
 
-            self.compile_store_closure_content(
-                builder.clone(),
-                closure,
-                function,
-                &environment_values,
-            )?;
+            self.closure_operation_compiler
+                .compile_store_closure_content(
+                    builder.clone(),
+                    closure,
+                    function,
+                    &environment_values,
+                )?;
 
             Ok(Some(
                 builder
@@ -279,151 +289,6 @@ impl<'c> FunctionApplicationCompiler<'c> {
                     .into_pointer_value(),
             ))
         }
-    }
-
-    fn compile_load_entry_pointer(
-        &self,
-        builder: &inkwell::builder::Builder<'c>,
-        closure: inkwell::values::PointerValue<'c>,
-    ) -> inkwell::values::PointerValue<'c> {
-        // Entry functions of thunks need to be loaded atomically
-        // to make thunk update thread-safe.
-        InstructionCompiler::compile_atomic_load(&builder, unsafe {
-            builder.build_gep(
-                closure,
-                &[
-                    self.context.i32_type().const_int(0, false),
-                    self.context.i32_type().const_int(0, false),
-                ],
-                "",
-            )
-        })
-        .into_pointer_value()
-    }
-
-    fn compile_load_arity(
-        &self,
-        builder: &inkwell::builder::Builder<'c>,
-        closure: inkwell::values::PointerValue<'c>,
-    ) -> inkwell::values::IntValue<'c> {
-        builder
-            .build_load(
-                builder
-                    .build_bitcast(
-                        unsafe {
-                            builder.build_gep(
-                                closure,
-                                &[
-                                    self.context.i32_type().const_int(0, false),
-                                    self.context.i32_type().const_int(1, false),
-                                ],
-                                "",
-                            )
-                        },
-                        self.type_compiler
-                            .compile_arity()
-                            .ptr_type(inkwell::AddressSpace::Generic),
-                        "",
-                    )
-                    .into_pointer_value(),
-                "",
-            )
-            .into_int_value()
-    }
-
-    fn compile_load_environment(
-        &self,
-        builder: &inkwell::builder::Builder<'c>,
-        closure: inkwell::values::PointerValue<'c>,
-    ) -> inkwell::values::BasicValueEnum<'c> {
-        builder.build_bitcast(
-            unsafe {
-                builder.build_gep(
-                    closure,
-                    &[
-                        self.context.i32_type().const_int(0, false),
-                        self.context.i32_type().const_int(2, false),
-                    ],
-                    "",
-                )
-            },
-            self.type_compiler
-                .compile_unsized_environment()
-                .ptr_type(inkwell::AddressSpace::Generic),
-            "",
-        )
-    }
-
-    // TODO Share this with ExpressionCompiler.
-    fn compile_store_closure_content(
-        &self,
-        builder: Arc<inkwell::builder::Builder<'c>>,
-        closure_pointer: inkwell::values::PointerValue<'c>,
-        entry_function: inkwell::values::FunctionValue<'c>,
-        environment_values: &[inkwell::values::BasicValueEnum<'c>],
-    ) -> Result<(), CompileError> {
-        let environment_type = self
-            .type_compiler
-            .compile_raw_environment(environment_values.iter().map(|value| value.get_type()));
-
-        let closure = builder
-            .build_insert_value(
-                self.type_compiler
-                    .compile_raw_closure(entry_function.get_type(), environment_type)
-                    .get_undef(),
-                entry_function.as_global_value().as_pointer_value(),
-                0,
-                "",
-            )
-            .unwrap();
-
-        let closure = builder
-            .build_insert_value(
-                closure,
-                self.type_compiler.compile_arity().const_int(
-                    utilities::get_arity(entry_function.get_type()) as u64,
-                    false,
-                ),
-                1,
-                "",
-            )
-            .unwrap();
-
-        let closure = builder
-            .build_insert_value(
-                closure,
-                {
-                    let mut environment = environment_type.get_undef();
-
-                    for (index, value) in environment_values.iter().copied().enumerate() {
-                        environment = builder
-                            .build_insert_value(environment, value, index as u32, "")
-                            .unwrap()
-                            .into_struct_value();
-                    }
-
-                    environment
-                },
-                2,
-                "",
-            )
-            .unwrap();
-
-        builder.build_store(
-            builder
-                .build_bitcast(
-                    closure_pointer,
-                    closure
-                        .into_struct_value()
-                        .get_type()
-                        .ptr_type(inkwell::AddressSpace::Generic),
-                    "",
-                )
-                .into_pointer_value(),
-            closure,
-        );
-
-        Ok(())
     }
 
     fn append_basic_block(
@@ -472,7 +337,9 @@ mod tests {
         let builder = context.create_builder();
         builder.position_at_end(context.append_basic_block(function, "entry"));
 
-        let type_compiler = TypeCompiler::new(&context);
+        let type_compiler = TypeCompiler::new(context);
+        let closure_operation_compiler =
+            ClosureOperationCompiler::new(context, type_compiler.clone());
         let malloc_compiler = MallocCompiler::new(module.clone(), COMPILE_CONFIGURATION.clone());
 
         (
@@ -480,6 +347,7 @@ mod tests {
                 &context,
                 module,
                 type_compiler.clone(),
+                closure_operation_compiler.clone(),
                 malloc_compiler,
             ),
             type_compiler,

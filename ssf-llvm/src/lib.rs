@@ -1,3 +1,4 @@
+mod closure_operation_compiler;
 mod compile_configuration;
 mod error;
 mod expression_compiler;
@@ -9,6 +10,7 @@ mod module_compiler;
 mod type_compiler;
 mod utilities;
 
+use closure_operation_compiler::ClosureOperationCompiler;
 pub use compile_configuration::CompileConfiguration;
 pub use error::CompileError;
 use malloc_compiler::MallocCompiler;
@@ -23,12 +25,14 @@ pub fn compile(
     let context = inkwell::context::Context::create();
     let module = Arc::new(context.create_module("main"));
     let type_compiler = TypeCompiler::new(&context);
+    let closure_operation_compiler = ClosureOperationCompiler::new(&context, type_compiler.clone());
     let malloc_compiler = MallocCompiler::new(module.clone(), compile_configuration.clone());
 
     ModuleCompiler::new(
         &context,
         module.clone(),
         type_compiler,
+        closure_operation_compiler,
         malloc_compiler,
         compile_configuration,
     )
