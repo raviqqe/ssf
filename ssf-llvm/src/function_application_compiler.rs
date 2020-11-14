@@ -522,7 +522,7 @@ mod tests {
             .compile(
                 builder.clone(),
                 type_compiler
-                    .compile_closure_struct(
+                    .compile_raw_closure(
                         context.f64_type().fn_type(
                             &[
                                 type_compiler
@@ -556,7 +556,7 @@ mod tests {
             .compile(
                 builder.clone(),
                 type_compiler
-                    .compile_closure_struct(
+                    .compile_raw_closure(
                         context.f64_type().fn_type(
                             &[
                                 type_compiler
@@ -591,7 +591,7 @@ mod tests {
             .compile(
                 builder.clone(),
                 type_compiler
-                    .compile_closure_struct(
+                    .compile_raw_closure(
                         context.f64_type().fn_type(
                             &[
                                 type_compiler
@@ -629,7 +629,7 @@ mod tests {
             .compile(
                 builder.clone(),
                 type_compiler
-                    .compile_closure_struct(
+                    .compile_raw_closure(
                         context.f64_type().fn_type(
                             &[
                                 type_compiler
@@ -665,7 +665,7 @@ mod tests {
             .compile(
                 builder.clone(),
                 type_compiler
-                    .compile_closure_struct(
+                    .compile_raw_closure(
                         context.f64_type().fn_type(
                             &[
                                 type_compiler
@@ -704,7 +704,7 @@ mod tests {
             .compile(
                 builder.clone(),
                 type_compiler
-                    .compile_closure_struct(
+                    .compile_raw_closure(
                         context.f64_type().fn_type(
                             &[
                                 type_compiler
