@@ -23,6 +23,7 @@ pub struct FunctionCompiler<'c> {
 }
 
 impl<'c> FunctionCompiler<'c> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         context: &'c inkwell::context::Context,
         module: Arc<inkwell::module::Module<'c>>,
