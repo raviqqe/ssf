@@ -4,6 +4,7 @@ mod error;
 mod expression_compiler;
 mod function_application_compiler;
 mod function_compiler;
+mod global_variable;
 mod instruction_compiler;
 mod malloc_compiler;
 mod module_compiler;

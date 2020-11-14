@@ -3,6 +3,7 @@ use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::expression_compiler::ExpressionCompiler;
 use super::function_application_compiler::FunctionApplicationCompiler;
+use super::global_variable::GlobalVariable;
 use super::instruction_compiler::InstructionCompiler;
 use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
@@ -18,7 +19,7 @@ pub struct FunctionCompiler<'c> {
     type_compiler: Arc<TypeCompiler<'c>>,
     closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
     malloc_compiler: Arc<MallocCompiler<'c>>,
-    global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
+    global_variables: HashMap<String, GlobalVariable<'c>>,
     compile_configuration: Arc<CompileConfiguration>,
 }
 
@@ -31,7 +32,7 @@ impl<'c> FunctionCompiler<'c> {
         type_compiler: Arc<TypeCompiler<'c>>,
         closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
         malloc_compiler: Arc<MallocCompiler<'c>>,
-        global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
+        global_variables: HashMap<String, GlobalVariable<'c>>,
         compile_configuration: Arc<CompileConfiguration>,
     ) -> Arc<Self> {
         Self {
@@ -184,7 +185,9 @@ impl<'c> FunctionCompiler<'c> {
         let mut variables = self
             .global_variables
             .iter()
-            .map(|(name, value)| (name.into(), value.as_pointer_value().into()))
+            .map(|(name, global_variable)| {
+                (name.into(), global_variable.load(builder.clone()).into())
+            })
             .collect::<HashMap<String, inkwell::values::BasicValueEnum>>();
 
         for (index, free_variable) in definition.environment().iter().enumerate() {
