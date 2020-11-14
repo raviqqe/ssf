@@ -36,7 +36,7 @@ impl<'c> ModuleCompiler<'c> {
         }
     }
 
-    pub fn compile(&mut self, ir_module: &ssf::ir::Module) -> Result<(), CompileError> {
+    pub fn compile(&self, ir_module: &ssf::ir::Module) -> Result<(), CompileError> {
         self.declare_intrinsics();
 
         let mut global_variables = HashMap::<String, inkwell::values::GlobalValue<'c>>::new();
@@ -59,7 +59,7 @@ impl<'c> ModuleCompiler<'c> {
     }
 
     fn declare_function(
-        &mut self,
+        &self,
         global_variables: &mut HashMap<String, inkwell::values::GlobalValue<'c>>,
         declaration: &ssf::ir::Declaration,
     ) {
@@ -75,7 +75,7 @@ impl<'c> ModuleCompiler<'c> {
     }
 
     fn define_function(
-        &mut self,
+        &self,
         global_variables: &mut HashMap<String, inkwell::values::GlobalValue<'c>>,
         definition: &ssf::ir::Definition,
     ) {
@@ -90,7 +90,7 @@ impl<'c> ModuleCompiler<'c> {
     }
 
     fn compile_function(
-        &mut self,
+        &self,
         global_variables: &HashMap<String, inkwell::values::GlobalValue<'c>>,
         definition: &ssf::ir::Definition,
     ) -> Result<(), CompileError> {
