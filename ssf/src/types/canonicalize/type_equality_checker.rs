@@ -26,34 +26,22 @@ impl<'a> TypeEqualityChecker<'a> {
             .all(|(one, other)| one.0 == other.0 && checker.equal_constructors(one.1, other.1))
     }
 
-    fn equal_values(&self, one: &Value, other: &Value) -> bool {
-        match (one, other) {
-            (Value::Primitive(one), Value::Primitive(other)) => one == other,
-            (Value::Algebraic(one), Value::Algebraic(other)) => self.equal_algebraics(one, other),
-            (Value::Index(index), Value::Algebraic(other)) => {
-                self.equal_algebraics(self.pairs[*index].0, other)
-            }
-            (Value::Algebraic(other), Value::Index(index)) => {
-                self.equal_algebraics(other, self.pairs[*index].1)
-            }
-            (Value::Index(one), Value::Index(other)) => {
-                self.equal_algebraics(self.pairs[*one].0, self.pairs[*other].1)
-            }
-            _ => false,
-        }
-    }
-
     fn equal(&self, one: &Type, other: &Type) -> bool {
         match (one, other) {
-            (Type::Value(one), Type::Value(other)) => self.equal_values(one, other),
             (Type::Function(one), Type::Function(other)) => {
-                one.arguments().len() == other.arguments().len()
-                    && one
-                        .arguments()
-                        .iter()
-                        .zip(other.arguments())
-                        .all(|(one, other)| self.equal(one, other))
-                    && self.equal_values(one.result(), other.result())
+                self.equal(one.argument(), other.argument())
+                    && self.equal(one.result(), other.result())
+            }
+            (Type::Primitive(one), Type::Primitive(other)) => one == other,
+            (Type::Algebraic(one), Type::Algebraic(other)) => self.equal_algebraics(one, other),
+            (Type::Index(index), Type::Algebraic(other)) => {
+                self.equal_algebraics(self.pairs[*index].0, other)
+            }
+            (Type::Algebraic(other), Type::Index(index)) => {
+                self.equal_algebraics(other, self.pairs[*index].1)
+            }
+            (Type::Index(one), Type::Index(other)) => {
+                self.equal_algebraics(self.pairs[*one].0, self.pairs[*other].1)
             }
             (_, _) => false,
         }
@@ -89,53 +77,53 @@ mod tests {
         for (one, other) in &[
             (Primitive::Float64.into(), Primitive::Float64.into()),
             (
-                Function::new(vec![Primitive::Float64.into()], Primitive::Float64).into(),
-                Function::new(vec![Primitive::Float64.into()], Primitive::Float64).into(),
+                Function::new(Primitive::Float64, Primitive::Float64).into(),
+                Function::new(Primitive::Float64, Primitive::Float64).into(),
             ),
             (
                 Algebraic::new(vec![Constructor::boxed(vec![Primitive::Float64.into()])]).into(),
                 Algebraic::new(vec![Constructor::boxed(vec![Primitive::Float64.into()])]).into(),
             ),
             (
-                Algebraic::new(vec![Constructor::boxed(vec![Value::Index(0).into()])]).into(),
+                Algebraic::new(vec![Constructor::boxed(vec![Type::Index(0)])]).into(),
                 Algebraic::new(vec![Constructor::boxed(vec![Algebraic::new(vec![
-                    Constructor::boxed(vec![Value::Index(0).into()]),
+                    Constructor::boxed(vec![Type::Index(0)]),
                 ])
                 .into()])])
                 .into(),
             ),
             (
-                Algebraic::new(vec![Constructor::boxed(vec![Value::Index(0).into()])]).into(),
+                Algebraic::new(vec![Constructor::boxed(vec![Type::Index(0)])]).into(),
                 Algebraic::new(vec![Constructor::boxed(vec![Algebraic::new(vec![
-                    Constructor::boxed(vec![Value::Index(1).into()]),
+                    Constructor::boxed(vec![Type::Index(1)]),
                 ])
                 .into()])])
                 .into(),
             ),
             (
                 Algebraic::new(vec![Constructor::boxed(vec![Algebraic::new(vec![
-                    Constructor::boxed(vec![Value::Index(0).into()]),
+                    Constructor::boxed(vec![Type::Index(0)]),
                 ])
                 .into()])])
                 .into(),
                 Algebraic::new(vec![Constructor::boxed(vec![Algebraic::new(vec![
-                    Constructor::boxed(vec![Value::Index(1).into()]),
+                    Constructor::boxed(vec![Type::Index(1)]),
                 ])
                 .into()])])
                 .into(),
             ),
             (
                 Algebraic::new(vec![Constructor::boxed(vec![Function::new(
-                    vec![Primitive::Float64.into()],
-                    Value::Index(0),
+                    Primitive::Float64,
+                    Type::Index(0),
                 )
                 .into()])])
                 .into(),
                 Algebraic::new(vec![Constructor::boxed(vec![Function::new(
-                    vec![Primitive::Float64.into()],
+                    Primitive::Float64,
                     Algebraic::new(vec![Constructor::boxed(vec![Function::new(
-                        vec![Primitive::Float64.into()],
-                        Value::Index(0),
+                        Primitive::Float64,
+                        Type::Index(0),
                     )
                     .into()])]),
                 )
@@ -144,16 +132,16 @@ mod tests {
             ),
             (
                 Algebraic::new(vec![Constructor::boxed(vec![Function::new(
-                    vec![Primitive::Float64.into()],
-                    Value::Index(0),
+                    Primitive::Float64,
+                    Type::Index(0),
                 )
                 .into()])])
                 .into(),
                 Algebraic::new(vec![Constructor::boxed(vec![Function::new(
-                    vec![Primitive::Float64.into()],
+                    Primitive::Float64,
                     Algebraic::new(vec![Constructor::boxed(vec![Function::new(
-                        vec![Primitive::Float64.into()],
-                        Value::Index(1),
+                        Primitive::Float64,
+                        Type::Index(1),
                     )
                     .into()])]),
                 )
@@ -170,15 +158,15 @@ mod tests {
         for (one, other) in &[
             (
                 Primitive::Float64.into(),
-                Function::new(vec![Primitive::Float64.into()], Primitive::Float64).into(),
+                Function::new(Primitive::Float64, Primitive::Float64).into(),
             ),
             (
                 Function::new(
-                    vec![Primitive::Float64.into(), Primitive::Float64.into()],
                     Primitive::Float64,
+                    Function::new(Primitive::Float64, Primitive::Float64),
                 )
                 .into(),
-                Function::new(vec![Primitive::Float64.into()], Primitive::Float64).into(),
+                Function::new(Primitive::Float64, Primitive::Float64).into(),
             ),
             (
                 Algebraic::new(vec![Constructor::boxed(vec![Primitive::Float64.into()])]).into(),

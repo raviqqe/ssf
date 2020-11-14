@@ -46,7 +46,7 @@ impl TypeChecker {
 
         self.check_equality(
             &self.check_expression(definition.body(), &variables)?,
-            &definition.result_type().clone().into(),
+            &definition.result_type().clone(),
         )
     }
 
@@ -58,7 +58,7 @@ impl TypeChecker {
         match expression {
             Expression::Bitcast(bitcast) => {
                 self.check_expression(bitcast.expression(), variables)?;
-                Ok(bitcast.type_().clone().into())
+                Ok(bitcast.type_().clone())
             }
             Expression::Case(case) => self.check_case(case, variables),
             Expression::ConstructorApplication(constructor_application) => {
@@ -88,27 +88,16 @@ impl TypeChecker {
                     .into())
             }
             Expression::FunctionApplication(function_application) => {
-                match self.check_variable(function_application.function(), variables)? {
+                match self.check_expression(function_application.function(), variables)? {
                     Type::Function(function_type) => {
-                        if function_type.arguments().len() != function_application.arguments().len()
-                        {
-                            return Err(TypeCheckError::WrongArgumentsLength(expression.clone()));
-                        }
+                        self.check_equality(
+                            &self.check_expression(function_application.argument(), variables)?,
+                            function_type.argument(),
+                        )?;
 
-                        for (argument, expected_type) in function_application
-                            .arguments()
-                            .iter()
-                            .zip(function_type.arguments())
-                        {
-                            self.check_equality(
-                                &self.check_expression(argument, variables)?,
-                                expected_type,
-                            )?;
-                        }
-
-                        Ok(function_type.result().clone().into())
+                        Ok(function_type.result().clone())
                     }
-                    Type::Value(_) => Err(TypeCheckError::FunctionExpected(
+                    _ => Err(TypeCheckError::FunctionExpected(
                         function_application.function().clone(),
                     )),
                 }

@@ -20,8 +20,7 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 ## Features
 
 - Inference of closure environment types
-- Implicit heap allocation for closures
-  - Injectable `malloc` functions
+- Partial application
 - Optimization of algebraic data types
 - Bitcast
 - Lazy evaluation
@@ -30,8 +29,6 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 
 - Type inference
   - The IR needs to be fully-typed already.
-- Partial application
-  - All function and constructor applications need to be saturated.
 - Generics
 - Garbage collection
   - Bring your own GC.

@@ -2,20 +2,21 @@ use super::expression::Expression;
 use super::operator::Operator;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Operation {
     operator: Operator,
-    lhs: Box<Expression>,
-    rhs: Box<Expression>,
+    lhs: Arc<Expression>,
+    rhs: Arc<Expression>,
 }
 
 impl Operation {
     pub fn new(operator: Operator, lhs: impl Into<Expression>, rhs: impl Into<Expression>) -> Self {
         Self {
             operator,
-            lhs: Box::new(lhs.into()),
-            rhs: Box::new(rhs.into()),
+            lhs: Arc::new(lhs.into()),
+            rhs: Arc::new(rhs.into()),
         }
     }
 

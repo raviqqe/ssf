@@ -3,23 +3,22 @@
     "adt",
     "adts",
     "algebraics",
-    "algo",
     "alloca",
+    "arity",
     "bitcast",
     "bitcode",
     "bitcodes",
     "canonicalize",
     "canonicalizer",
+    "clippy",
     "cmpxchg",
     "codecov",
     "concat",
     "idempotently",
     "intrinsics",
-    "kosaraju",
     "llvm",
     "malloc",
-    "petgraph",
     "reloc",
-    "toposort"
+    "uncurried"
   ]
 }

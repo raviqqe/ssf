@@ -1,26 +1,42 @@
+mod closure_operation_compiler;
 mod compile_configuration;
 mod error;
 mod expression_compiler;
+mod function_application_compiler;
 mod function_compiler;
 mod instruction_compiler;
+mod malloc_compiler;
 mod module_compiler;
 mod type_compiler;
+mod utilities;
 
+use closure_operation_compiler::ClosureOperationCompiler;
 pub use compile_configuration::CompileConfiguration;
 pub use error::CompileError;
+use malloc_compiler::MallocCompiler;
 use module_compiler::ModuleCompiler;
+use std::sync::Arc;
 use type_compiler::TypeCompiler;
 
 pub fn compile(
     ir_module: &ssf::ir::Module,
-    compile_configuration: &CompileConfiguration,
+    compile_configuration: Arc<CompileConfiguration>,
 ) -> Result<Vec<u8>, CompileError> {
     let context = inkwell::context::Context::create();
-    let module = context.create_module("main");
+    let module = Arc::new(context.create_module("main"));
     let type_compiler = TypeCompiler::new(&context);
+    let closure_operation_compiler = ClosureOperationCompiler::new(&context, type_compiler.clone());
+    let malloc_compiler = MallocCompiler::new(module.clone(), compile_configuration.clone());
 
-    ModuleCompiler::new(&context, &module, &type_compiler, compile_configuration)
-        .compile(ir_module)?;
+    ModuleCompiler::new(
+        &context,
+        module.clone(),
+        type_compiler,
+        closure_operation_compiler,
+        malloc_compiler,
+        compile_configuration,
+    )
+    .compile(ir_module)?;
 
     Ok(module.write_bitcode_to_memory().as_slice().to_vec())
 }
@@ -47,7 +63,7 @@ mod tests {
     ];
 
     lazy_static! {
-        static ref COMPILE_CONFIGURATION: CompileConfiguration =
+        static ref COMPILE_CONFIGURATION: Arc<CompileConfiguration> =
             CompileConfiguration::new(None, None);
     }
 
@@ -55,7 +71,7 @@ mod tests {
     fn compile_() {
         compile(
             &ssf::ir::Module::new(vec![], vec![]).unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -82,7 +98,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &CompileConfiguration::new(Some("custom_malloc".into()), None),
+            CompileConfiguration::new(Some("custom_malloc".into()), None),
         )
         .unwrap();
     }
@@ -105,7 +121,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &CompileConfiguration::new(None, Some("panic".into())),
+            CompileConfiguration::new(None, Some("panic".into())),
         )
         .unwrap();
     }
@@ -132,7 +148,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -141,7 +157,7 @@ mod tests {
     fn compile_recursive_field_access_of_algebraic_types() {
         let algebraic_type =
             ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
-                ssf::types::Value::Index(0).into(),
+                ssf::types::Type::Index(0),
             ])]);
 
         compile(
@@ -164,7 +180,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -173,7 +189,7 @@ mod tests {
     fn compile_constructor_applications_of_recursive_algebraic_types() {
         let algebraic_type =
             ssf::types::Algebraic::new(vec![ssf::types::Constructor::boxed(vec![
-                ssf::types::Value::Index(0).into(),
+                ssf::types::Type::Index(0),
             ])]);
 
         compile(
@@ -190,7 +206,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -223,7 +239,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -265,7 +281,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -307,7 +323,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -325,7 +341,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -345,16 +361,13 @@ mod tests {
                     ssf::ir::Definition::new(
                         "g",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                        ssf::ir::FunctionApplication::new(
-                            ssf::ir::Variable::new("f"),
-                            vec![42.0.into()],
-                        ),
+                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("f"), 42.0),
                         ssf::types::Primitive::Float64,
                     ),
                 ],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -373,7 +386,7 @@ mod tests {
                     )],
                 )
                 .unwrap(),
-                &COMPILE_CONFIGURATION,
+                COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
         }
@@ -393,7 +406,7 @@ mod tests {
                     )],
                 )
                 .unwrap(),
-                &COMPILE_CONFIGURATION,
+                COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
         }
@@ -413,7 +426,7 @@ mod tests {
                     )],
                 )
                 .unwrap(),
-                &COMPILE_CONFIGURATION,
+                COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
         }
@@ -433,7 +446,7 @@ mod tests {
                     )],
                 )
                 .unwrap(),
-                &COMPILE_CONFIGURATION,
+                COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
         }
@@ -465,7 +478,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &CompileConfiguration::new(None, Some("panic".into())),
+            CompileConfiguration::new(None, Some("panic".into())),
         )
         .unwrap();
     }
@@ -496,7 +509,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &CompileConfiguration::new(None, Some("panic".into())),
+            CompileConfiguration::new(None, Some("panic".into())),
         )
         .unwrap();
     }
@@ -508,13 +521,13 @@ mod tests {
                 vec![],
                 vec![ssf::ir::Definition::new(
                     "f",
-                    vec![],
+                    vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
                     42.0,
                     ssf::types::Primitive::Float64,
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -525,17 +538,22 @@ mod tests {
             &ssf::ir::Module::new(
                 vec![],
                 vec![
-                    ssf::ir::Definition::thunk("f", vec![], 42.0, ssf::types::Primitive::Float64),
+                    ssf::ir::Definition::thunk(
+                        "f",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        42.0,
+                        ssf::types::Primitive::Float64,
+                    ),
                     ssf::ir::Definition::new(
                         "g",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("f"), vec![]),
+                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("f"), 42.0),
                         ssf::types::Primitive::Float64,
                     ),
                 ],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -555,16 +573,13 @@ mod tests {
                     ssf::ir::Definition::new(
                         "g",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                        ssf::ir::FunctionApplication::new(
-                            ssf::ir::Variable::new("f"),
-                            vec![42.0.into()],
-                        ),
+                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("f"), 42.0),
                         ssf::types::Primitive::Float64,
                     ),
                 ],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -578,19 +593,19 @@ mod tests {
                     "f",
                     vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
                     ssf::ir::LetRecursive::new(
-                        vec![ssf::ir::Definition::new(
+                        vec![ssf::ir::Definition::thunk(
                             "g",
-                            vec![],
+                            vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
                             ssf::ir::Variable::new("x"),
                             ssf::types::Primitive::Float64,
                         )],
-                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("g"), vec![]),
+                        ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("g"), 42.0),
                     ),
                     ssf::types::Primitive::Float64,
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -616,7 +631,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -649,7 +664,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -675,7 +690,7 @@ mod tests {
                                     )],
                                     ssf::ir::FunctionApplication::new(
                                         ssf::ir::Variable::new("f"),
-                                        vec![42.0.into()],
+                                        42.0,
                                     ),
                                     ssf::types::Primitive::Float64,
                                 )],
@@ -689,8 +704,119 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
+    }
+
+    mod partial_application {
+        use super::*;
+
+        #[test]
+        fn compile_with_1_argument_and_2_arity() {
+            compile(
+                &ssf::ir::Module::new(
+                    vec![],
+                    vec![
+                        ssf::ir::Definition::new(
+                            "f",
+                            vec![
+                                ssf::ir::Argument::new("x", ssf::types::Primitive::Float64),
+                                ssf::ir::Argument::new("y", ssf::types::Primitive::Float64),
+                            ],
+                            42.0,
+                            ssf::types::Primitive::Float64,
+                        ),
+                        ssf::ir::Definition::new(
+                            "g",
+                            vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                            ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("f"), 42.0),
+                            ssf::types::Function::new(
+                                ssf::types::Primitive::Float64,
+                                ssf::types::Primitive::Float64,
+                            ),
+                        ),
+                    ],
+                )
+                .unwrap(),
+                COMPILE_CONFIGURATION.clone(),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        fn compile_with_1_argument_and_3_arity() {
+            compile(
+                &ssf::ir::Module::new(
+                    vec![],
+                    vec![
+                        ssf::ir::Definition::new(
+                            "f",
+                            vec![
+                                ssf::ir::Argument::new("x", ssf::types::Primitive::Float64),
+                                ssf::ir::Argument::new("y", ssf::types::Primitive::Float64),
+                                ssf::ir::Argument::new("z", ssf::types::Primitive::Float64),
+                            ],
+                            42.0,
+                            ssf::types::Primitive::Float64,
+                        ),
+                        ssf::ir::Definition::new(
+                            "g",
+                            vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                            ssf::ir::FunctionApplication::new(ssf::ir::Variable::new("f"), 42.0),
+                            ssf::types::Function::new(
+                                ssf::types::Primitive::Float64,
+                                ssf::types::Function::new(
+                                    ssf::types::Primitive::Float64,
+                                    ssf::types::Primitive::Float64,
+                                ),
+                            ),
+                        ),
+                    ],
+                )
+                .unwrap(),
+                COMPILE_CONFIGURATION.clone(),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        fn compile_with_2_argument_and_3_arity() {
+            compile(
+                &ssf::ir::Module::new(
+                    vec![],
+                    vec![
+                        ssf::ir::Definition::new(
+                            "f",
+                            vec![
+                                ssf::ir::Argument::new("x", ssf::types::Primitive::Float64),
+                                ssf::ir::Argument::new("y", ssf::types::Primitive::Float64),
+                                ssf::ir::Argument::new("z", ssf::types::Primitive::Float64),
+                            ],
+                            42.0,
+                            ssf::types::Primitive::Float64,
+                        ),
+                        ssf::ir::Definition::new(
+                            "g",
+                            vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                            ssf::ir::FunctionApplication::new(
+                                ssf::ir::FunctionApplication::new(
+                                    ssf::ir::Variable::new("f"),
+                                    42.0,
+                                ),
+                                42.0,
+                            ),
+                            ssf::types::Function::new(
+                                ssf::types::Primitive::Float64,
+                                ssf::types::Primitive::Float64,
+                            ),
+                        ),
+                    ],
+                )
+                .unwrap(),
+                COMPILE_CONFIGURATION.clone(),
+            )
+            .unwrap();
+        }
     }
 }

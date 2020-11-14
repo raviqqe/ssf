@@ -3,11 +3,12 @@ use super::expression::Expression;
 use super::primitive_alternative::PrimitiveAlternative;
 use crate::types::{self, Type};
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PrimitiveCase {
     type_: types::Primitive,
-    argument: Box<Expression>,
+    argument: Arc<Expression>,
     alternatives: Vec<PrimitiveAlternative>,
     default_alternative: Option<DefaultAlternative>,
 }
@@ -21,7 +22,7 @@ impl PrimitiveCase {
     ) -> Self {
         Self {
             type_,
-            argument: Box::new(argument.into()),
+            argument: Arc::new(argument.into()),
             alternatives,
             default_alternative,
         }
@@ -94,8 +95,6 @@ impl PrimitiveCase {
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         Self {
             type_: convert(&self.type_.clone().into())
-                .into_value()
-                .unwrap()
                 .into_primitive()
                 .unwrap(),
             argument: self.argument.convert_types(convert).into(),

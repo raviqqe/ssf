@@ -1,36 +1,50 @@
+use super::closure_operation_compiler::ClosureOperationCompiler;
 use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
+use super::function_application_compiler::FunctionApplicationCompiler;
 use super::function_compiler::FunctionCompiler;
-use super::instruction_compiler::InstructionCompiler;
+use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
 use std::collections::HashMap;
+use std::sync::Arc;
 
-pub struct ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
+pub struct ExpressionCompiler<'c> {
     context: &'c inkwell::context::Context,
-    module: &'m inkwell::module::Module<'c>,
-    builder: &'b inkwell::builder::Builder<'c>,
-    function_compiler: &'f FunctionCompiler<'c, 'm, 't, 'v>,
-    type_compiler: &'t TypeCompiler<'c>,
-    compile_configuration: &'m CompileConfiguration,
+    module: Arc<inkwell::module::Module<'c>>,
+    builder: Arc<inkwell::builder::Builder<'c>>,
+    function_compiler: Arc<FunctionCompiler<'c>>,
+    function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
+    type_compiler: Arc<TypeCompiler<'c>>,
+    closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
+    malloc_compiler: Arc<MallocCompiler<'c>>,
+    compile_configuration: Arc<CompileConfiguration>,
 }
 
-impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
+impl<'c> ExpressionCompiler<'c> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         context: &'c inkwell::context::Context,
-        module: &'m inkwell::module::Module<'c>,
-        builder: &'b inkwell::builder::Builder<'c>,
-        function_compiler: &'f FunctionCompiler<'c, 'm, 't, 'v>,
-        type_compiler: &'t TypeCompiler<'c>,
-        compile_configuration: &'m CompileConfiguration,
-    ) -> Self {
+        module: Arc<inkwell::module::Module<'c>>,
+        builder: Arc<inkwell::builder::Builder<'c>>,
+        function_compiler: Arc<FunctionCompiler<'c>>,
+        function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
+        type_compiler: Arc<TypeCompiler<'c>>,
+        closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
+        malloc_compiler: Arc<MallocCompiler<'c>>,
+        compile_configuration: Arc<CompileConfiguration>,
+    ) -> Arc<Self> {
         Self {
             context,
             module,
             builder,
             function_compiler,
+            function_application_compiler,
             type_compiler,
+            closure_operation_compiler,
+            malloc_compiler,
             compile_configuration,
         }
+        .into()
     }
 
     pub fn compile(
@@ -41,7 +55,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         match expression {
             ssf::ir::Expression::Bitcast(bitcast) => Ok(self.builder.build_bitcast(
                 self.compile(bitcast.expression(), variables)?,
-                self.type_compiler.compile_value(bitcast.type_()),
+                self.type_compiler.compile(bitcast.type_()),
                 "",
             )),
             ssf::ir::Expression::Case(case) => self.compile_case(case, variables),
@@ -62,7 +76,9 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                         .builder
                         .build_insert_value(
                             algebraic_value,
-                            self.context.i64_type().const_int(constructor.tag(), false),
+                            self.type_compiler
+                                .compile_tag()
+                                .const_int(constructor.tag(), false),
                             0,
                             "",
                         )
@@ -91,7 +107,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
                     let constructor_value: inkwell::values::BasicValueEnum<'c> =
                         if constructor.constructor_type().is_boxed() {
-                            let constructor_pointer = self.compile_struct_malloc(constructor_type);
+                            let constructor_pointer = self.compile_malloc(constructor_type);
 
                             self.builder
                                 .build_store(constructor_pointer, constructor_value);
@@ -134,65 +150,24 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 Ok(self.builder.build_load(algebraic_pointer, ""))
             }
             ssf::ir::Expression::FunctionApplication(function_application) => {
-                let closure = self
-                    .compile_variable(function_application.function(), variables)?
-                    .into_pointer_value();
-
-                let mut arguments = vec![self.builder.build_bitcast(
-                    unsafe {
-                        self.builder.build_gep(
-                            closure,
-                            &[
-                                self.context.i32_type().const_int(0, false),
-                                self.context.i32_type().const_int(1, false),
-                            ],
-                            "",
-                        )
-                    },
-                    self.type_compiler
-                        .compile_unsized_environment()
-                        .ptr_type(inkwell::AddressSpace::Generic),
-                    "",
-                )];
-
-                for argument in function_application.arguments() {
-                    arguments.push(self.compile(argument, variables)?);
-                }
-
-                let entry_pointer = unsafe {
-                    self.builder.build_gep(
-                        closure,
-                        &[
-                            self.context.i32_type().const_int(0, false),
-                            self.context.i32_type().const_int(0, false),
-                        ],
-                        "",
-                    )
-                };
-
-                // Entry functions of thunks need to be loaded atomically
-                // to make thunk update thread-safe.
-                // TODO Use load instructions for normal functions.
-                Ok(self
-                    .builder
-                    .build_call(
-                        InstructionCompiler::compile_atomic_load(&self.builder, entry_pointer)
-                            .into_pointer_value(),
-                        &arguments,
-                        "",
-                    )
-                    .try_as_basic_value()
-                    .left()
-                    .unwrap())
+                self.function_application_compiler.compile(
+                    self.builder.clone(),
+                    self.compile(function_application.first_function(), variables)?
+                        .into_pointer_value(),
+                    &function_application
+                        .arguments()
+                        .into_iter()
+                        .map(|argument| self.compile(argument, variables))
+                        .collect::<Result<Vec<_>, _>>()?,
+                )
             }
             ssf::ir::Expression::LetRecursive(let_recursive) => {
                 let mut variables = variables.clone();
                 let mut closures = HashMap::<&str, inkwell::values::PointerValue>::new();
 
                 for definition in let_recursive.definitions() {
-                    let pointer = self.compile_struct_malloc(
-                        self.type_compiler.compile_sized_closure(definition),
-                    );
+                    let pointer =
+                        self.compile_malloc(self.type_compiler.compile_sized_closure(definition));
 
                     variables.insert(
                         definition.name().into(),
@@ -210,69 +185,21 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                 for definition in let_recursive.definitions() {
                     let closure = closures[definition.name()];
 
-                    self.builder.build_store(
-                        unsafe {
-                            self.builder.build_gep(
-                                closure,
-                                &[
-                                    self.context.i32_type().const_int(0, false),
-                                    self.context.i32_type().const_int(0, false),
-                                ],
-                                "",
-                            )
-                        },
-                        self.function_compiler
-                            .compile(definition)?
-                            .as_global_value()
-                            .as_pointer_value(),
-                    );
-
-                    let environment = self
-                        .builder
-                        .build_bitcast(
-                            unsafe {
-                                self.builder.build_gep(
-                                    closure,
-                                    &[
-                                        self.context.i32_type().const_int(0, false),
-                                        self.context.i32_type().const_int(1, false),
-                                    ],
-                                    "",
-                                )
-                            },
-                            self.type_compiler
-                                .compile_environment(definition)
-                                .ptr_type(inkwell::AddressSpace::Generic),
-                            "",
-                        )
-                        .into_pointer_value();
-
-                    for (index, &&value) in definition
-                        .environment()
-                        .iter()
-                        .map(|argument| {
-                            variables.get(argument.name()).ok_or_else(|| {
-                                CompileError::VariableNotFound(argument.name().into())
-                            })
-                        })
-                        .collect::<Result<Vec<_>, _>>()?
-                        .iter()
-                        .enumerate()
-                    {
-                        self.builder.build_store(
-                            unsafe {
-                                self.builder.build_gep(
-                                    environment,
-                                    &[
-                                        self.context.i32_type().const_int(0, false),
-                                        self.context.i32_type().const_int(index as u64, false),
-                                    ],
-                                    "",
-                                )
-                            },
-                            value,
-                        );
-                    }
+                    self.closure_operation_compiler
+                        .compile_store_closure_content(
+                            self.builder.clone(),
+                            closure,
+                            self.function_compiler.compile(definition)?,
+                            &definition
+                                .environment()
+                                .iter()
+                                .map(|argument| {
+                                    variables.get(argument.name()).copied().ok_or_else(|| {
+                                        CompileError::VariableNotFound(argument.name().into())
+                                    })
+                                })
+                                .collect::<Result<Vec<_>, _>>()?,
+                        )?;
                 }
 
                 self.compile(let_recursive.expression(), &variables)
@@ -410,7 +337,7 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
 
                 let tag = if algebraic_case.type_().is_singleton() {
                     // Set a dummy tag value of 0.
-                    self.context.i64_type().const_int(0, false)
+                    self.type_compiler.compile_tag().const_int(0, false)
                 } else {
                     self.builder
                         .build_extract_value(argument, 0, "")
@@ -483,7 +410,9 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
                     let expression = self.compile(alternative.expression(), &variables)?;
 
                     cases.push((
-                        self.context.i64_type().const_int(constructor.tag(), false),
+                        self.type_compiler
+                            .compile_tag()
+                            .const_int(constructor.tag(), false),
                         block,
                         self.builder.get_insert_block().unwrap(),
                         expression,
@@ -687,27 +616,12 @@ impl<'c, 'm, 'b, 'f, 't, 'v> ExpressionCompiler<'c, 'm, 'b, 'f, 't, 'v> {
         )
     }
 
-    fn compile_struct_malloc(
+    fn compile_malloc(
         &self,
         type_: inkwell::types::StructType<'c>,
     ) -> inkwell::values::PointerValue<'c> {
-        self.builder
-            .build_bitcast(
-                self.builder
-                    .build_call(
-                        self.module
-                            .get_function(self.compile_configuration.malloc_function_name())
-                            .unwrap(),
-                        &[type_.size_of().unwrap().into()],
-                        "",
-                    )
-                    .try_as_basic_value()
-                    .left()
-                    .unwrap(),
-                type_.ptr_type(inkwell::AddressSpace::Generic),
-                "",
-            )
-            .into_pointer_value()
+        self.malloc_compiler
+            .compile_struct_malloc(self.builder.clone(), type_)
     }
 
     fn compile_unreachable(&self) {
@@ -729,8 +643,72 @@ mod tests {
     use lazy_static::lazy_static;
 
     lazy_static! {
-        static ref COMPILE_CONFIGURATION: CompileConfiguration =
+        static ref COMPILE_CONFIGURATION: Arc<CompileConfiguration> =
             CompileConfiguration::new(None, None);
+    }
+
+    fn create_expression_compiler(
+        context: &inkwell::context::Context,
+    ) -> (
+        Arc<ExpressionCompiler>,
+        Arc<TypeCompiler>,
+        Arc<inkwell::builder::Builder>,
+        Arc<inkwell::module::Module>,
+        inkwell::values::FunctionValue,
+    ) {
+        let module = Arc::new(context.create_module(""));
+
+        module.add_function(
+            COMPILE_CONFIGURATION.malloc_function_name(),
+            context
+                .i8_type()
+                .ptr_type(inkwell::AddressSpace::Generic)
+                .fn_type(&[context.i64_type().into()], false),
+            None,
+        );
+
+        let function = module.add_function("", context.void_type().fn_type(&[], false), None);
+        let builder = Arc::new(context.create_builder());
+        builder.position_at_end(context.append_basic_block(function, "entry"));
+
+        let type_compiler = TypeCompiler::new(&context);
+        let closure_operation_compiler =
+            ClosureOperationCompiler::new(context, type_compiler.clone());
+        let malloc_compiler = MallocCompiler::new(module.clone(), COMPILE_CONFIGURATION.clone());
+        let function_application_compiler = FunctionApplicationCompiler::new(
+            &context,
+            module.clone(),
+            type_compiler.clone(),
+            closure_operation_compiler.clone(),
+            malloc_compiler.clone(),
+        );
+
+        (
+            ExpressionCompiler::new(
+                &context,
+                module.clone(),
+                builder.clone(),
+                FunctionCompiler::new(
+                    &context,
+                    module.clone(),
+                    function_application_compiler.clone(),
+                    type_compiler.clone(),
+                    closure_operation_compiler.clone(),
+                    malloc_compiler.clone(),
+                    HashMap::new(),
+                    COMPILE_CONFIGURATION.clone(),
+                ),
+                function_application_compiler.clone(),
+                type_compiler.clone(),
+                closure_operation_compiler.clone(),
+                malloc_compiler.clone(),
+                COMPILE_CONFIGURATION.clone(),
+            ),
+            type_compiler,
+            builder,
+            module,
+            function,
+        )
     }
 
     mod case_expressions {
@@ -809,41 +787,24 @@ mod tests {
                     ),
                 ] {
                     let context = inkwell::context::Context::create();
-                    let type_compiler = TypeCompiler::new(&context);
-                    let module = context.create_module("");
-                    let function =
-                        module.add_function("", context.void_type().fn_type(&[], false), None);
-                    let builder = context.create_builder();
-                    builder.position_at_end(context.append_basic_block(function, "entry"));
+                    let (expression_compiler, type_compiler, builder, module, function) =
+                        create_expression_compiler(&context);
 
-                    ExpressionCompiler::new(
-                        &context,
-                        &module,
-                        &builder,
-                        &FunctionCompiler::new(
-                            &context,
-                            &module,
-                            &type_compiler,
-                            &HashMap::new(),
-                            &COMPILE_CONFIGURATION,
-                        ),
-                        &type_compiler,
-                        &COMPILE_CONFIGURATION,
-                    )
-                    .compile(
-                        &algebraic_case.into(),
-                        &vec![(
-                            "x".into(),
-                            type_compiler
-                                .compile_value(&algebraic_type.clone().into())
-                                .into_struct_type()
-                                .get_undef()
-                                .into(),
-                        )]
-                        .drain(..)
-                        .collect(),
-                    )
-                    .unwrap();
+                    expression_compiler
+                        .compile(
+                            &algebraic_case.into(),
+                            &vec![(
+                                "x".into(),
+                                type_compiler
+                                    .compile(&algebraic_type.clone().into())
+                                    .into_struct_type()
+                                    .get_undef()
+                                    .into(),
+                            )]
+                            .drain(..)
+                            .collect(),
+                        )
+                        .unwrap();
 
                     builder.build_return(None);
 
@@ -886,41 +847,24 @@ mod tests {
                     ),
                 ] {
                     let context = inkwell::context::Context::create();
-                    let type_compiler = TypeCompiler::new(&context);
-                    let module = context.create_module("");
-                    let function =
-                        module.add_function("", context.void_type().fn_type(&[], false), None);
-                    let builder = context.create_builder();
-                    builder.position_at_end(context.append_basic_block(function, "entry"));
+                    let (expression_compiler, type_compiler, builder, module, function) =
+                        create_expression_compiler(&context);
 
-                    ExpressionCompiler::new(
-                        &context,
-                        &module,
-                        &builder,
-                        &FunctionCompiler::new(
-                            &context,
-                            &module,
-                            &type_compiler,
-                            &HashMap::new(),
-                            &COMPILE_CONFIGURATION,
-                        ),
-                        &type_compiler,
-                        &COMPILE_CONFIGURATION,
-                    )
-                    .compile(
-                        &algebraic_case.into(),
-                        &vec![(
-                            "x".into(),
-                            type_compiler
-                                .compile_value(&algebraic_type.clone().into())
-                                .into_struct_type()
-                                .get_undef()
-                                .into(),
-                        )]
-                        .drain(..)
-                        .collect(),
-                    )
-                    .unwrap();
+                    expression_compiler
+                        .compile(
+                            &algebraic_case.into(),
+                            &vec![(
+                                "x".into(),
+                                type_compiler
+                                    .compile(&algebraic_type.clone().into())
+                                    .into_struct_type()
+                                    .get_undef()
+                                    .into(),
+                            )]
+                            .drain(..)
+                            .collect(),
+                        )
+                        .unwrap();
 
                     builder.build_return(None);
 
@@ -999,41 +943,24 @@ mod tests {
                     ),
                 ] {
                     let context = inkwell::context::Context::create();
-                    let type_compiler = TypeCompiler::new(&context);
-                    let module = context.create_module("");
-                    let function =
-                        module.add_function("", context.void_type().fn_type(&[], false), None);
-                    let builder = context.create_builder();
-                    builder.position_at_end(context.append_basic_block(function, "entry"));
+                    let (expression_compiler, type_compiler, builder, module, function) =
+                        create_expression_compiler(&context);
 
-                    ExpressionCompiler::new(
-                        &context,
-                        &module,
-                        &builder,
-                        &FunctionCompiler::new(
-                            &context,
-                            &module,
-                            &type_compiler,
-                            &HashMap::new(),
-                            &COMPILE_CONFIGURATION,
-                        ),
-                        &type_compiler,
-                        &COMPILE_CONFIGURATION,
-                    )
-                    .compile(
-                        &algebraic_case.into(),
-                        &vec![(
-                            "x".into(),
-                            type_compiler
-                                .compile_value(&algebraic_type.clone().into())
-                                .into_struct_type()
-                                .get_undef()
-                                .into(),
-                        )]
-                        .drain(..)
-                        .collect(),
-                    )
-                    .unwrap();
+                    expression_compiler
+                        .compile(
+                            &algebraic_case.into(),
+                            &vec![(
+                                "x".into(),
+                                type_compiler
+                                    .compile(&algebraic_type.clone().into())
+                                    .into_struct_type()
+                                    .get_undef()
+                                    .into(),
+                            )]
+                            .drain(..)
+                            .collect(),
+                        )
+                        .unwrap();
 
                     builder.build_return(None);
 
@@ -1051,25 +978,25 @@ mod tests {
                 for primitive_case in vec![
                     ssf::ir::PrimitiveCase::new(
                         ssf::types::Primitive::Integer64,
-                        ssf::ir::Variable::new("x"),
+                        ssf::ir::Primitive::Integer64(42),
                         vec![],
                         Some(ssf::ir::DefaultAlternative::new("x", 42)),
                     ),
                     ssf::ir::PrimitiveCase::new(
                         ssf::types::Primitive::Integer64,
-                        ssf::ir::Variable::new("x"),
+                        ssf::ir::Primitive::Integer64(42),
                         vec![ssf::ir::PrimitiveAlternative::new(0, 42)],
                         None,
                     ),
                     ssf::ir::PrimitiveCase::new(
                         ssf::types::Primitive::Integer64,
-                        ssf::ir::Variable::new("x"),
+                        ssf::ir::Primitive::Integer64(42),
                         vec![ssf::ir::PrimitiveAlternative::new(0, 42)],
                         Some(ssf::ir::DefaultAlternative::new("x", 42)),
                     ),
                     ssf::ir::PrimitiveCase::new(
                         ssf::types::Primitive::Integer64,
-                        ssf::ir::Variable::new("x"),
+                        ssf::ir::Primitive::Integer64(42),
                         vec![
                             ssf::ir::PrimitiveAlternative::new(0, 42),
                             ssf::ir::PrimitiveAlternative::new(1, 42),
@@ -1078,7 +1005,7 @@ mod tests {
                     ),
                     ssf::ir::PrimitiveCase::new(
                         ssf::types::Primitive::Integer64,
-                        ssf::ir::Variable::new("x"),
+                        ssf::ir::Primitive::Integer64(42),
                         vec![
                             ssf::ir::PrimitiveAlternative::new(0, 42),
                             ssf::ir::PrimitiveAlternative::new(1, 42),
@@ -1087,43 +1014,14 @@ mod tests {
                     ),
                 ] {
                     let context = inkwell::context::Context::create();
-                    let type_compiler = TypeCompiler::new(&context);
-                    let module = context.create_module("");
-                    let function = module.add_function(
-                        "",
-                        context.i64_type().fn_type(
-                            &[type_compiler
-                                .compile_value(&ssf::types::Primitive::Integer64.into())],
-                            false,
-                        ),
-                        None,
-                    );
-                    let builder = context.create_builder();
-                    builder.position_at_end(context.append_basic_block(function, "entry"));
+                    let (expression_compiler, _, builder, module, function) =
+                        create_expression_compiler(&context);
 
-                    builder.build_return(Some(
-                        &ExpressionCompiler::new(
-                            &context,
-                            &module,
-                            &builder,
-                            &FunctionCompiler::new(
-                                &context,
-                                &module,
-                                &type_compiler,
-                                &HashMap::new(),
-                                &COMPILE_CONFIGURATION,
-                            ),
-                            &type_compiler,
-                            &COMPILE_CONFIGURATION,
-                        )
-                        .compile(
-                            &primitive_case.into(),
-                            &vec![("x".into(), function.get_params()[0])]
-                                .drain(..)
-                                .collect(),
-                        )
-                        .unwrap(),
-                    ));
+                    expression_compiler
+                        .compile(&primitive_case.into(), &Default::default())
+                        .unwrap();
+
+                    builder.build_return(None);
 
                     assert!(function.verify(true));
                     assert!(module.verify().is_ok());
@@ -1135,25 +1033,25 @@ mod tests {
                 for primitive_case in vec![
                     ssf::ir::PrimitiveCase::new(
                         ssf::types::Primitive::Float64,
-                        ssf::ir::Variable::new("x"),
+                        ssf::ir::Primitive::Float64(42.0),
                         vec![],
                         Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
                     ),
                     ssf::ir::PrimitiveCase::new(
                         ssf::types::Primitive::Float64,
-                        ssf::ir::Variable::new("x"),
+                        ssf::ir::Primitive::Float64(42.0),
                         vec![ssf::ir::PrimitiveAlternative::new(0.0, 42.0)],
                         None,
                     ),
                     ssf::ir::PrimitiveCase::new(
                         ssf::types::Primitive::Float64,
-                        ssf::ir::Variable::new("x"),
+                        ssf::ir::Primitive::Float64(42.0),
                         vec![ssf::ir::PrimitiveAlternative::new(0.0, 42.0)],
                         Some(ssf::ir::DefaultAlternative::new("x", 42.0)),
                     ),
                     ssf::ir::PrimitiveCase::new(
                         ssf::types::Primitive::Float64,
-                        ssf::ir::Variable::new("x"),
+                        ssf::ir::Primitive::Float64(42.0),
                         vec![
                             ssf::ir::PrimitiveAlternative::new(0.0, 42.0),
                             ssf::ir::PrimitiveAlternative::new(1.0, 42.0),
@@ -1162,7 +1060,7 @@ mod tests {
                     ),
                     ssf::ir::PrimitiveCase::new(
                         ssf::types::Primitive::Float64,
-                        ssf::ir::Variable::new("x"),
+                        ssf::ir::Primitive::Float64(42.0),
                         vec![
                             ssf::ir::PrimitiveAlternative::new(0.0, 42.0),
                             ssf::ir::PrimitiveAlternative::new(1.0, 42.0),
@@ -1171,42 +1069,14 @@ mod tests {
                     ),
                 ] {
                     let context = inkwell::context::Context::create();
-                    let type_compiler = TypeCompiler::new(&context);
-                    let module = context.create_module("");
-                    let function = module.add_function(
-                        "",
-                        context.f64_type().fn_type(
-                            &[type_compiler.compile_value(&ssf::types::Primitive::Float64.into())],
-                            false,
-                        ),
-                        None,
-                    );
-                    let builder = context.create_builder();
-                    builder.position_at_end(context.append_basic_block(function, "entry"));
+                    let (expression_compiler, _, builder, module, function) =
+                        create_expression_compiler(&context);
 
-                    builder.build_return(Some(
-                        &ExpressionCompiler::new(
-                            &context,
-                            &module,
-                            &builder,
-                            &FunctionCompiler::new(
-                                &context,
-                                &module,
-                                &type_compiler,
-                                &HashMap::new(),
-                                &COMPILE_CONFIGURATION,
-                            ),
-                            &type_compiler,
-                            &COMPILE_CONFIGURATION,
-                        )
-                        .compile(
-                            &primitive_case.into(),
-                            &vec![("x".into(), function.get_params()[0])]
-                                .drain(..)
-                                .collect(),
-                        )
-                        .unwrap(),
-                    ));
+                    expression_compiler
+                        .compile(&primitive_case.into(), &Default::default())
+                        .unwrap();
+
+                    builder.build_return(None);
 
                     assert!(function.verify(true));
                     assert!(module.verify().is_ok());
@@ -1231,51 +1101,19 @@ mod tests {
                     vec![],
                 ),
                 ssf::ir::ConstructorApplication::new(
-                    ssf::ir::Constructor::new(algebraic_type.clone(), 1),
+                    ssf::ir::Constructor::new(algebraic_type, 1),
                     vec![42.0.into()],
                 ),
             ] {
                 let context = inkwell::context::Context::create();
-                let type_compiler = TypeCompiler::new(&context);
-                let module = context.create_module("");
+                let (expression_compiler, _, builder, module, function) =
+                    create_expression_compiler(&context);
 
-                module.add_function(
-                    COMPILE_CONFIGURATION.malloc_function_name(),
-                    context
-                        .i8_type()
-                        .ptr_type(inkwell::AddressSpace::Generic)
-                        .fn_type(&[context.i64_type().into()], false),
-                    None,
-                );
-
-                let function = module.add_function(
-                    "",
-                    type_compiler
-                        .compile_algebraic(&algebraic_type, None)
-                        .fn_type(&[], false),
-                    None,
-                );
-                let builder = context.create_builder();
-                builder.position_at_end(context.append_basic_block(function, "entry"));
-
-                builder.build_return(Some(
-                    &ExpressionCompiler::new(
-                        &context,
-                        &module,
-                        &builder,
-                        &FunctionCompiler::new(
-                            &context,
-                            &module,
-                            &type_compiler,
-                            &HashMap::new(),
-                            &COMPILE_CONFIGURATION,
-                        ),
-                        &type_compiler,
-                        &COMPILE_CONFIGURATION,
-                    )
+                expression_compiler
                     .compile(&constructor_application.into(), &HashMap::new())
-                    .unwrap(),
-                ));
+                    .unwrap();
+
+                builder.build_return(None);
 
                 assert!(function.verify(true));
                 assert!(module.verify().is_ok());
@@ -1295,51 +1133,19 @@ mod tests {
                     vec![],
                 ),
                 ssf::ir::ConstructorApplication::new(
-                    ssf::ir::Constructor::new(algebraic_type.clone(), 1),
+                    ssf::ir::Constructor::new(algebraic_type, 1),
                     vec![42.0.into()],
                 ),
             ] {
                 let context = inkwell::context::Context::create();
-                let type_compiler = TypeCompiler::new(&context);
-                let module = context.create_module("");
+                let (expression_compiler, _, builder, module, function) =
+                    create_expression_compiler(&context);
 
-                module.add_function(
-                    COMPILE_CONFIGURATION.malloc_function_name(),
-                    context
-                        .i8_type()
-                        .ptr_type(inkwell::AddressSpace::Generic)
-                        .fn_type(&[context.i64_type().into()], false),
-                    None,
-                );
-
-                let function = module.add_function(
-                    "",
-                    type_compiler
-                        .compile_algebraic(&algebraic_type, None)
-                        .fn_type(&[], false),
-                    None,
-                );
-                let builder = context.create_builder();
-                builder.position_at_end(context.append_basic_block(function, "entry"));
-
-                builder.build_return(Some(
-                    &ExpressionCompiler::new(
-                        &context,
-                        &module,
-                        &builder,
-                        &FunctionCompiler::new(
-                            &context,
-                            &module,
-                            &type_compiler,
-                            &HashMap::new(),
-                            &COMPILE_CONFIGURATION,
-                        ),
-                        &type_compiler,
-                        &COMPILE_CONFIGURATION,
-                    )
+                expression_compiler
                     .compile(&constructor_application.into(), &HashMap::new())
-                    .unwrap(),
-                ));
+                    .unwrap();
+
+                builder.build_return(None);
 
                 assert!(function.verify(true));
                 assert!(module.verify().is_ok());

@@ -12,27 +12,12 @@ impl<'a> TypeCanonicalizer<'a> {
 
     pub fn canonicalize(&self, type_: &Type) -> Type {
         match type_ {
-            Type::Value(value_type) => self.canonicalize_value_type(value_type).into(),
-            Type::Function(function) => Function::new(
-                function
-                    .arguments()
-                    .iter()
-                    .map(|argument| self.canonicalize(argument))
-                    .collect(),
-                self.canonicalize_value_type(function.result()),
-            )
-            .into(),
-        }
-    }
-
-    fn canonicalize_value_type(&self, type_: &Value) -> Value {
-        match type_ {
-            Value::Algebraic(algebraic) => {
+            Type::Algebraic(algebraic) => {
                 for (index, parent_type) in self.types.iter().enumerate() {
                     if TypeEqualityChecker::new(&self.types)
                         .equal_algebraics(algebraic, parent_type)
                     {
-                        return Value::Index(index);
+                        return Type::Index(index);
                     }
                 }
 
@@ -59,6 +44,11 @@ impl<'a> TypeCanonicalizer<'a> {
                 )
                 .into()
             }
+            Type::Function(function) => Function::new(
+                self.canonicalize(function.argument()),
+                self.canonicalize(function.result()),
+            )
+            .into(),
             _ => type_.clone(),
         }
     }

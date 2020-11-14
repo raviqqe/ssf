@@ -1,40 +1,56 @@
+use super::closure_operation_compiler::ClosureOperationCompiler;
 use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::expression_compiler::ExpressionCompiler;
+use super::function_application_compiler::FunctionApplicationCompiler;
 use super::instruction_compiler::InstructionCompiler;
+use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
 use inkwell::types::BasicType;
 use std::collections::HashMap;
+use std::sync::Arc;
 
-pub struct FunctionCompiler<'c, 'm, 't, 'v> {
+#[derive(Clone)]
+pub struct FunctionCompiler<'c> {
     context: &'c inkwell::context::Context,
-    module: &'m inkwell::module::Module<'c>,
-    type_compiler: &'t TypeCompiler<'c>,
-    global_variables: &'v HashMap<String, inkwell::values::GlobalValue<'c>>,
-    compile_configuration: &'c CompileConfiguration,
+    module: Arc<inkwell::module::Module<'c>>,
+    function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
+    type_compiler: Arc<TypeCompiler<'c>>,
+    closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
+    malloc_compiler: Arc<MallocCompiler<'c>>,
+    global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
+    compile_configuration: Arc<CompileConfiguration>,
 }
 
-impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
+impl<'c> FunctionCompiler<'c> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         context: &'c inkwell::context::Context,
-        module: &'m inkwell::module::Module<'c>,
-        type_compiler: &'t TypeCompiler<'c>,
-        global_variables: &'v HashMap<String, inkwell::values::GlobalValue<'c>>,
-        compile_configuration: &'c CompileConfiguration,
-    ) -> Self {
+        module: Arc<inkwell::module::Module<'c>>,
+        function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
+        type_compiler: Arc<TypeCompiler<'c>>,
+        closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
+        malloc_compiler: Arc<MallocCompiler<'c>>,
+        global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
+        compile_configuration: Arc<CompileConfiguration>,
+    ) -> Arc<Self> {
         Self {
             context,
             module,
+            function_application_compiler,
             type_compiler,
+            closure_operation_compiler,
+            malloc_compiler,
             global_variables,
             compile_configuration,
         }
+        .into()
     }
 
     pub fn compile(
         &self,
         definition: &ssf::ir::Definition,
-    ) -> Result<inkwell::values::FunctionValue, CompileError> {
+    ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
         Ok(if definition.is_thunk() {
             self.compile_thunk(definition)?
         } else {
@@ -45,18 +61,17 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     fn compile_non_thunk(
         &self,
         definition: &ssf::ir::Definition,
-    ) -> Result<inkwell::values::FunctionValue, CompileError> {
+    ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
         let entry_function = self.module.add_function(
             &Self::generate_closure_entry_name(definition.name()),
-            self.type_compiler
-                .compile_entry_function(definition.type_()),
+            self.type_compiler.compile_entry_function(definition),
             None,
         );
 
-        let builder = self.context.create_builder();
+        let builder = Arc::new(self.context.create_builder());
         builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
 
-        builder.build_return(Some(&self.compile_body(&builder, definition)?));
+        builder.build_return(Some(&self.compile_body(builder.clone(), definition)?));
 
         entry_function.verify(true);
 
@@ -66,15 +81,14 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     fn compile_thunk(
         &self,
         definition: &ssf::ir::Definition,
-    ) -> Result<inkwell::values::FunctionValue, CompileError> {
+    ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
         let entry_function = self.module.add_function(
             &Self::generate_closure_entry_name(definition.name()),
-            self.type_compiler
-                .compile_entry_function(definition.type_()),
+            self.type_compiler.compile_entry_function(definition),
             None,
         );
 
-        let builder = self.context.create_builder();
+        let builder = Arc::new(self.context.create_builder());
         builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
 
         let entry_pointer = self.compile_entry_pointer(&builder, entry_function);
@@ -122,7 +136,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
 
         builder.position_at_end(then_block);
 
-        let result = self.compile_body(&builder, definition)?;
+        let result = self.compile_body(builder.clone(), definition)?;
 
         builder.build_store(
             builder
@@ -152,7 +166,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
 
     fn compile_body(
         &self,
-        builder: &inkwell::builder::Builder<'c>,
+        builder: Arc<inkwell::builder::Builder<'c>>,
         definition: &ssf::ir::Definition,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         let entry_function = builder.get_insert_block().unwrap().get_parent().unwrap();
@@ -201,11 +215,14 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
 
         Ok(ExpressionCompiler::new(
             self.context,
-            self.module,
-            &builder,
-            self,
-            self.type_compiler,
-            self.compile_configuration,
+            self.module.clone(),
+            builder,
+            self.clone().into(),
+            self.function_application_compiler.clone(),
+            self.type_compiler.clone(),
+            self.closure_operation_compiler.clone(),
+            self.malloc_compiler.clone(),
+            self.compile_configuration.clone(),
         )
         .compile(&definition.body(), &variables)?)
     }
@@ -216,8 +233,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     ) -> inkwell::values::FunctionValue<'c> {
         let entry_function = self.module.add_function(
             &Self::generate_normal_entry_name(definition.name()),
-            self.type_compiler
-                .compile_entry_function(definition.type_()),
+            self.type_compiler.compile_entry_function(definition),
             None,
         );
 
@@ -237,8 +253,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
     ) -> inkwell::values::FunctionValue<'c> {
         let entry_function = self.module.add_function(
             &Self::generate_locked_entry_name(definition.name()),
-            self.type_compiler
-                .compile_entry_function(definition.type_()),
+            self.type_compiler.compile_entry_function(definition),
             None,
         );
 
