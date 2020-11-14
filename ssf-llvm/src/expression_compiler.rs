@@ -67,7 +67,9 @@ impl<'c> ExpressionCompiler<'c> {
                         .builder
                         .build_insert_value(
                             algebraic_value,
-                            self.context.i64_type().const_int(constructor.tag(), false),
+                            self.type_compiler
+                                .compile_tag()
+                                .const_int(constructor.tag(), false),
                             0,
                             "",
                         )
@@ -325,7 +327,7 @@ impl<'c> ExpressionCompiler<'c> {
 
                 let tag = if algebraic_case.type_().is_singleton() {
                     // Set a dummy tag value of 0.
-                    self.context.i64_type().const_int(0, false)
+                    self.type_compiler.compile_tag().const_int(0, false)
                 } else {
                     self.builder
                         .build_extract_value(argument, 0, "")
@@ -398,7 +400,9 @@ impl<'c> ExpressionCompiler<'c> {
                     let expression = self.compile(alternative.expression(), &variables)?;
 
                     cases.push((
-                        self.context.i64_type().const_int(constructor.tag(), false),
+                        self.type_compiler
+                            .compile_tag()
+                            .const_int(constructor.tag(), false),
                         block,
                         self.builder.get_insert_block().unwrap(),
                         expression,

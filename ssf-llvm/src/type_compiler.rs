@@ -65,7 +65,7 @@ impl<'c> TypeCompiler<'c> {
         let mut elements = vec![];
 
         if !algebraic.is_singleton() {
-            elements.push(self.context.i64_type().into());
+            elements.push(self.compile_tag().into());
         }
 
         if !algebraic.is_enum() {
@@ -279,6 +279,10 @@ impl<'c> TypeCompiler<'c> {
                     .unwrap() as u32,
             )
             .into()
+    }
+
+    pub fn compile_tag(&self) -> inkwell::types::IntType<'c> {
+        self.context.i64_type()
     }
 
     pub fn compile_arity(&self) -> inkwell::types::IntType<'c> {
