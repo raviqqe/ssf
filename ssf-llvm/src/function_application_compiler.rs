@@ -451,7 +451,6 @@ impl<'c> FunctionApplicationCompiler<'c> {
             .into_pointer_value()
     }
 
-    // TODO Share this with ExpressionCompiler.
     fn append_basic_block(
         &self,
         builder: Arc<inkwell::builder::Builder<'c>>,
