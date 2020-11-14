@@ -721,14 +721,14 @@ mod tests {
             CompileConfiguration::new(None, None);
     }
 
-    fn create_expression_compiler<'c>(
-        context: &'c inkwell::context::Context,
+    fn create_expression_compiler(
+        context: &inkwell::context::Context,
     ) -> (
-        Arc<ExpressionCompiler<'c>>,
-        Arc<TypeCompiler<'c>>,
-        Arc<inkwell::builder::Builder<'c>>,
-        Arc<inkwell::module::Module<'c>>,
-        inkwell::values::FunctionValue<'c>,
+        Arc<ExpressionCompiler>,
+        Arc<TypeCompiler>,
+        Arc<inkwell::builder::Builder>,
+        Arc<inkwell::module::Module>,
+        inkwell::values::FunctionValue,
     ) {
         let type_compiler = TypeCompiler::new(&context);
         let module = Arc::new(context.create_module(""));
@@ -1167,7 +1167,7 @@ mod tests {
                     vec![],
                 ),
                 ssf::ir::ConstructorApplication::new(
-                    ssf::ir::Constructor::new(algebraic_type.clone(), 1),
+                    ssf::ir::Constructor::new(algebraic_type, 1),
                     vec![42.0.into()],
                 ),
             ] {
@@ -1199,7 +1199,7 @@ mod tests {
                     vec![],
                 ),
                 ssf::ir::ConstructorApplication::new(
-                    ssf::ir::Constructor::new(algebraic_type.clone(), 1),
+                    ssf::ir::Constructor::new(algebraic_type, 1),
                     vec![42.0.into()],
                 ),
             ] {
