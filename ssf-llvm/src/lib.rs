@@ -4,12 +4,14 @@ mod expression_compiler;
 mod function_application_compiler;
 mod function_compiler;
 mod instruction_compiler;
+mod malloc_compiler;
 mod module_compiler;
 mod type_compiler;
 mod utilities;
 
 pub use compile_configuration::CompileConfiguration;
 pub use error::CompileError;
+use malloc_compiler::MallocCompiler;
 use module_compiler::ModuleCompiler;
 use std::sync::Arc;
 use type_compiler::TypeCompiler;
@@ -21,11 +23,13 @@ pub fn compile(
     let context = inkwell::context::Context::create();
     let module = Arc::new(context.create_module("main"));
     let type_compiler = TypeCompiler::new(&context);
+    let malloc_compiler = MallocCompiler::new(module.clone(), compile_configuration.clone());
 
     ModuleCompiler::new(
         &context,
         module.clone(),
         type_compiler,
+        malloc_compiler,
         compile_configuration,
     )
     .compile(ir_module)?;

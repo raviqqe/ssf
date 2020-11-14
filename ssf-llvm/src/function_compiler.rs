@@ -3,6 +3,7 @@ use super::error::CompileError;
 use super::expression_compiler::ExpressionCompiler;
 use super::function_application_compiler::FunctionApplicationCompiler;
 use super::instruction_compiler::InstructionCompiler;
+use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
 use inkwell::types::BasicType;
 use std::collections::HashMap;
@@ -14,6 +15,7 @@ pub struct FunctionCompiler<'c> {
     module: Arc<inkwell::module::Module<'c>>,
     function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
     type_compiler: Arc<TypeCompiler<'c>>,
+    malloc_compiler: Arc<MallocCompiler<'c>>,
     global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
     compile_configuration: Arc<CompileConfiguration>,
 }
@@ -24,6 +26,7 @@ impl<'c> FunctionCompiler<'c> {
         module: Arc<inkwell::module::Module<'c>>,
         function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
         type_compiler: Arc<TypeCompiler<'c>>,
+        malloc_compiler: Arc<MallocCompiler<'c>>,
         global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
         compile_configuration: Arc<CompileConfiguration>,
     ) -> Arc<Self> {
@@ -32,6 +35,7 @@ impl<'c> FunctionCompiler<'c> {
             module,
             function_application_compiler,
             type_compiler,
+            malloc_compiler,
             global_variables,
             compile_configuration,
         }
@@ -211,6 +215,7 @@ impl<'c> FunctionCompiler<'c> {
             self.clone().into(),
             self.function_application_compiler.clone(),
             self.type_compiler.clone(),
+            self.malloc_compiler.clone(),
             self.compile_configuration.clone(),
         )
         .compile(&definition.body(), &variables)?)

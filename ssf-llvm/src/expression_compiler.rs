@@ -2,6 +2,7 @@ use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::function_application_compiler::FunctionApplicationCompiler;
 use super::function_compiler::FunctionCompiler;
+use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -13,10 +14,12 @@ pub struct ExpressionCompiler<'c> {
     function_compiler: Arc<FunctionCompiler<'c>>,
     function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
     type_compiler: Arc<TypeCompiler<'c>>,
+    malloc_compiler: Arc<MallocCompiler<'c>>,
     compile_configuration: Arc<CompileConfiguration>,
 }
 
 impl<'c> ExpressionCompiler<'c> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         context: &'c inkwell::context::Context,
         module: Arc<inkwell::module::Module<'c>>,
@@ -24,6 +27,7 @@ impl<'c> ExpressionCompiler<'c> {
         function_compiler: Arc<FunctionCompiler<'c>>,
         function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
         type_compiler: Arc<TypeCompiler<'c>>,
+        malloc_compiler: Arc<MallocCompiler<'c>>,
         compile_configuration: Arc<CompileConfiguration>,
     ) -> Arc<Self> {
         Self {
@@ -33,6 +37,7 @@ impl<'c> ExpressionCompiler<'c> {
             function_compiler,
             function_application_compiler,
             type_compiler,
+            malloc_compiler,
             compile_configuration,
         }
         .into()
@@ -98,7 +103,7 @@ impl<'c> ExpressionCompiler<'c> {
 
                     let constructor_value: inkwell::values::BasicValueEnum<'c> =
                         if constructor.constructor_type().is_boxed() {
-                            let constructor_pointer = self.compile_struct_malloc(constructor_type);
+                            let constructor_pointer = self.compile_malloc(constructor_type);
 
                             self.builder
                                 .build_store(constructor_pointer, constructor_value);
@@ -157,9 +162,8 @@ impl<'c> ExpressionCompiler<'c> {
                 let mut closures = HashMap::<&str, inkwell::values::PointerValue>::new();
 
                 for definition in let_recursive.definitions() {
-                    let pointer = self.compile_struct_malloc(
-                        self.type_compiler.compile_sized_closure(definition),
-                    );
+                    let pointer =
+                        self.compile_malloc(self.type_compiler.compile_sized_closure(definition));
 
                     variables.insert(
                         definition.name().into(),
@@ -679,27 +683,12 @@ impl<'c> ExpressionCompiler<'c> {
         )
     }
 
-    fn compile_struct_malloc(
+    fn compile_malloc(
         &self,
         type_: inkwell::types::StructType<'c>,
     ) -> inkwell::values::PointerValue<'c> {
-        self.builder
-            .build_bitcast(
-                self.builder
-                    .build_call(
-                        self.module
-                            .get_function(self.compile_configuration.malloc_function_name())
-                            .unwrap(),
-                        &[type_.size_of().unwrap().into()],
-                        "",
-                    )
-                    .try_as_basic_value()
-                    .left()
-                    .unwrap(),
-                type_.ptr_type(inkwell::AddressSpace::Generic),
-                "",
-            )
-            .into_pointer_value()
+        self.malloc_compiler
+            .compile_struct_malloc(self.builder.clone(), type_)
     }
 
     fn compile_unreachable(&self) {
@@ -734,7 +723,6 @@ mod tests {
         Arc<inkwell::module::Module>,
         inkwell::values::FunctionValue,
     ) {
-        let type_compiler = TypeCompiler::new(&context);
         let module = Arc::new(context.create_module(""));
 
         module.add_function(
@@ -750,11 +738,13 @@ mod tests {
         let builder = Arc::new(context.create_builder());
         builder.position_at_end(context.append_basic_block(function, "entry"));
 
+        let type_compiler = TypeCompiler::new(&context);
+        let malloc_compiler = MallocCompiler::new(module.clone(), COMPILE_CONFIGURATION.clone());
         let function_application_compiler = FunctionApplicationCompiler::new(
             &context,
             module.clone(),
             type_compiler.clone(),
-            COMPILE_CONFIGURATION.clone(),
+            malloc_compiler.clone(),
         );
 
         (
@@ -767,11 +757,13 @@ mod tests {
                     module.clone(),
                     function_application_compiler.clone(),
                     type_compiler.clone(),
+                    malloc_compiler.clone(),
                     HashMap::new(),
                     COMPILE_CONFIGURATION.clone(),
                 ),
                 function_application_compiler.clone(),
                 type_compiler.clone(),
+                malloc_compiler.clone(),
                 COMPILE_CONFIGURATION.clone(),
             ),
             type_compiler,

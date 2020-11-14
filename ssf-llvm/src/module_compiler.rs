@@ -2,6 +2,7 @@ use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::function_application_compiler::FunctionApplicationCompiler;
 use super::function_compiler::FunctionCompiler;
+use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -10,6 +11,7 @@ pub struct ModuleCompiler<'c> {
     context: &'c inkwell::context::Context,
     module: Arc<inkwell::module::Module<'c>>,
     type_compiler: Arc<TypeCompiler<'c>>,
+    malloc_compiler: Arc<MallocCompiler<'c>>,
     compile_configuration: Arc<CompileConfiguration>,
 }
 
@@ -18,12 +20,14 @@ impl<'c> ModuleCompiler<'c> {
         context: &'c inkwell::context::Context,
         module: Arc<inkwell::module::Module<'c>>,
         type_compiler: Arc<TypeCompiler<'c>>,
+        malloc_compiler: Arc<MallocCompiler<'c>>,
         compile_configuration: Arc<CompileConfiguration>,
     ) -> Self {
         Self {
             context,
             module,
             type_compiler,
+            malloc_compiler,
             compile_configuration,
         }
     }
@@ -102,9 +106,10 @@ impl<'c> ModuleCompiler<'c> {
                         self.context,
                         self.module.clone(),
                         self.type_compiler.clone(),
-                        self.compile_configuration.clone(),
+                        self.malloc_compiler.clone(),
                     ),
                     self.type_compiler.clone(),
+                    self.malloc_compiler.clone(),
                     global_variables.clone(),
                     self.compile_configuration.clone(),
                 )

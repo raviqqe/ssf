@@ -1,6 +1,6 @@
-use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::instruction_compiler::InstructionCompiler;
+use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
 use super::utilities;
 use inkwell::types::BasicType;
@@ -10,7 +10,7 @@ pub struct FunctionApplicationCompiler<'c> {
     context: &'c inkwell::context::Context,
     module: Arc<inkwell::module::Module<'c>>,
     type_compiler: Arc<TypeCompiler<'c>>,
-    compile_configuration: Arc<CompileConfiguration>,
+    malloc_compiler: Arc<MallocCompiler<'c>>,
 }
 
 impl<'c> FunctionApplicationCompiler<'c> {
@@ -18,13 +18,13 @@ impl<'c> FunctionApplicationCompiler<'c> {
         context: &'c inkwell::context::Context,
         module: Arc<inkwell::module::Module<'c>>,
         type_compiler: Arc<TypeCompiler<'c>>,
-        compile_configuration: Arc<CompileConfiguration>,
+        malloc_compiler: Arc<MallocCompiler<'c>>,
     ) -> Arc<Self> {
         Self {
             context,
             module,
             type_compiler,
-            compile_configuration,
+            malloc_compiler,
         }
         .into()
     }
@@ -251,7 +251,7 @@ impl<'c> FunctionApplicationCompiler<'c> {
             let function =
                 self.compile_partially_applied_function(target_function_type, environment_type)?;
 
-            let closure = self.compile_struct_malloc(
+            let closure = self.malloc_compiler.compile_struct_malloc(
                 builder.clone(),
                 self.type_compiler
                     .compile_raw_closure(function.get_type(), environment_type),
@@ -426,31 +426,6 @@ impl<'c> FunctionApplicationCompiler<'c> {
         Ok(())
     }
 
-    // TODO Share this with ExpressionCompiler.
-    fn compile_struct_malloc(
-        &self,
-        builder: Arc<inkwell::builder::Builder<'c>>,
-        type_: inkwell::types::StructType<'c>,
-    ) -> inkwell::values::PointerValue<'c> {
-        builder
-            .build_bitcast(
-                builder
-                    .build_call(
-                        self.module
-                            .get_function(self.compile_configuration.malloc_function_name())
-                            .unwrap(),
-                        &[type_.size_of().unwrap().into()],
-                        "",
-                    )
-                    .try_as_basic_value()
-                    .left()
-                    .unwrap(),
-                type_.ptr_type(inkwell::AddressSpace::Generic),
-                "",
-            )
-            .into_pointer_value()
-    }
-
     fn append_basic_block(
         &self,
         builder: Arc<inkwell::builder::Builder<'c>>,
@@ -465,6 +440,7 @@ impl<'c> FunctionApplicationCompiler<'c> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::compile_configuration::CompileConfiguration;
     use super::*;
     use lazy_static::lazy_static;
 
@@ -481,7 +457,7 @@ mod tests {
         Arc<inkwell::builder::Builder>,
         inkwell::values::FunctionValue,
     ) {
-        let module = context.create_module("");
+        let module = Arc::new(context.create_module(""));
 
         module.add_function(
             COMPILE_CONFIGURATION.malloc_function_name(),
@@ -497,13 +473,14 @@ mod tests {
         builder.position_at_end(context.append_basic_block(function, "entry"));
 
         let type_compiler = TypeCompiler::new(&context);
+        let malloc_compiler = MallocCompiler::new(module.clone(), COMPILE_CONFIGURATION.clone());
 
         (
             FunctionApplicationCompiler::new(
                 &context,
-                module.into(),
+                module,
                 type_compiler.clone(),
-                COMPILE_CONFIGURATION.clone(),
+                malloc_compiler,
             ),
             type_compiler,
             builder.into(),
