@@ -1,5 +1,6 @@
 use inkwell::types::BasicType;
 use std::cmp::max;
+use std::sync::Arc;
 
 static EMPTY_BOXED_CONSTRUCTOR: ssf::types::Constructor =
     ssf::types::Constructor::boxed(Vec::new());
@@ -10,7 +11,7 @@ pub struct TypeCompiler<'c> {
 }
 
 impl<'c> TypeCompiler<'c> {
-    pub fn new(context: &'c inkwell::context::Context) -> Self {
+    pub fn new(context: &'c inkwell::context::Context) -> Arc<Self> {
         inkwell::targets::Target::initialize_all(&inkwell::targets::InitializationConfig::default());
         let target_triple = inkwell::targets::TargetMachine::get_default_triple();
 
@@ -28,6 +29,7 @@ impl<'c> TypeCompiler<'c> {
                 )
                 .unwrap(),
         }
+        .into()
     }
 
     pub fn compile(&self, type_: &ssf::types::Type) -> inkwell::types::BasicTypeEnum<'c> {

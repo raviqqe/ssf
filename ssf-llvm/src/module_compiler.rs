@@ -1,29 +1,29 @@
 use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
+use super::function_application_compiler::FunctionApplicationCompiler;
 use super::function_compiler::FunctionCompiler;
 use super::type_compiler::TypeCompiler;
 use std::collections::HashMap;
+use std::sync::Arc;
 
-pub struct ModuleCompiler<'c, 'm, 't> {
+pub struct ModuleCompiler<'c> {
     context: &'c inkwell::context::Context,
-    module: &'m inkwell::module::Module<'c>,
-    type_compiler: &'t TypeCompiler<'c>,
-    global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
-    compile_configuration: &'c CompileConfiguration,
+    module: Arc<inkwell::module::Module<'c>>,
+    type_compiler: Arc<TypeCompiler<'c>>,
+    compile_configuration: Arc<CompileConfiguration>,
 }
 
-impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
+impl<'c> ModuleCompiler<'c> {
     pub fn new(
         context: &'c inkwell::context::Context,
-        module: &'m inkwell::module::Module<'c>,
-        type_compiler: &'t TypeCompiler<'c>,
-        compile_configuration: &'c CompileConfiguration,
+        module: Arc<inkwell::module::Module<'c>>,
+        type_compiler: Arc<TypeCompiler<'c>>,
+        compile_configuration: Arc<CompileConfiguration>,
     ) -> Self {
         Self {
             context,
             module,
             type_compiler,
-            global_variables: HashMap::new(),
             compile_configuration,
         }
     }
@@ -31,16 +31,18 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
     pub fn compile(&mut self, ir_module: &ssf::ir::Module) -> Result<(), CompileError> {
         self.declare_intrinsics();
 
+        let mut global_variables = HashMap::<String, inkwell::values::GlobalValue<'c>>::new();
+
         for declaration in ir_module.declarations() {
-            self.declare_function(declaration);
+            self.declare_function(&mut global_variables, declaration);
         }
 
         for definition in ir_module.definitions() {
-            self.define_function(definition);
+            self.define_function(&mut global_variables, definition);
         }
 
         for definition in ir_module.definitions() {
-            self.compile_function(definition)?
+            self.compile_function(&global_variables, definition)?;
         }
 
         self.module.verify()?;
@@ -48,8 +50,12 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
         Ok(())
     }
 
-    fn declare_function(&mut self, declaration: &ssf::ir::Declaration) {
-        self.global_variables.insert(
+    fn declare_function(
+        &mut self,
+        global_variables: &mut HashMap<String, inkwell::values::GlobalValue<'c>>,
+        declaration: &ssf::ir::Declaration,
+    ) {
+        global_variables.insert(
             declaration.name().into(),
             self.module.add_global(
                 self.type_compiler
@@ -60,8 +66,12 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
         );
     }
 
-    fn define_function(&mut self, definition: &ssf::ir::Definition) {
-        self.global_variables.insert(
+    fn define_function(
+        &mut self,
+        global_variables: &mut HashMap<String, inkwell::values::GlobalValue<'c>>,
+        definition: &ssf::ir::Definition,
+    ) {
+        global_variables.insert(
             definition.name().into(),
             self.module.add_global(
                 self.type_compiler.compile_sized_closure(definition),
@@ -71,8 +81,12 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
         );
     }
 
-    fn compile_function(&mut self, definition: &ssf::ir::Definition) -> Result<(), CompileError> {
-        let global_variable = self.global_variables[definition.name()];
+    fn compile_function(
+        &mut self,
+        global_variables: &HashMap<String, inkwell::values::GlobalValue<'c>>,
+        definition: &ssf::ir::Definition,
+    ) -> Result<(), CompileError> {
+        let global_variable = global_variables[definition.name()];
         let closure_type = global_variable
             .as_pointer_value()
             .get_type()
@@ -83,10 +97,16 @@ impl<'c, 'm, 't> ModuleCompiler<'c, 'm, 't> {
             &closure_type.const_named_struct(&[
                 FunctionCompiler::new(
                     self.context,
-                    self.module,
-                    self.type_compiler,
-                    &self.global_variables,
-                    self.compile_configuration,
+                    self.module.clone(),
+                    FunctionApplicationCompiler::new(
+                        self.context,
+                        self.module.clone(),
+                        self.type_compiler.clone(),
+                        self.compile_configuration.clone(),
+                    ),
+                    self.type_compiler.clone(),
+                    global_variables.clone(),
+                    self.compile_configuration.clone(),
                 )
                 .compile(definition)?
                 .as_global_value()

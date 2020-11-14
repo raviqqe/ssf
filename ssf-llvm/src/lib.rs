@@ -11,18 +11,24 @@ mod utilities;
 pub use compile_configuration::CompileConfiguration;
 pub use error::CompileError;
 use module_compiler::ModuleCompiler;
+use std::sync::Arc;
 use type_compiler::TypeCompiler;
 
 pub fn compile(
     ir_module: &ssf::ir::Module,
-    compile_configuration: &CompileConfiguration,
+    compile_configuration: Arc<CompileConfiguration>,
 ) -> Result<Vec<u8>, CompileError> {
     let context = inkwell::context::Context::create();
-    let module = context.create_module("main");
+    let module = Arc::new(context.create_module("main"));
     let type_compiler = TypeCompiler::new(&context);
 
-    ModuleCompiler::new(&context, &module, &type_compiler, compile_configuration)
-        .compile(ir_module)?;
+    ModuleCompiler::new(
+        &context,
+        module.clone(),
+        type_compiler,
+        compile_configuration,
+    )
+    .compile(ir_module)?;
 
     Ok(module.write_bitcode_to_memory().as_slice().to_vec())
 }
@@ -49,7 +55,7 @@ mod tests {
     ];
 
     lazy_static! {
-        static ref COMPILE_CONFIGURATION: CompileConfiguration =
+        static ref COMPILE_CONFIGURATION: Arc<CompileConfiguration> =
             CompileConfiguration::new(None, None);
     }
 
@@ -57,7 +63,7 @@ mod tests {
     fn compile_() {
         compile(
             &ssf::ir::Module::new(vec![], vec![]).unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -84,7 +90,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &CompileConfiguration::new(Some("custom_malloc".into()), None),
+            CompileConfiguration::new(Some("custom_malloc".into()), None),
         )
         .unwrap();
     }
@@ -107,7 +113,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &CompileConfiguration::new(None, Some("panic".into())),
+            CompileConfiguration::new(None, Some("panic".into())),
         )
         .unwrap();
     }
@@ -134,7 +140,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -166,7 +172,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -192,7 +198,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -225,7 +231,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -267,7 +273,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -309,7 +315,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -327,7 +333,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -353,7 +359,7 @@ mod tests {
                 ],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -372,7 +378,7 @@ mod tests {
                     )],
                 )
                 .unwrap(),
-                &COMPILE_CONFIGURATION,
+                COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
         }
@@ -392,7 +398,7 @@ mod tests {
                     )],
                 )
                 .unwrap(),
-                &COMPILE_CONFIGURATION,
+                COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
         }
@@ -412,7 +418,7 @@ mod tests {
                     )],
                 )
                 .unwrap(),
-                &COMPILE_CONFIGURATION,
+                COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
         }
@@ -432,7 +438,7 @@ mod tests {
                     )],
                 )
                 .unwrap(),
-                &COMPILE_CONFIGURATION,
+                COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
         }
@@ -464,7 +470,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &CompileConfiguration::new(None, Some("panic".into())),
+            CompileConfiguration::new(None, Some("panic".into())),
         )
         .unwrap();
     }
@@ -495,7 +501,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &CompileConfiguration::new(None, Some("panic".into())),
+            CompileConfiguration::new(None, Some("panic".into())),
         )
         .unwrap();
     }
@@ -513,7 +519,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -539,7 +545,7 @@ mod tests {
                 ],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -565,7 +571,7 @@ mod tests {
                 ],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -591,7 +597,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -617,7 +623,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -650,7 +656,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -690,7 +696,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            &COMPILE_CONFIGURATION,
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -725,7 +731,7 @@ mod tests {
                     ],
                 )
                 .unwrap(),
-                &COMPILE_CONFIGURATION,
+                COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
         }
@@ -761,7 +767,7 @@ mod tests {
                     ],
                 )
                 .unwrap(),
-                &COMPILE_CONFIGURATION,
+                COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
         }
@@ -800,7 +806,7 @@ mod tests {
                     ],
                 )
                 .unwrap(),
-                &COMPILE_CONFIGURATION,
+                COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
         }

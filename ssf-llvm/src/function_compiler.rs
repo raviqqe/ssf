@@ -1,34 +1,41 @@
 use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::expression_compiler::ExpressionCompiler;
+use super::function_application_compiler::FunctionApplicationCompiler;
 use super::instruction_compiler::InstructionCompiler;
 use super::type_compiler::TypeCompiler;
 use inkwell::types::BasicType;
 use std::collections::HashMap;
+use std::sync::Arc;
 
-pub struct FunctionCompiler<'c, 'm, 't, 'v> {
+#[derive(Clone)]
+pub struct FunctionCompiler<'c> {
     context: &'c inkwell::context::Context,
-    module: &'m inkwell::module::Module<'c>,
-    type_compiler: &'t TypeCompiler<'c>,
-    global_variables: &'v HashMap<String, inkwell::values::GlobalValue<'c>>,
-    compile_configuration: &'c CompileConfiguration,
+    module: Arc<inkwell::module::Module<'c>>,
+    function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
+    type_compiler: Arc<TypeCompiler<'c>>,
+    global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
+    compile_configuration: Arc<CompileConfiguration>,
 }
 
-impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
+impl<'c> FunctionCompiler<'c> {
     pub fn new(
         context: &'c inkwell::context::Context,
-        module: &'m inkwell::module::Module<'c>,
-        type_compiler: &'t TypeCompiler<'c>,
-        global_variables: &'v HashMap<String, inkwell::values::GlobalValue<'c>>,
-        compile_configuration: &'c CompileConfiguration,
-    ) -> Self {
+        module: Arc<inkwell::module::Module<'c>>,
+        function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
+        type_compiler: Arc<TypeCompiler<'c>>,
+        global_variables: HashMap<String, inkwell::values::GlobalValue<'c>>,
+        compile_configuration: Arc<CompileConfiguration>,
+    ) -> Arc<Self> {
         Self {
             context,
             module,
+            function_application_compiler,
             type_compiler,
             global_variables,
             compile_configuration,
         }
+        .into()
     }
 
     pub fn compile(
@@ -42,67 +49,6 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
         })
     }
 
-    pub fn compile_partial_application(
-        &self,
-        function_type: inkwell::types::FunctionType<'c>,
-        environment_type: inkwell::types::StructType<'c>,
-    ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
-        let entry_function = self
-            .module
-            .add_function("partial_application", function_type, None);
-
-        let builder = self.context.create_builder();
-        builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
-
-        builder.build_return(Some(&self.compile_partial_application_body(
-            &builder,
-            entry_function,
-            environment_type,
-        )?));
-
-        entry_function.verify(true);
-
-        Ok(entry_function)
-    }
-
-    fn compile_partial_application_body(
-        &self,
-        builder: &inkwell::builder::Builder<'c>,
-        entry_function: inkwell::values::FunctionValue<'c>,
-        environment_type: inkwell::types::StructType<'c>,
-    ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
-        let environment = builder
-            .build_load(
-                builder
-                    .build_bitcast(
-                        entry_function.get_params()[0],
-                        environment_type.ptr_type(inkwell::AddressSpace::Generic),
-                        "",
-                    )
-                    .into_pointer_value(),
-                "",
-            )
-            .into_struct_value();
-
-        Ok(ExpressionCompiler::new(
-            self.context,
-            self.module,
-            &builder,
-            self,
-            self.type_compiler,
-            self.compile_configuration,
-        )
-        .compile_closure_call(
-            builder
-                .build_extract_value(environment, 0, "")
-                .unwrap()
-                .into_pointer_value(),
-            &(1..environment.get_type().count_fields())
-                .map(|index| builder.build_extract_value(environment, index, "").unwrap())
-                .collect::<Vec<_>>(),
-        )?)
-    }
-
     fn compile_non_thunk(
         &self,
         definition: &ssf::ir::Definition,
@@ -113,10 +59,10 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
             None,
         );
 
-        let builder = self.context.create_builder();
+        let builder = Arc::new(self.context.create_builder());
         builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
 
-        builder.build_return(Some(&self.compile_body(&builder, definition)?));
+        builder.build_return(Some(&self.compile_body(builder.clone(), definition)?));
 
         entry_function.verify(true);
 
@@ -133,7 +79,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
             None,
         );
 
-        let builder = self.context.create_builder();
+        let builder = Arc::new(self.context.create_builder());
         builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
 
         let entry_pointer = self.compile_entry_pointer(&builder, entry_function);
@@ -181,7 +127,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
 
         builder.position_at_end(then_block);
 
-        let result = self.compile_body(&builder, definition)?;
+        let result = self.compile_body(builder.clone(), definition)?;
 
         builder.build_store(
             builder
@@ -211,7 +157,7 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
 
     fn compile_body(
         &self,
-        builder: &inkwell::builder::Builder<'c>,
+        builder: Arc<inkwell::builder::Builder<'c>>,
         definition: &ssf::ir::Definition,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         let entry_function = builder.get_insert_block().unwrap().get_parent().unwrap();
@@ -260,11 +206,12 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
 
         Ok(ExpressionCompiler::new(
             self.context,
-            self.module,
-            &builder,
-            self,
-            self.type_compiler,
-            self.compile_configuration,
+            self.module.clone(),
+            builder,
+            self.clone().into(),
+            self.function_application_compiler.clone(),
+            self.type_compiler.clone(),
+            self.compile_configuration.clone(),
         )
         .compile(&definition.body(), &variables)?)
     }

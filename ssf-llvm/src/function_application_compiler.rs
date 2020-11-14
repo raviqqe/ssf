@@ -4,50 +4,56 @@ use super::instruction_compiler::InstructionCompiler;
 use super::type_compiler::TypeCompiler;
 use super::utilities;
 use inkwell::types::BasicType;
+use std::sync::Arc;
 
-pub struct FunctionApplicationCompiler<'c, 'm, 't> {
+pub struct FunctionApplicationCompiler<'c> {
     context: &'c inkwell::context::Context,
-    module: &'m inkwell::module::Module<'c>,
-    type_compiler: &'t TypeCompiler<'c>,
-    compile_configuration: &'c CompileConfiguration,
+    module: Arc<inkwell::module::Module<'c>>,
+    type_compiler: Arc<TypeCompiler<'c>>,
+    compile_configuration: Arc<CompileConfiguration>,
 }
 
-impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
+impl<'c> FunctionApplicationCompiler<'c> {
     pub fn new(
         context: &'c inkwell::context::Context,
-        module: &'m inkwell::module::Module<'c>,
-        type_compiler: &'t TypeCompiler<'c>,
-        compile_configuration: &'c CompileConfiguration,
-    ) -> Self {
+        module: Arc<inkwell::module::Module<'c>>,
+        type_compiler: Arc<TypeCompiler<'c>>,
+        compile_configuration: Arc<CompileConfiguration>,
+    ) -> Arc<Self> {
         Self {
             context,
             module,
             type_compiler,
             compile_configuration,
         }
+        .into()
     }
 
     // Closures' entry points are always uncurried.
     pub fn compile(
         &self,
-        builder: &inkwell::builder::Builder<'c>,
+        builder: Arc<inkwell::builder::Builder<'c>>,
         closure: inkwell::values::PointerValue<'c>,
         arguments: &[inkwell::values::BasicValueEnum<'c>],
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         let switch_block = builder.get_insert_block().unwrap();
-        let phi_block = self.append_basic_block(builder, "phi");
+        let phi_block = self.append_basic_block(builder.clone(), "phi");
 
         let cases = (1..=arguments.len())
             .map(|arity| {
-                let block = self.append_basic_block(builder, &format!("pa_arity_{}", arity));
+                let block =
+                    self.append_basic_block(builder.clone(), &format!("pa_arity_{}", arity));
                 builder.position_at_end(block);
 
                 let mut value =
                     self.compile_direct_closure_call(&builder, closure, &arguments[..arity]);
 
                 if arity != arguments.len() {
-                    value =
-                        self.compile(builder, value.into_pointer_value(), &arguments[arity..])?;
+                    value = self.compile(
+                        builder.clone(),
+                        value.into_pointer_value(),
+                        &arguments[arity..],
+                    )?;
                 }
 
                 builder.build_unconditional_branch(phi_block);
@@ -56,9 +62,9 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
             })
             .collect::<Result<Vec<_>, CompileError>>()?;
 
-        let default_block = self.append_basic_block(builder, "pa_default");
+        let default_block = self.append_basic_block(builder.clone(), "pa_default");
         builder.position_at_end(default_block);
-        let default_value = self.compile_create_closure(&builder, closure, &arguments)?;
+        let default_value = self.compile_create_closure(builder.clone(), closure, &arguments)?;
         if default_value.is_some() {
             builder.build_unconditional_branch(phi_block);
         }
@@ -108,7 +114,7 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
             None,
         );
 
-        let builder = self.context.create_builder();
+        let builder = Arc::new(self.context.create_builder());
         builder.position_at_end(self.context.append_basic_block(entry_function, "entry"));
 
         let environment = builder
@@ -133,8 +139,8 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
             .chain(vec![entry_function.get_params()[1]])
             .collect::<Vec<_>>();
 
-        let then_block = self.append_basic_block(&builder, "then");
-        let else_block = self.append_basic_block(&builder, "else");
+        let then_block = self.append_basic_block(builder.clone(), "then");
+        let else_block = self.append_basic_block(builder.clone(), "else");
 
         builder.build_conditional_branch(
             builder.build_int_compare(
@@ -155,7 +161,7 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
         ));
 
         builder.position_at_end(else_block);
-        if let Some(value) = self.compile_create_closure(&builder, closure, &arguments)? {
+        if let Some(value) = self.compile_create_closure(builder.clone(), closure, &arguments)? {
             builder.build_return(Some(&value));
         }
 
@@ -202,7 +208,7 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
 
     fn compile_create_closure(
         &self,
-        builder: &inkwell::builder::Builder<'c>,
+        builder: Arc<inkwell::builder::Builder<'c>>,
         closure: inkwell::values::PointerValue<'c>,
         arguments: &[inkwell::values::BasicValueEnum<'c>],
     ) -> Result<Option<inkwell::values::PointerValue<'c>>, CompileError> {
@@ -246,12 +252,17 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
                 self.compile_partially_applied_function(target_function_type, environment_type)?;
 
             let closure = self.compile_struct_malloc(
-                builder,
+                builder.clone(),
                 self.type_compiler
                     .compile_closure_struct(function.get_type(), environment_type),
             );
 
-            self.compile_store_closure_content(builder, closure, function, &environment_values)?;
+            self.compile_store_closure_content(
+                builder.clone(),
+                closure,
+                function,
+                &environment_values,
+            )?;
 
             Ok(Some(
                 builder
@@ -346,7 +357,7 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
     // TODO Share this with ExpressionCompiler.
     fn compile_store_closure_content(
         &self,
-        builder: &inkwell::builder::Builder<'c>,
+        builder: Arc<inkwell::builder::Builder<'c>>,
         closure_pointer: inkwell::values::PointerValue<'c>,
         entry_function: inkwell::values::FunctionValue<'c>,
         environment_values: &[inkwell::values::BasicValueEnum<'c>],
@@ -418,7 +429,7 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
     // TODO Share this with ExpressionCompiler.
     fn compile_struct_malloc(
         &self,
-        builder: &inkwell::builder::Builder<'c>,
+        builder: Arc<inkwell::builder::Builder<'c>>,
         type_: inkwell::types::StructType<'c>,
     ) -> inkwell::values::PointerValue<'c> {
         builder
@@ -443,7 +454,7 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
     // TODO Share this with ExpressionCompiler.
     fn append_basic_block(
         &self,
-        builder: &inkwell::builder::Builder<'c>,
+        builder: Arc<inkwell::builder::Builder<'c>>,
         name: &str,
     ) -> inkwell::basic_block::BasicBlock<'c> {
         self.context.append_basic_block(
@@ -459,11 +470,18 @@ mod tests {
     use lazy_static::lazy_static;
 
     lazy_static! {
-        static ref COMPILE_CONFIGURATION: CompileConfiguration =
+        static ref COMPILE_CONFIGURATION: Arc<CompileConfiguration> =
             CompileConfiguration::new(None, None);
     }
 
-    fn create_module(context: &inkwell::context::Context) -> inkwell::module::Module {
+    fn create_function_application_compiler(
+        context: &inkwell::context::Context,
+    ) -> (
+        Arc<FunctionApplicationCompiler>,
+        Arc<TypeCompiler>,
+        Arc<inkwell::builder::Builder>,
+        inkwell::values::FunctionValue,
+    ) {
         let module = context.create_module("");
 
         module.add_function(
@@ -475,22 +493,34 @@ mod tests {
             None,
         );
 
-        module
+        let function = module.add_function("", context.void_type().fn_type(&[], false), None);
+        let builder = context.create_builder();
+        builder.position_at_end(context.append_basic_block(function, "entry"));
+
+        let type_compiler = TypeCompiler::new(&context);
+
+        (
+            FunctionApplicationCompiler::new(
+                &context,
+                module.into(),
+                type_compiler.clone(),
+                COMPILE_CONFIGURATION.clone(),
+            ),
+            type_compiler,
+            builder.into(),
+            function,
+        )
     }
 
     #[test]
     fn apply_1_argument_to_1_arity_function() {
         let context = inkwell::context::Context::create();
-        let type_compiler = TypeCompiler::new(&context);
-        let module = create_module(&context);
+        let (function_application_compiler, type_compiler, builder, function) =
+            create_function_application_compiler(&context);
 
-        let function = module.add_function("", context.void_type().fn_type(&[], false), None);
-        let builder = context.create_builder();
-        builder.position_at_end(context.append_basic_block(function, "entry"));
-
-        FunctionApplicationCompiler::new(&context, &module, &type_compiler, &COMPILE_CONFIGURATION)
+        function_application_compiler
             .compile(
-                &builder,
+                builder.clone(),
                 type_compiler
                     .compile_closure_struct(
                         context.f64_type().fn_type(
@@ -519,16 +549,12 @@ mod tests {
     #[test]
     fn apply_1_argument_to_2_arity_function() {
         let context = inkwell::context::Context::create();
-        let type_compiler = TypeCompiler::new(&context);
-        let module = create_module(&context);
+        let (function_application_compiler, type_compiler, builder, function) =
+            create_function_application_compiler(&context);
 
-        let function = module.add_function("", context.void_type().fn_type(&[], false), None);
-        let builder = context.create_builder();
-        builder.position_at_end(context.append_basic_block(function, "entry"));
-
-        FunctionApplicationCompiler::new(&context, &module, &type_compiler, &COMPILE_CONFIGURATION)
+        function_application_compiler
             .compile(
-                &builder,
+                builder.clone(),
                 type_compiler
                     .compile_closure_struct(
                         context.f64_type().fn_type(
@@ -558,16 +584,12 @@ mod tests {
     #[test]
     fn apply_2_argument_to_2_arity_function() {
         let context = inkwell::context::Context::create();
-        let type_compiler = TypeCompiler::new(&context);
-        let module = create_module(&context);
+        let (function_application_compiler, type_compiler, builder, function) =
+            create_function_application_compiler(&context);
 
-        let function = module.add_function("", context.void_type().fn_type(&[], false), None);
-        let builder = context.create_builder();
-        builder.position_at_end(context.append_basic_block(function, "entry"));
-
-        FunctionApplicationCompiler::new(&context, &module, &type_compiler, &COMPILE_CONFIGURATION)
+        function_application_compiler
             .compile(
-                &builder,
+                builder.clone(),
                 type_compiler
                     .compile_closure_struct(
                         context.f64_type().fn_type(
@@ -600,16 +622,12 @@ mod tests {
     #[test]
     fn apply_1_argument_to_3_arity_function() {
         let context = inkwell::context::Context::create();
-        let type_compiler = TypeCompiler::new(&context);
-        let module = create_module(&context);
+        let (function_application_compiler, type_compiler, builder, function) =
+            create_function_application_compiler(&context);
 
-        let function = module.add_function("", context.void_type().fn_type(&[], false), None);
-        let builder = context.create_builder();
-        builder.position_at_end(context.append_basic_block(function, "entry"));
-
-        FunctionApplicationCompiler::new(&context, &module, &type_compiler, &COMPILE_CONFIGURATION)
+        function_application_compiler
             .compile(
-                &builder,
+                builder.clone(),
                 type_compiler
                     .compile_closure_struct(
                         context.f64_type().fn_type(
@@ -640,16 +658,12 @@ mod tests {
     #[test]
     fn apply_2_argument_to_3_arity_function() {
         let context = inkwell::context::Context::create();
-        let type_compiler = TypeCompiler::new(&context);
-        let module = create_module(&context);
+        let (function_application_compiler, type_compiler, builder, function) =
+            create_function_application_compiler(&context);
 
-        let function = module.add_function("", context.void_type().fn_type(&[], false), None);
-        let builder = context.create_builder();
-        builder.position_at_end(context.append_basic_block(function, "entry"));
-
-        FunctionApplicationCompiler::new(&context, &module, &type_compiler, &COMPILE_CONFIGURATION)
+        function_application_compiler
             .compile(
-                &builder,
+                builder.clone(),
                 type_compiler
                     .compile_closure_struct(
                         context.f64_type().fn_type(
@@ -683,16 +697,12 @@ mod tests {
     #[test]
     fn apply_3_argument_to_3_arity_function() {
         let context = inkwell::context::Context::create();
-        let type_compiler = TypeCompiler::new(&context);
-        let module = create_module(&context);
+        let (function_application_compiler, type_compiler, builder, function) =
+            create_function_application_compiler(&context);
 
-        let function = module.add_function("", context.void_type().fn_type(&[], false), None);
-        let builder = context.create_builder();
-        builder.position_at_end(context.append_basic_block(function, "entry"));
-
-        FunctionApplicationCompiler::new(&context, &module, &type_compiler, &COMPILE_CONFIGURATION)
+        function_application_compiler
             .compile(
-                &builder,
+                builder.clone(),
                 type_compiler
                     .compile_closure_struct(
                         context.f64_type().fn_type(

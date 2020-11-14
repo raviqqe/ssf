@@ -1,14 +1,20 @@
+use std::sync::Arc;
+
 pub struct CompileConfiguration {
     malloc_function_name: Option<String>,
     panic_function_name: Option<String>,
 }
 
 impl CompileConfiguration {
-    pub fn new(malloc_function_name: Option<String>, panic_function_name: Option<String>) -> Self {
+    pub fn new(
+        malloc_function_name: Option<String>,
+        panic_function_name: Option<String>,
+    ) -> Arc<Self> {
         Self {
             malloc_function_name,
             panic_function_name,
         }
+        .into()
     }
 
     pub fn malloc_function_name(&self) -> &str {
