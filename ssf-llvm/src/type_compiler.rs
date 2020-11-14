@@ -85,7 +85,7 @@ impl<'c> TypeCompiler<'c> {
         &self,
         definition: &ssf::ir::Definition,
     ) -> inkwell::types::StructType<'c> {
-        self.compile_closure_struct(
+        self.compile_raw_closure(
             self.compile_entry_function(definition),
             self.compile_payload(definition),
         )
@@ -95,13 +95,13 @@ impl<'c> TypeCompiler<'c> {
         &self,
         type_: &ssf::types::Function,
     ) -> inkwell::types::StructType<'c> {
-        self.compile_closure_struct(
+        self.compile_raw_closure(
             self.compile_uncurried_entry_function(type_),
             self.compile_unsized_environment(),
         )
     }
 
-    pub fn compile_closure_struct(
+    pub fn compile_raw_closure(
         &self,
         entry_function: inkwell::types::FunctionType<'c>,
         environment: inkwell::types::StructType<'c>,
@@ -140,7 +140,7 @@ impl<'c> TypeCompiler<'c> {
         &self,
         definition: &ssf::ir::Definition,
     ) -> inkwell::types::StructType<'c> {
-        self.compile_environment_from_elements(
+        self.compile_raw_environment(
             definition
                 .environment()
                 .iter()
@@ -149,7 +149,7 @@ impl<'c> TypeCompiler<'c> {
         )
     }
 
-    pub fn compile_environment_from_elements(
+    pub fn compile_raw_environment(
         &self,
         types: impl IntoIterator<Item = inkwell::types::BasicTypeEnum<'c>>,
     ) -> inkwell::types::StructType<'c> {
@@ -169,7 +169,7 @@ impl<'c> TypeCompiler<'c> {
         if arity == (type_.count_param_types() as usize) - 1 {
             type_
         } else {
-            self.compile_closure_struct(
+            self.compile_raw_closure(
                 type_.get_return_type().unwrap().fn_type(
                     &vec![type_.get_param_types()[0]]
                         .into_iter()
@@ -184,7 +184,7 @@ impl<'c> TypeCompiler<'c> {
         }
     }
 
-    pub fn compile_uncurried_entry_function(
+    fn compile_uncurried_entry_function(
         &self,
         type_: &ssf::types::Function,
     ) -> inkwell::types::FunctionType<'c> {

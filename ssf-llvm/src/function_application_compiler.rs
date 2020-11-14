@@ -233,9 +233,9 @@ impl<'c> FunctionApplicationCompiler<'c> {
                 .chain(arguments.iter().copied())
                 .collect::<Vec<_>>();
 
-            let environment_type = self.type_compiler.compile_environment_from_elements(
-                environment_values.iter().map(|value| value.get_type()),
-            );
+            let environment_type = self
+                .type_compiler
+                .compile_raw_environment(environment_values.iter().map(|value| value.get_type()));
             let target_function_type = entry_function_type.get_return_type().unwrap().fn_type(
                 &vec![entry_function_type.get_param_types()[0]]
                     .into_iter()
@@ -254,7 +254,7 @@ impl<'c> FunctionApplicationCompiler<'c> {
             let closure = self.compile_struct_malloc(
                 builder.clone(),
                 self.type_compiler
-                    .compile_closure_struct(function.get_type(), environment_type),
+                    .compile_raw_closure(function.get_type(), environment_type),
             );
 
             self.compile_store_closure_content(
@@ -269,7 +269,7 @@ impl<'c> FunctionApplicationCompiler<'c> {
                     .build_bitcast(
                         closure,
                         self.type_compiler
-                            .compile_closure_struct(
+                            .compile_raw_closure(
                                 target_function_type,
                                 self.type_compiler.compile_unsized_environment(),
                             )
@@ -362,14 +362,14 @@ impl<'c> FunctionApplicationCompiler<'c> {
         entry_function: inkwell::values::FunctionValue<'c>,
         environment_values: &[inkwell::values::BasicValueEnum<'c>],
     ) -> Result<(), CompileError> {
-        let environment_type = self.type_compiler.compile_environment_from_elements(
-            environment_values.iter().map(|value| value.get_type()),
-        );
+        let environment_type = self
+            .type_compiler
+            .compile_raw_environment(environment_values.iter().map(|value| value.get_type()));
 
         let closure = builder
             .build_insert_value(
                 self.type_compiler
-                    .compile_closure_struct(entry_function.get_type(), environment_type)
+                    .compile_raw_closure(entry_function.get_type(), environment_type)
                     .get_undef(),
                 entry_function.as_global_value().as_pointer_value(),
                 0,

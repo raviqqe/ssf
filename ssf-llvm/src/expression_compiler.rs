@@ -597,15 +597,15 @@ impl<'c> ExpressionCompiler<'c> {
         entry_function: inkwell::values::FunctionValue<'c>,
         environment_values: &[inkwell::values::BasicValueEnum<'c>],
     ) -> Result<(), CompileError> {
-        let environment_type = self.type_compiler.compile_environment_from_elements(
-            environment_values.iter().map(|value| value.get_type()),
-        );
+        let environment_type = self
+            .type_compiler
+            .compile_raw_environment(environment_values.iter().map(|value| value.get_type()));
 
         let closure = self
             .builder
             .build_insert_value(
                 self.type_compiler
-                    .compile_closure_struct(entry_function.get_type(), environment_type)
+                    .compile_raw_closure(entry_function.get_type(), environment_type)
                     .get_undef(),
                 entry_function.as_global_value().as_pointer_value(),
                 0,
