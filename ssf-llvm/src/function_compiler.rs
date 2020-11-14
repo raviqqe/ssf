@@ -84,25 +84,23 @@ impl<'c, 'm, 't, 'v> FunctionCompiler<'c, 'm, 't, 'v> {
             )
             .into_struct_value();
 
-        builder.build_unreachable();
-        // TODO Cache partial application functions.
-        // Ok(ExpressionCompiler::new(
-        //     self.context,
-        //     self.module,
-        //     &builder,
-        //     self,
-        //     self.type_compiler,
-        //     self.compile_configuration,
-        // )
-        // .compile_closure_call(
-        //     builder
-        //         .build_extract_value(environment, 0, "")
-        //         .unwrap()
-        //         .into_pointer_value(),
-        //     &(1..environment.get_type().count_fields())
-        //         .map(|index| builder.build_extract_value(environment, index, "").unwrap())
-        //         .collect::<Vec<_>>(),
-        // )?)
+        Ok(ExpressionCompiler::new(
+            self.context,
+            self.module,
+            &builder,
+            self,
+            self.type_compiler,
+            self.compile_configuration,
+        )
+        .compile_closure_call(
+            builder
+                .build_extract_value(environment, 0, "")
+                .unwrap()
+                .into_pointer_value(),
+            &(1..environment.get_type().count_fields())
+                .map(|index| builder.build_extract_value(environment, index, "").unwrap())
+                .collect::<Vec<_>>(),
+        )?)
     }
 
     fn compile_non_thunk(
