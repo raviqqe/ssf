@@ -344,7 +344,7 @@ impl<'c> FunctionCompiler<'c> {
         unsafe {
             builder.build_gep(
                 base_pointer,
-                &[self.context.i64_type().const_int(-1i64 as u64, true)],
+                &[self.context.i64_type().const_int(-2i64 as u64, true)],
                 "",
             )
         }
