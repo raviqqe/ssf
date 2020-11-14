@@ -3,11 +3,12 @@ use super::default_alternative::DefaultAlternative;
 use super::expression::Expression;
 use crate::types::{self, Type};
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct AlgebraicCase {
     type_: types::Algebraic,
-    argument: Box<Expression>,
+    argument: Arc<Expression>,
     alternatives: Vec<AlgebraicAlternative>,
     default_alternative: Option<DefaultAlternative>,
 }
@@ -21,7 +22,7 @@ impl AlgebraicCase {
     ) -> Self {
         Self {
             type_,
-            argument: Box::new(argument.into()),
+            argument: Arc::new(argument.into()),
             alternatives,
             default_alternative,
         }

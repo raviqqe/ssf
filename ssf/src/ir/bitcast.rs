@@ -1,17 +1,18 @@
 use super::expression::Expression;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Bitcast {
-    expression: Box<Expression>,
+    expression: Arc<Expression>,
     type_: Type,
 }
 
 impl Bitcast {
     pub fn new(expression: impl Into<Expression>, type_: impl Into<Type>) -> Self {
         Self {
-            expression: Box::new(expression.into()),
+            expression: Arc::new(expression.into()),
             type_: type_.into(),
         }
     }

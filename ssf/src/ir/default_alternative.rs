@@ -1,18 +1,19 @@
 use super::expression::Expression;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct DefaultAlternative {
     variable: String,
-    expression: Box<Expression>,
+    expression: Arc<Expression>,
 }
 
 impl DefaultAlternative {
     pub fn new(variable: impl Into<String>, expression: impl Into<Expression>) -> Self {
         Self {
             variable: variable.into(),
-            expression: Box::new(expression.into()),
+            expression: Arc::new(expression.into()),
         }
     }
 
