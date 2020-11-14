@@ -34,13 +34,6 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
         closure: inkwell::values::PointerValue<'c>,
         arguments: &[inkwell::values::BasicValueEnum<'c>],
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
-        let entry_arguments = vec![self.compile_load_environment(builder, closure)]
-            .into_iter()
-            .chain(arguments.iter().copied())
-            .collect::<Vec<_>>();
-
-        let entry_pointer = self.compile_load_entry_pointer(builder, closure);
-
         let switch_block = builder.get_insert_block().unwrap();
         let phi_block = self.append_basic_block(builder, "phi");
 
@@ -49,15 +42,8 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
                 let block = self.append_basic_block(builder, &format!("pa_arity_{}", arity));
                 builder.position_at_end(block);
 
-                let mut value = builder
-                    .build_call(
-                        self.compile_curry_entry_pointer(&builder, entry_pointer, arity),
-                        &entry_arguments[..arity + 1],
-                        "",
-                    )
-                    .try_as_basic_value()
-                    .left()
-                    .unwrap();
+                let mut value =
+                    self.compile_direct_closure_call(&builder, closure, &arguments[..arity]);
 
                 if arity != arguments.len() {
                     value =
@@ -110,28 +96,15 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
         Ok(phi.as_basic_value())
     }
 
-    fn compile_function(
+    fn compile_partially_applied_function(
         &self,
         function_type: inkwell::types::FunctionType<'c>,
         environment_type: inkwell::types::StructType<'c>,
     ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
         let entry_function = self.module.add_function(
             "pa_entry",
-            self.type_compiler.compile_curried_entry_function(
-                function_type.get_return_type().unwrap().fn_type(
-                    &vec![function_type.get_param_types()[0]]
-                        .into_iter()
-                        .chain(
-                            function_type.get_param_types()
-                                [environment_type.count_fields() as usize..]
-                                .iter()
-                                .copied(),
-                        )
-                        .collect::<Vec<_>>(),
-                    false,
-                ),
-                1,
-            ),
+            self.type_compiler
+                .compile_curried_entry_function(function_type, 1),
             None,
         );
 
@@ -178,22 +151,7 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
 
         builder.position_at_end(then_block);
         builder.build_return(Some(
-            &builder
-                .build_call(
-                    self.compile_curry_entry_pointer(
-                        &builder,
-                        self.compile_load_entry_pointer(&builder, closure),
-                        arguments.len(),
-                    ),
-                    &vec![self.compile_load_environment(&builder, closure)]
-                        .into_iter()
-                        .chain(arguments.iter().copied())
-                        .collect::<Vec<_>>(),
-                    "",
-                )
-                .try_as_basic_value()
-                .left()
-                .unwrap(),
+            &self.compile_direct_closure_call(&builder, closure, &arguments),
         ));
 
         builder.position_at_end(else_block);
@@ -204,6 +162,42 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
         entry_function.verify(true);
 
         Ok(entry_function)
+    }
+
+    fn compile_direct_closure_call(
+        &self,
+        builder: &inkwell::builder::Builder<'c>,
+        closure: inkwell::values::PointerValue<'c>,
+        arguments: &[inkwell::values::BasicValueEnum<'c>],
+    ) -> inkwell::values::BasicValueEnum<'c> {
+        let entry_pointer = self.compile_load_entry_pointer(&builder, closure);
+
+        builder
+            .build_call(
+                builder
+                    .build_bitcast(
+                        entry_pointer,
+                        self.type_compiler
+                            .compile_curried_entry_function(
+                                entry_pointer
+                                    .get_type()
+                                    .get_element_type()
+                                    .into_function_type(),
+                                arguments.len(),
+                            )
+                            .ptr_type(inkwell::AddressSpace::Generic),
+                        "",
+                    )
+                    .into_pointer_value(),
+                &vec![self.compile_load_environment(&builder, closure)]
+                    .into_iter()
+                    .chain(arguments.iter().copied())
+                    .collect::<Vec<_>>(),
+                "",
+            )
+            .try_as_basic_value()
+            .left()
+            .unwrap()
     }
 
     fn compile_create_closure(
@@ -236,7 +230,20 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
             let environment_type = self.type_compiler.compile_environment_from_elements(
                 environment_values.iter().map(|value| value.get_type()),
             );
-            let function = self.compile_function(entry_function_type, environment_type)?;
+            let target_function_type = entry_function_type.get_return_type().unwrap().fn_type(
+                &vec![entry_function_type.get_param_types()[0]]
+                    .into_iter()
+                    .chain(
+                        entry_function_type.get_param_types()[arguments.len() + 1..]
+                            .iter()
+                            .copied(),
+                    )
+                    .collect::<Vec<_>>(),
+                false,
+            );
+
+            let function =
+                self.compile_partially_applied_function(target_function_type, environment_type)?;
 
             let closure = self.compile_struct_malloc(
                 builder,
@@ -252,18 +259,7 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
                         closure,
                         self.type_compiler
                             .compile_closure_struct(
-                                entry_function_type.get_return_type().unwrap().fn_type(
-                                    &vec![entry_function_type.get_param_types()[0]]
-                                        .into_iter()
-                                        .chain(
-                                            entry_function_type.get_param_types()
-                                                [environment_type.count_fields() as usize..]
-                                                .iter()
-                                                .copied(),
-                                        )
-                                        .collect::<Vec<_>>(),
-                                    false,
-                                ),
+                                target_function_type,
                                 self.type_compiler.compile_unsized_environment(),
                             )
                             .ptr_type(inkwell::AddressSpace::Generic),
@@ -272,29 +268,6 @@ impl<'c, 'm, 't> FunctionApplicationCompiler<'c, 'm, 't> {
                     .into_pointer_value(),
             ))
         }
-    }
-
-    fn compile_curry_entry_pointer(
-        &self,
-        builder: &inkwell::builder::Builder<'c>,
-        entry_pointer: inkwell::values::PointerValue<'c>,
-        arity: usize,
-    ) -> inkwell::values::PointerValue<'c> {
-        builder
-            .build_bitcast(
-                entry_pointer,
-                self.type_compiler
-                    .compile_curried_entry_function(
-                        entry_pointer
-                            .get_type()
-                            .get_element_type()
-                            .into_function_type(),
-                        arity,
-                    )
-                    .ptr_type(inkwell::AddressSpace::Generic),
-                "",
-            )
-            .into_pointer_value()
     }
 
     fn compile_load_entry_pointer(
@@ -656,6 +629,49 @@ mod tests {
                     .ptr_type(inkwell::AddressSpace::Generic)
                     .get_undef(),
                 &[context.f64_type().const_zero().into()],
+            )
+            .unwrap();
+
+        builder.build_return(None);
+
+        assert!(function.verify(true));
+    }
+
+    #[test]
+    fn apply_2_argument_to_3_arity_function() {
+        let context = inkwell::context::Context::create();
+        let type_compiler = TypeCompiler::new(&context);
+        let module = create_module(&context);
+
+        let function = module.add_function("", context.void_type().fn_type(&[], false), None);
+        let builder = context.create_builder();
+        builder.position_at_end(context.append_basic_block(function, "entry"));
+
+        FunctionApplicationCompiler::new(&context, &module, &type_compiler, &COMPILE_CONFIGURATION)
+            .compile(
+                &builder,
+                type_compiler
+                    .compile_closure_struct(
+                        context.f64_type().fn_type(
+                            &[
+                                type_compiler
+                                    .compile_unsized_environment()
+                                    .ptr_type(inkwell::AddressSpace::Generic)
+                                    .into(),
+                                context.f64_type().into(),
+                                context.f64_type().into(),
+                                context.f64_type().into(),
+                            ],
+                            false,
+                        ),
+                        type_compiler.compile_unsized_environment(),
+                    )
+                    .ptr_type(inkwell::AddressSpace::Generic)
+                    .get_undef(),
+                &[
+                    context.f64_type().const_zero().into(),
+                    context.f64_type().const_zero().into(),
+                ],
             )
             .unwrap();
 
