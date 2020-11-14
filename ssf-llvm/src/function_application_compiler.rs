@@ -681,7 +681,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_2_argument_to_3_arity_function() {
+    fn apply_3_argument_to_3_arity_function() {
         let context = inkwell::context::Context::create();
         let type_compiler = TypeCompiler::new(&context);
         let module = create_module(&context);
@@ -712,6 +712,7 @@ mod tests {
                     .ptr_type(inkwell::AddressSpace::Generic)
                     .get_undef(),
                 &[
+                    context.f64_type().const_zero().into(),
                     context.f64_type().const_zero().into(),
                     context.f64_type().const_zero().into(),
                 ],
