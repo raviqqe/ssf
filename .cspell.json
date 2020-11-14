@@ -10,6 +10,7 @@
     "bitcodes",
     "canonicalize",
     "canonicalizer",
+    "clippy",
     "cmpxchg",
     "codecov",
     "concat",
