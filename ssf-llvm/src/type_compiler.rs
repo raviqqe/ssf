@@ -123,9 +123,13 @@ impl<'c> TypeCompiler<'c> {
             self.target_machine
                 .get_target_data()
                 .get_store_size(&self.compile_environment(definition)),
-            self.target_machine
-                .get_target_data()
-                .get_store_size(&self.compile(definition.result_type())),
+            if definition.is_thunk() {
+                self.target_machine
+                    .get_target_data()
+                    .get_store_size(&self.compile(definition.result_type()))
+            } else {
+                0
+            },
         );
 
         self.context.struct_type(
