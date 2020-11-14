@@ -133,13 +133,13 @@ impl<'c> TypeCompiler<'c> {
         );
 
         self.context.struct_type(
-            &if size == 0 {
-                vec![]
+            &(0..if size == 0 {
+                0
             } else {
-                (0..((size as isize - 1) / 8 + 1))
-                    .map(|_| self.context.i64_type().into())
-                    .collect::<Vec<_>>()
-            },
+                (size as isize - 1) / 8 + 1
+            })
+                .map(|_| self.context.i64_type().into())
+                .collect::<Vec<_>>(),
             false,
         )
     }
