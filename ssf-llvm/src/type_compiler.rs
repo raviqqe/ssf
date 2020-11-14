@@ -268,6 +268,7 @@ impl<'c> TypeCompiler<'c> {
         &self,
         algebraic_type: &ssf::types::Algebraic,
     ) -> inkwell::types::BasicTypeEnum<'c> {
+        // TODO Use i64 array type.
         self.context
             .i8_type()
             .array_type(
