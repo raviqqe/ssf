@@ -111,11 +111,11 @@ impl<'c> FunctionApplicationCompiler<'c> {
         function_type: inkwell::types::FunctionType<'c>,
         environment_type: inkwell::types::StructType<'c>,
     ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
-        let entry_function = self.module.add_function(
+        let entry_function = utilities::add_function_to_module(
+            self.module.clone(),
             "pa_entry",
             self.type_compiler
                 .compile_curried_entry_function(function_type, 1),
-            None,
         );
 
         let builder = Arc::new(self.context.create_builder());

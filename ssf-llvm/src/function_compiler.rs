@@ -7,6 +7,7 @@ use super::global_variable::GlobalVariable;
 use super::instruction_compiler::InstructionCompiler;
 use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
+use super::utilities;
 use inkwell::types::BasicType;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -63,10 +64,9 @@ impl<'c> FunctionCompiler<'c> {
         &self,
         definition: &ssf::ir::Definition,
     ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
-        let entry_function = self.module.add_function(
+        let entry_function = self.add_function(
             &Self::generate_closure_entry_name(definition.name()),
             self.type_compiler.compile_entry_function(definition),
-            None,
         );
 
         let builder = Arc::new(self.context.create_builder());
@@ -83,10 +83,9 @@ impl<'c> FunctionCompiler<'c> {
         &self,
         definition: &ssf::ir::Definition,
     ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
-        let entry_function = self.module.add_function(
+        let entry_function = self.add_function(
             &Self::generate_closure_entry_name(definition.name()),
             self.type_compiler.compile_entry_function(definition),
-            None,
         );
 
         let builder = Arc::new(self.context.create_builder());
@@ -234,10 +233,9 @@ impl<'c> FunctionCompiler<'c> {
         &self,
         definition: &ssf::ir::Definition,
     ) -> inkwell::values::FunctionValue<'c> {
-        let entry_function = self.module.add_function(
+        let entry_function = self.add_function(
             &Self::generate_normal_entry_name(definition.name()),
             self.type_compiler.compile_entry_function(definition),
-            None,
         );
 
         let builder = self.context.create_builder();
@@ -254,10 +252,9 @@ impl<'c> FunctionCompiler<'c> {
         &self,
         definition: &ssf::ir::Definition,
     ) -> inkwell::values::FunctionValue<'c> {
-        let entry_function = self.module.add_function(
+        let entry_function = self.add_function(
             &Self::generate_locked_entry_name(definition.name()),
             self.type_compiler.compile_entry_function(definition),
-            None,
         );
 
         let builder = self.context.create_builder();
@@ -348,6 +345,14 @@ impl<'c> FunctionCompiler<'c> {
                 "",
             )
         }
+    }
+
+    fn add_function(
+        &self,
+        name: &str,
+        type_: inkwell::types::FunctionType<'c>,
+    ) -> inkwell::values::FunctionValue<'c> {
+        utilities::add_function_to_module(self.module.clone(), name, type_)
     }
 
     fn generate_closure_entry_name(name: &str) -> String {
