@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Variable {
@@ -12,13 +12,6 @@ impl Variable {
 
     pub fn name(&self) -> &str {
         &self.name
-    }
-
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        match names.get(self.name.as_str()) {
-            Some(name) => Self::new(name),
-            None => self.clone(),
-        }
     }
 
     pub(crate) fn find_variables(&self) -> HashSet<String> {

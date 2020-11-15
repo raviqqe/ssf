@@ -25,10 +25,6 @@ impl Bitcast {
         &self.type_
     }
 
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        Self::new(self.expression.rename_variables(names), self.type_.clone())
-    }
-
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         self.expression.find_variables()
     }

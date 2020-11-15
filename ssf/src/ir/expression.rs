@@ -33,24 +33,6 @@ impl Expression {
         }
     }
 
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        match self {
-            Self::Bitcast(bitcast) => bitcast.rename_variables(names).into(),
-            Self::Case(case) => case.rename_variables(names).into(),
-            Self::ConstructorApplication(constructor_application) => {
-                constructor_application.rename_variables(names).into()
-            }
-            Self::FunctionApplication(function_application) => {
-                function_application.rename_variables(names).into()
-            }
-            Self::LetRecursive(let_recursive) => let_recursive.rename_variables(names).into(),
-            Self::Let(let_) => let_.rename_variables(names).into(),
-            Self::Operation(operation) => operation.rename_variables(names).into(),
-            Self::Variable(variable) => variable.rename_variables(names).into(),
-            Self::Primitive(_) => self.clone(),
-        }
-    }
-
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         match self {
             Self::Bitcast(bitcast) => bitcast.find_variables(),

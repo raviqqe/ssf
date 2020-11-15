@@ -49,13 +49,6 @@ impl FunctionApplication {
         arguments
     }
 
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        Self::new(
-            self.function.rename_variables(names),
-            self.argument.rename_variables(names),
-        )
-    }
-
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         self.function
             .find_variables()

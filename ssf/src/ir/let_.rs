@@ -42,19 +42,6 @@ impl Let {
         &self.expression
     }
 
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        Self::new(
-            self.name.clone(),
-            self.type_.clone(),
-            self.bound_expression.rename_variables(&names),
-            {
-                let mut names = names.clone();
-                names.remove(&self.name);
-                self.expression.rename_variables(&names)
-            },
-        )
-    }
-
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         self.bound_expression
             .find_variables()

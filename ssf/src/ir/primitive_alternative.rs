@@ -25,13 +25,6 @@ impl PrimitiveAlternative {
         &self.expression
     }
 
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        Self {
-            primitive: self.primitive.clone(),
-            expression: self.expression.rename_variables(&names),
-        }
-    }
-
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         self.expression.find_variables()
     }

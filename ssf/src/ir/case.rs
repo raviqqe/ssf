@@ -15,13 +15,6 @@ pub enum Case {
 }
 
 impl Case {
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        match self {
-            Self::Algebraic(algebraic_case) => algebraic_case.rename_variables(names).into(),
-            Self::Primitive(primitive_case) => primitive_case.rename_variables(names).into(),
-        }
-    }
-
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         match self {
             Self::Algebraic(algebraic_case) => algebraic_case.find_variables(),
