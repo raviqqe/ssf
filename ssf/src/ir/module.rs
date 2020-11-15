@@ -48,49 +48,6 @@ impl Module {
         &self.definitions
     }
 
-    pub fn rename_global_variables(&self, names: &HashMap<String, String>) -> Self {
-        Self {
-            declarations: self
-                .declarations
-                .iter()
-                .map(|declaration| {
-                    Declaration::new(
-                        names
-                            .get(declaration.name())
-                            .cloned()
-                            .unwrap_or_else(|| declaration.name().into()),
-                        declaration.type_().clone(),
-                    )
-                })
-                .collect(),
-            definitions: self
-                .definitions
-                .iter()
-                .map(|definition| {
-                    Definition::with_options(
-                        names
-                            .get(definition.name())
-                            .cloned()
-                            .unwrap_or_else(|| definition.name().into()),
-                        definition.environment().to_vec(),
-                        definition.arguments().to_vec(),
-                        {
-                            let mut names = names.clone();
-
-                            for argument in definition.arguments() {
-                                names.remove(argument.name());
-                            }
-
-                            definition.body().rename_variables(&names)
-                        },
-                        definition.result_type().clone(),
-                        definition.is_thunk(),
-                    )
-                })
-                .collect(),
-        }
-    }
-
     fn canonicalize_types(&self) -> Self {
         Self {
             declarations: self
