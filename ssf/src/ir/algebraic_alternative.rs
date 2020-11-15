@@ -35,20 +35,6 @@ impl AlgebraicAlternative {
         &self.expression
     }
 
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        let mut names = names.clone();
-
-        for element_name in &self.element_names {
-            names.remove(element_name);
-        }
-
-        Self {
-            constructor: self.constructor.clone(),
-            element_names: self.element_names.clone(),
-            expression: self.expression.rename_variables(&names),
-        }
-    }
-
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         let mut variables = self.expression.find_variables();
 

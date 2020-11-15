@@ -107,25 +107,6 @@ impl Definition {
         self.is_thunk
     }
 
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        let mut names = names.clone();
-
-        names.remove(self.name.as_str());
-
-        for argument in &self.arguments {
-            names.remove(argument.name());
-        }
-
-        Self::with_options(
-            self.name.clone(),
-            self.environment.clone(),
-            self.arguments.clone(),
-            self.body.rename_variables(&names),
-            self.result_type.clone(),
-            self.is_thunk,
-        )
-    }
-
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         let mut variables = self.body.find_variables();
 

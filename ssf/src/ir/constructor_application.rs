@@ -25,16 +25,6 @@ impl ConstructorApplication {
         &self.arguments
     }
 
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        Self::new(
-            self.constructor.clone(),
-            self.arguments
-                .iter()
-                .map(|argument| argument.rename_variables(names))
-                .collect(),
-        )
-    }
-
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         let mut variables = HashSet::new();
 

@@ -32,14 +32,6 @@ impl Operation {
         &self.rhs
     }
 
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        Self::new(
-            self.operator,
-            self.lhs.rename_variables(names),
-            self.rhs.rename_variables(names),
-        )
-    }
-
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         self.lhs
             .find_variables()

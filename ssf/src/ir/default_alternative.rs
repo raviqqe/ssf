@@ -25,17 +25,6 @@ impl DefaultAlternative {
         &self.expression
     }
 
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        let mut names = names.clone();
-
-        names.remove(&self.variable);
-
-        Self {
-            variable: self.variable.clone(),
-            expression: self.expression.rename_variables(&names).into(),
-        }
-    }
-
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         let mut variables = self.expression.find_variables();
 

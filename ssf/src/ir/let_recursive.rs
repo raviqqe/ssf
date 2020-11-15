@@ -26,22 +26,6 @@ impl LetRecursive {
         &self.expression
     }
 
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        let mut names = names.clone();
-
-        for definition in &self.definitions {
-            names.remove(definition.name());
-        }
-
-        let mut definitions = Vec::with_capacity(self.definitions.len());
-
-        for definition in &self.definitions {
-            definitions.push(definition.rename_variables(&names));
-        }
-
-        Self::new(definitions, self.expression.rename_variables(&names))
-    }
-
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         let mut variables = self.expression.find_variables();
 

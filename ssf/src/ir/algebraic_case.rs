@@ -44,22 +44,6 @@ impl AlgebraicCase {
         self.default_alternative.as_ref()
     }
 
-    pub(crate) fn rename_variables(&self, names: &HashMap<String, String>) -> Self {
-        Self {
-            type_: self.type_.clone(),
-            argument: self.argument.rename_variables(names).into(),
-            alternatives: self
-                .alternatives
-                .iter()
-                .map(|alternative| alternative.rename_variables(names))
-                .collect(),
-            default_alternative: self
-                .default_alternative
-                .as_ref()
-                .map(|default_alternative| default_alternative.rename_variables(names)),
-        }
-    }
-
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         let mut variables = self.argument.find_variables();
 
