@@ -2,7 +2,6 @@ use super::declaration::Declaration;
 use super::definition::Definition;
 use crate::analysis::{check_types, AnalysisError};
 use crate::types::canonicalize;
-use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Module {
