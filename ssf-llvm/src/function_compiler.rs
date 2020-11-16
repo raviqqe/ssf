@@ -1,11 +1,7 @@
-use super::closure_operation_compiler::ClosureOperationCompiler;
-use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
-use super::expression_compiler::ExpressionCompiler;
-use super::function_application_compiler::FunctionApplicationCompiler;
+use super::expression_compiler_factory::ExpressionCompilerFactory;
 use super::global_variable::GlobalVariable;
 use super::instruction_compiler::InstructionCompiler;
-use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
 use super::utilities;
 use inkwell::types::BasicType;
@@ -16,12 +12,9 @@ use std::sync::Arc;
 pub struct FunctionCompiler<'c> {
     context: &'c inkwell::context::Context,
     module: Arc<inkwell::module::Module<'c>>,
-    function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
+    expression_compiler_factory: Arc<ExpressionCompilerFactory<'c>>,
     type_compiler: Arc<TypeCompiler<'c>>,
-    closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
-    malloc_compiler: Arc<MallocCompiler<'c>>,
     global_variables: Arc<HashMap<String, GlobalVariable<'c>>>,
-    compile_configuration: Arc<CompileConfiguration>,
 }
 
 impl<'c> FunctionCompiler<'c> {
@@ -29,22 +22,16 @@ impl<'c> FunctionCompiler<'c> {
     pub fn new(
         context: &'c inkwell::context::Context,
         module: Arc<inkwell::module::Module<'c>>,
-        function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
+        expression_compiler_factory: Arc<ExpressionCompilerFactory<'c>>,
         type_compiler: Arc<TypeCompiler<'c>>,
-        closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
-        malloc_compiler: Arc<MallocCompiler<'c>>,
         global_variables: Arc<HashMap<String, GlobalVariable<'c>>>,
-        compile_configuration: Arc<CompileConfiguration>,
     ) -> Arc<Self> {
         Self {
             context,
             module,
-            function_application_compiler,
+            expression_compiler_factory,
             type_compiler,
-            closure_operation_compiler,
-            malloc_compiler,
             global_variables,
-            compile_configuration,
         }
         .into()
     }
@@ -215,18 +202,10 @@ impl<'c> FunctionCompiler<'c> {
             );
         }
 
-        Ok(ExpressionCompiler::new(
-            self.context,
-            self.module.clone(),
-            builder,
-            self.clone().into(),
-            self.function_application_compiler.clone(),
-            self.type_compiler.clone(),
-            self.closure_operation_compiler.clone(),
-            self.malloc_compiler.clone(),
-            self.compile_configuration.clone(),
-        )
-        .compile(&definition.body(), &variables)?)
+        Ok(self
+            .expression_compiler_factory
+            .create(builder, self.clone().into())
+            .compile(&definition.body(), &variables)?)
     }
 
     fn compile_normal_entry(

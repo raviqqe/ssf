@@ -639,6 +639,7 @@ impl<'c> ExpressionCompiler<'c> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::expression_compiler_factory::ExpressionCompilerFactory;
     use super::*;
     use lazy_static::lazy_static;
 
@@ -682,27 +683,26 @@ mod tests {
             closure_operation_compiler.clone(),
             malloc_compiler.clone(),
         );
+        let expression_compiler_factory = ExpressionCompilerFactory::new(
+            context,
+            module.clone(),
+            function_application_compiler.clone(),
+            type_compiler.clone(),
+            closure_operation_compiler.clone(),
+            malloc_compiler.clone(),
+            COMPILE_CONFIGURATION.clone(),
+        );
 
         (
-            ExpressionCompiler::new(
-                &context,
-                module.clone(),
+            expression_compiler_factory.create(
                 builder.clone(),
                 FunctionCompiler::new(
                     &context,
                     module.clone(),
-                    function_application_compiler.clone(),
+                    expression_compiler_factory.clone(),
                     type_compiler.clone(),
-                    closure_operation_compiler.clone(),
-                    malloc_compiler.clone(),
                     HashMap::new().into(),
-                    COMPILE_CONFIGURATION.clone(),
                 ),
-                function_application_compiler.clone(),
-                type_compiler.clone(),
-                closure_operation_compiler.clone(),
-                malloc_compiler.clone(),
-                COMPILE_CONFIGURATION.clone(),
             ),
             type_compiler,
             builder,

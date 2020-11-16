@@ -1,10 +1,8 @@
-use super::closure_operation_compiler::ClosureOperationCompiler;
 use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
-use super::function_application_compiler::FunctionApplicationCompiler;
+use super::expression_compiler_factory::ExpressionCompilerFactory;
 use super::function_compiler::FunctionCompiler;
 use super::global_variable::GlobalVariable;
-use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -12,9 +10,8 @@ use std::sync::Arc;
 pub struct ModuleCompiler<'c> {
     context: &'c inkwell::context::Context,
     module: Arc<inkwell::module::Module<'c>>,
+    expression_compiler_factory: Arc<ExpressionCompilerFactory<'c>>,
     type_compiler: Arc<TypeCompiler<'c>>,
-    closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
-    malloc_compiler: Arc<MallocCompiler<'c>>,
     compile_configuration: Arc<CompileConfiguration>,
 }
 
@@ -22,17 +19,15 @@ impl<'c> ModuleCompiler<'c> {
     pub fn new(
         context: &'c inkwell::context::Context,
         module: Arc<inkwell::module::Module<'c>>,
+        expression_compiler_factory: Arc<ExpressionCompilerFactory<'c>>,
         type_compiler: Arc<TypeCompiler<'c>>,
-        closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
-        malloc_compiler: Arc<MallocCompiler<'c>>,
         compile_configuration: Arc<CompileConfiguration>,
     ) -> Self {
         Self {
             context,
             module,
+            expression_compiler_factory,
             type_compiler,
-            closure_operation_compiler,
-            malloc_compiler,
             compile_configuration,
         }
     }
@@ -119,18 +114,9 @@ impl<'c> ModuleCompiler<'c> {
                 FunctionCompiler::new(
                     self.context,
                     self.module.clone(),
-                    FunctionApplicationCompiler::new(
-                        self.context,
-                        self.module.clone(),
-                        self.type_compiler.clone(),
-                        self.closure_operation_compiler.clone(),
-                        self.malloc_compiler.clone(),
-                    ),
+                    self.expression_compiler_factory.clone(),
                     self.type_compiler.clone(),
-                    self.closure_operation_compiler.clone(),
-                    self.malloc_compiler.clone(),
                     global_variables.clone(),
-                    self.compile_configuration.clone(),
                 )
                 .compile(definition)?
                 .as_global_value()
