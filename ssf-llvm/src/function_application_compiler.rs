@@ -35,28 +35,24 @@ impl<'c> FunctionApplicationCompiler<'c> {
     // Closures' entry points are always uncurried.
     pub fn compile(
         &self,
-        builder: Arc<inkwell::builder::Builder<'c>>,
+        builder: &inkwell::builder::Builder<'c>,
         closure: inkwell::values::PointerValue<'c>,
         arguments: &[inkwell::values::BasicValueEnum<'c>],
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         let switch_block = builder.get_insert_block().unwrap();
-        let phi_block = self.append_basic_block(builder.clone(), "phi");
+        let phi_block = self.append_basic_block(builder, "phi");
 
         let cases = (1..=arguments.len())
             .map(|arity| {
-                let block =
-                    self.append_basic_block(builder.clone(), &format!("pa_arity_{}", arity));
+                let block = self.append_basic_block(builder, &format!("pa_arity_{}", arity));
                 builder.position_at_end(block);
 
                 let mut value =
                     self.compile_direct_closure_call(&builder, closure, &arguments[..arity]);
 
                 if arity != arguments.len() {
-                    value = self.compile(
-                        builder.clone(),
-                        value.into_pointer_value(),
-                        &arguments[arity..],
-                    )?;
+                    value =
+                        self.compile(builder, value.into_pointer_value(), &arguments[arity..])?;
                 }
 
                 builder.build_unconditional_branch(phi_block);
@@ -65,9 +61,9 @@ impl<'c> FunctionApplicationCompiler<'c> {
             })
             .collect::<Result<Vec<_>, CompileError>>()?;
 
-        let default_block = self.append_basic_block(builder.clone(), "pa_default");
+        let default_block = self.append_basic_block(builder, "pa_default");
         builder.position_at_end(default_block);
-        let default_value = self.compile_create_closure(builder.clone(), closure, &arguments)?;
+        let default_value = self.compile_create_closure(builder, closure, &arguments)?;
         if default_value.is_some() {
             builder.build_unconditional_branch(phi_block);
         }
@@ -143,8 +139,8 @@ impl<'c> FunctionApplicationCompiler<'c> {
             .chain(vec![entry_function.get_params()[1]])
             .collect::<Vec<_>>();
 
-        let then_block = self.append_basic_block(builder.clone(), "then");
-        let else_block = self.append_basic_block(builder.clone(), "else");
+        let then_block = self.append_basic_block(&builder, "then");
+        let else_block = self.append_basic_block(&builder, "else");
 
         builder.build_conditional_branch(
             builder.build_int_compare(
@@ -166,7 +162,7 @@ impl<'c> FunctionApplicationCompiler<'c> {
         ));
 
         builder.position_at_end(else_block);
-        if let Some(value) = self.compile_create_closure(builder.clone(), closure, &arguments)? {
+        if let Some(value) = self.compile_create_closure(&builder, closure, &arguments)? {
             builder.build_return(Some(&value));
         }
 
@@ -217,7 +213,7 @@ impl<'c> FunctionApplicationCompiler<'c> {
 
     fn compile_create_closure(
         &self,
-        builder: Arc<inkwell::builder::Builder<'c>>,
+        builder: &inkwell::builder::Builder<'c>,
         closure: inkwell::values::PointerValue<'c>,
         arguments: &[inkwell::values::BasicValueEnum<'c>],
     ) -> Result<Option<inkwell::values::PointerValue<'c>>, CompileError> {
@@ -288,7 +284,7 @@ impl<'c> FunctionApplicationCompiler<'c> {
 
     fn append_basic_block(
         &self,
-        builder: Arc<inkwell::builder::Builder<'c>>,
+        builder: &inkwell::builder::Builder<'c>,
         name: &str,
     ) -> inkwell::basic_block::BasicBlock<'c> {
         self.context.append_basic_block(
@@ -314,7 +310,7 @@ mod tests {
     ) -> (
         Arc<FunctionApplicationCompiler>,
         Arc<TypeCompiler>,
-        Arc<inkwell::builder::Builder>,
+        inkwell::builder::Builder,
         inkwell::values::FunctionValue,
     ) {
         let module = Arc::new(context.create_module(""));
@@ -346,7 +342,7 @@ mod tests {
                 malloc_compiler,
             ),
             type_compiler,
-            builder.into(),
+            builder,
             function,
         )
     }
@@ -359,7 +355,7 @@ mod tests {
 
         function_application_compiler
             .compile(
-                builder.clone(),
+                &builder,
                 type_compiler
                     .compile_raw_closure(
                         context.f64_type().fn_type(
@@ -393,7 +389,7 @@ mod tests {
 
         function_application_compiler
             .compile(
-                builder.clone(),
+                &builder,
                 type_compiler
                     .compile_raw_closure(
                         context.f64_type().fn_type(
@@ -428,7 +424,7 @@ mod tests {
 
         function_application_compiler
             .compile(
-                builder.clone(),
+                &builder,
                 type_compiler
                     .compile_raw_closure(
                         context.f64_type().fn_type(
@@ -466,7 +462,7 @@ mod tests {
 
         function_application_compiler
             .compile(
-                builder.clone(),
+                &builder,
                 type_compiler
                     .compile_raw_closure(
                         context.f64_type().fn_type(
@@ -502,7 +498,7 @@ mod tests {
 
         function_application_compiler
             .compile(
-                builder.clone(),
+                &builder,
                 type_compiler
                     .compile_raw_closure(
                         context.f64_type().fn_type(
@@ -541,7 +537,7 @@ mod tests {
 
         function_application_compiler
             .compile(
-                builder.clone(),
+                &builder,
                 type_compiler
                     .compile_raw_closure(
                         context.f64_type().fn_type(

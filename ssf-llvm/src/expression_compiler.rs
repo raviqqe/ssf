@@ -151,7 +151,7 @@ impl<'c> ExpressionCompiler<'c> {
             }
             ssf::ir::Expression::FunctionApplication(function_application) => {
                 self.function_application_compiler.compile(
-                    self.builder.clone(),
+                    &self.builder,
                     self.compile(function_application.first_function(), variables)?
                         .into_pointer_value(),
                     &function_application

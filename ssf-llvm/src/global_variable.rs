@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 pub struct GlobalVariable<'c> {
     global_value: inkwell::values::GlobalValue<'c>,
     pointer_type: inkwell::types::PointerType<'c>,
@@ -22,7 +20,7 @@ impl<'c> GlobalVariable<'c> {
 
     pub fn load(
         &self,
-        builder: Arc<inkwell::builder::Builder<'c>>,
+        builder: &inkwell::builder::Builder<'c>,
     ) -> inkwell::values::PointerValue<'c> {
         builder
             .build_bitcast(self.global_value.as_pointer_value(), self.pointer_type, "")

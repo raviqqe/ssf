@@ -170,9 +170,7 @@ impl<'c> FunctionCompiler<'c> {
         let mut variables = self
             .global_variables
             .iter()
-            .map(|(name, global_variable)| {
-                (name.into(), global_variable.load(builder.clone()).into())
-            })
+            .map(|(name, global_variable)| (name.into(), global_variable.load(&builder).into()))
             .collect::<HashMap<String, inkwell::values::BasicValueEnum>>();
 
         for (index, free_variable) in definition.environment().iter().enumerate() {
