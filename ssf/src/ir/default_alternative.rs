@@ -40,16 +40,13 @@ impl DefaultAlternative {
     ) -> Self {
         Self {
             variable: self.variable.clone(),
-            expression: self
-                .expression
-                .infer_environment(
-                    &variables
-                        .clone()
-                        .into_iter()
-                        .chain(vec![(self.variable.clone(), type_.into())])
-                        .collect(),
-                )
-                .into(),
+            expression: {
+                let mut variables = variables.clone();
+
+                variables.insert(self.variable.clone(), type_.into());
+
+                self.expression.infer_environment(&variables).into()
+            },
         }
     }
 
