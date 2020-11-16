@@ -695,7 +695,7 @@ mod tests {
                     type_compiler.clone(),
                     closure_operation_compiler.clone(),
                     malloc_compiler.clone(),
-                    HashMap::new(),
+                    HashMap::new().into(),
                     COMPILE_CONFIGURATION.clone(),
                 ),
                 function_application_compiler.clone(),
