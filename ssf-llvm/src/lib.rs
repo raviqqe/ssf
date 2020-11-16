@@ -5,6 +5,7 @@ mod expression_compiler;
 mod expression_compiler_factory;
 mod function_application_compiler;
 mod function_compiler;
+mod function_compiler_factory;
 mod global_variable;
 mod instruction_compiler;
 mod malloc_compiler;
@@ -17,6 +18,7 @@ pub use compile_configuration::CompileConfiguration;
 pub use error::CompileError;
 use expression_compiler_factory::ExpressionCompilerFactory;
 use function_application_compiler::FunctionApplicationCompiler;
+use function_compiler_factory::FunctionCompilerFactory;
 use malloc_compiler::MallocCompiler;
 use module_compiler::ModuleCompiler;
 use std::sync::Arc;
@@ -47,11 +49,17 @@ pub fn compile(
         malloc_compiler.clone(),
         compile_configuration.clone(),
     );
+    let function_compiler_factory = FunctionCompilerFactory::new(
+        &context,
+        module.clone(),
+        expression_compiler_factory,
+        type_compiler.clone(),
+    );
 
     ModuleCompiler::new(
         &context,
         module.clone(),
-        expression_compiler_factory,
+        function_compiler_factory,
         type_compiler,
         compile_configuration,
     )

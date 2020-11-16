@@ -1,7 +1,6 @@
 use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
-use super::expression_compiler_factory::ExpressionCompilerFactory;
-use super::function_compiler::FunctionCompiler;
+use super::function_compiler_factory::FunctionCompilerFactory;
 use super::global_variable::GlobalVariable;
 use super::type_compiler::TypeCompiler;
 use std::collections::HashMap;
@@ -10,7 +9,7 @@ use std::sync::Arc;
 pub struct ModuleCompiler<'c> {
     context: &'c inkwell::context::Context,
     module: Arc<inkwell::module::Module<'c>>,
-    expression_compiler_factory: Arc<ExpressionCompilerFactory<'c>>,
+    function_compiler_factory: Arc<FunctionCompilerFactory<'c>>,
     type_compiler: Arc<TypeCompiler<'c>>,
     compile_configuration: Arc<CompileConfiguration>,
 }
@@ -19,14 +18,14 @@ impl<'c> ModuleCompiler<'c> {
     pub fn new(
         context: &'c inkwell::context::Context,
         module: Arc<inkwell::module::Module<'c>>,
-        expression_compiler_factory: Arc<ExpressionCompilerFactory<'c>>,
+        function_compiler_factory: Arc<FunctionCompilerFactory<'c>>,
         type_compiler: Arc<TypeCompiler<'c>>,
         compile_configuration: Arc<CompileConfiguration>,
     ) -> Self {
         Self {
             context,
             module,
-            expression_compiler_factory,
+            function_compiler_factory,
             type_compiler,
             compile_configuration,
         }
@@ -111,17 +110,12 @@ impl<'c> ModuleCompiler<'c> {
 
         global_value.set_initializer(
             &closure_type.const_named_struct(&[
-                FunctionCompiler::new(
-                    self.context,
-                    self.module.clone(),
-                    self.expression_compiler_factory.clone(),
-                    self.type_compiler.clone(),
-                    global_variables.clone(),
-                )
-                .compile(definition)?
-                .as_global_value()
-                .as_pointer_value()
-                .into(),
+                self.function_compiler_factory
+                    .create(global_variables.clone())
+                    .compile(definition)?
+                    .as_global_value()
+                    .as_pointer_value()
+                    .into(),
                 self.type_compiler
                     .compile_arity()
                     .const_int(definition.arguments().len() as u64, false)
