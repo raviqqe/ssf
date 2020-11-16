@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-#[derive(Clone)]
 pub struct GlobalVariable<'c> {
     global_value: inkwell::values::GlobalValue<'c>,
     pointer_type: inkwell::types::PointerType<'c>,

@@ -50,8 +50,10 @@ impl<'c> ModuleCompiler<'c> {
             self.define_function(&mut global_variables, definition);
         }
 
+        let global_variables = Arc::new(global_variables);
+
         for definition in ir_module.definitions() {
-            self.compile_function(&global_variables, definition)?;
+            self.compile_function(global_variables.clone(), definition)?;
         }
 
         self.module.verify()?;
@@ -102,7 +104,7 @@ impl<'c> ModuleCompiler<'c> {
 
     fn compile_function(
         &self,
-        global_variables: &HashMap<String, GlobalVariable<'c>>,
+        global_variables: Arc<HashMap<String, GlobalVariable<'c>>>,
         definition: &ssf::ir::Definition,
     ) -> Result<(), CompileError> {
         let global_value = global_variables[definition.name()].global_value();

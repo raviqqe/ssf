@@ -20,7 +20,7 @@ pub struct FunctionCompiler<'c> {
     type_compiler: Arc<TypeCompiler<'c>>,
     closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
     malloc_compiler: Arc<MallocCompiler<'c>>,
-    global_variables: HashMap<String, GlobalVariable<'c>>,
+    global_variables: Arc<HashMap<String, GlobalVariable<'c>>>,
     compile_configuration: Arc<CompileConfiguration>,
 }
 
@@ -33,7 +33,7 @@ impl<'c> FunctionCompiler<'c> {
         type_compiler: Arc<TypeCompiler<'c>>,
         closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
         malloc_compiler: Arc<MallocCompiler<'c>>,
-        global_variables: HashMap<String, GlobalVariable<'c>>,
+        global_variables: Arc<HashMap<String, GlobalVariable<'c>>>,
         compile_configuration: Arc<CompileConfiguration>,
     ) -> Arc<Self> {
         Self {
