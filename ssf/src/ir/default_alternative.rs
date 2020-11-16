@@ -38,13 +38,15 @@ impl DefaultAlternative {
         type_: impl Into<Type>,
         variables: &HashMap<String, Type>,
     ) -> Self {
-        let mut variables = variables.clone();
-
-        variables.insert(self.variable.clone(), type_.into());
-
         Self {
             variable: self.variable.clone(),
-            expression: self.expression.infer_environment(&variables).into(),
+            expression: {
+                let mut variables = variables.clone();
+
+                variables.insert(self.variable.clone(), type_.into());
+
+                self.expression.infer_environment(&variables).into()
+            },
         }
     }
 

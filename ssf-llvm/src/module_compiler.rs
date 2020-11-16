@@ -1,10 +1,7 @@
-use super::closure_operation_compiler::ClosureOperationCompiler;
 use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
-use super::function_application_compiler::FunctionApplicationCompiler;
-use super::function_compiler::FunctionCompiler;
+use super::function_compiler_factory::FunctionCompilerFactory;
 use super::global_variable::GlobalVariable;
-use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -12,9 +9,8 @@ use std::sync::Arc;
 pub struct ModuleCompiler<'c> {
     context: &'c inkwell::context::Context,
     module: Arc<inkwell::module::Module<'c>>,
+    function_compiler_factory: Arc<FunctionCompilerFactory<'c>>,
     type_compiler: Arc<TypeCompiler<'c>>,
-    closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
-    malloc_compiler: Arc<MallocCompiler<'c>>,
     compile_configuration: Arc<CompileConfiguration>,
 }
 
@@ -22,17 +18,15 @@ impl<'c> ModuleCompiler<'c> {
     pub fn new(
         context: &'c inkwell::context::Context,
         module: Arc<inkwell::module::Module<'c>>,
+        function_compiler_factory: Arc<FunctionCompilerFactory<'c>>,
         type_compiler: Arc<TypeCompiler<'c>>,
-        closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
-        malloc_compiler: Arc<MallocCompiler<'c>>,
         compile_configuration: Arc<CompileConfiguration>,
     ) -> Self {
         Self {
             context,
             module,
+            function_compiler_factory,
             type_compiler,
-            closure_operation_compiler,
-            malloc_compiler,
             compile_configuration,
         }
     }
@@ -50,8 +44,10 @@ impl<'c> ModuleCompiler<'c> {
             self.define_function(&mut global_variables, definition);
         }
 
+        let global_variables = Arc::new(global_variables);
+
         for definition in ir_module.definitions() {
-            self.compile_function(&global_variables, definition)?;
+            self.compile_function(global_variables.clone(), definition)?;
         }
 
         self.module.verify()?;
@@ -102,7 +98,7 @@ impl<'c> ModuleCompiler<'c> {
 
     fn compile_function(
         &self,
-        global_variables: &HashMap<String, GlobalVariable<'c>>,
+        global_variables: Arc<HashMap<String, GlobalVariable<'c>>>,
         definition: &ssf::ir::Definition,
     ) -> Result<(), CompileError> {
         let global_value = global_variables[definition.name()].global_value();
@@ -114,26 +110,12 @@ impl<'c> ModuleCompiler<'c> {
 
         global_value.set_initializer(
             &closure_type.const_named_struct(&[
-                FunctionCompiler::new(
-                    self.context,
-                    self.module.clone(),
-                    FunctionApplicationCompiler::new(
-                        self.context,
-                        self.module.clone(),
-                        self.type_compiler.clone(),
-                        self.closure_operation_compiler.clone(),
-                        self.malloc_compiler.clone(),
-                    ),
-                    self.type_compiler.clone(),
-                    self.closure_operation_compiler.clone(),
-                    self.malloc_compiler.clone(),
-                    global_variables.clone(),
-                    self.compile_configuration.clone(),
-                )
-                .compile(definition)?
-                .as_global_value()
-                .as_pointer_value()
-                .into(),
+                self.function_compiler_factory
+                    .create(global_variables.clone())
+                    .compile(definition)?
+                    .as_global_value()
+                    .as_pointer_value()
+                    .into(),
                 self.type_compiler
                     .compile_arity()
                     .const_int(definition.arguments().len() as u64, false)

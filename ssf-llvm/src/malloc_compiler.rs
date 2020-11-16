@@ -20,7 +20,7 @@ impl<'c> MallocCompiler<'c> {
 
     pub fn compile_struct_malloc(
         &self,
-        builder: Arc<inkwell::builder::Builder<'c>>,
+        builder: &inkwell::builder::Builder<'c>,
         type_: inkwell::types::StructType<'c>,
     ) -> inkwell::values::PointerValue<'c> {
         builder

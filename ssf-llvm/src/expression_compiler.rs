@@ -151,7 +151,7 @@ impl<'c> ExpressionCompiler<'c> {
             }
             ssf::ir::Expression::FunctionApplication(function_application) => {
                 self.function_application_compiler.compile(
-                    self.builder.clone(),
+                    &self.builder,
                     self.compile(function_application.first_function(), variables)?
                         .into_pointer_value(),
                     &function_application
@@ -187,7 +187,7 @@ impl<'c> ExpressionCompiler<'c> {
 
                     self.closure_operation_compiler
                         .compile_store_closure_content(
-                            self.builder.clone(),
+                            &self.builder,
                             closure,
                             self.function_compiler.compile(definition)?,
                             &definition
@@ -599,10 +599,10 @@ impl<'c> ExpressionCompiler<'c> {
         variable: &ssf::ir::Variable,
         variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
-        match variables.get(variable.name()) {
-            Some(value) => Ok(*value),
-            None => Err(CompileError::VariableNotFound(variable.name().into())),
-        }
+        variables
+            .get(variable.name())
+            .copied()
+            .ok_or_else(|| CompileError::VariableNotFound(variable.name().into()))
     }
 
     fn append_basic_block(&self, name: &str) -> inkwell::basic_block::BasicBlock<'c> {
@@ -621,7 +621,7 @@ impl<'c> ExpressionCompiler<'c> {
         type_: inkwell::types::StructType<'c>,
     ) -> inkwell::values::PointerValue<'c> {
         self.malloc_compiler
-            .compile_struct_malloc(self.builder.clone(), type_)
+            .compile_struct_malloc(&self.builder, type_)
     }
 
     fn compile_unreachable(&self) {
@@ -639,6 +639,7 @@ impl<'c> ExpressionCompiler<'c> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::expression_compiler_factory::ExpressionCompilerFactory;
     use super::*;
     use lazy_static::lazy_static;
 
@@ -682,27 +683,26 @@ mod tests {
             closure_operation_compiler.clone(),
             malloc_compiler.clone(),
         );
+        let expression_compiler_factory = ExpressionCompilerFactory::new(
+            context,
+            module.clone(),
+            function_application_compiler.clone(),
+            type_compiler.clone(),
+            closure_operation_compiler.clone(),
+            malloc_compiler.clone(),
+            COMPILE_CONFIGURATION.clone(),
+        );
 
         (
-            ExpressionCompiler::new(
-                &context,
-                module.clone(),
+            expression_compiler_factory.create(
                 builder.clone(),
                 FunctionCompiler::new(
                     &context,
                     module.clone(),
-                    function_application_compiler.clone(),
+                    expression_compiler_factory.clone(),
                     type_compiler.clone(),
-                    closure_operation_compiler.clone(),
-                    malloc_compiler.clone(),
-                    HashMap::new(),
-                    COMPILE_CONFIGURATION.clone(),
+                    HashMap::new().into(),
                 ),
-                function_application_compiler.clone(),
-                type_compiler.clone(),
-                closure_operation_compiler.clone(),
-                malloc_compiler.clone(),
-                COMPILE_CONFIGURATION.clone(),
             ),
             type_compiler,
             builder,

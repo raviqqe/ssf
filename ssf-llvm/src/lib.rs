@@ -2,8 +2,10 @@ mod closure_operation_compiler;
 mod compile_configuration;
 mod error;
 mod expression_compiler;
+mod expression_compiler_factory;
 mod function_application_compiler;
 mod function_compiler;
+mod function_compiler_factory;
 mod global_variable;
 mod instruction_compiler;
 mod malloc_compiler;
@@ -14,6 +16,9 @@ mod utilities;
 use closure_operation_compiler::ClosureOperationCompiler;
 pub use compile_configuration::CompileConfiguration;
 pub use error::CompileError;
+use expression_compiler_factory::ExpressionCompilerFactory;
+use function_application_compiler::FunctionApplicationCompiler;
+use function_compiler_factory::FunctionCompilerFactory;
 use malloc_compiler::MallocCompiler;
 use module_compiler::ModuleCompiler;
 use std::sync::Arc;
@@ -28,13 +33,34 @@ pub fn compile(
     let type_compiler = TypeCompiler::new(&context);
     let closure_operation_compiler = ClosureOperationCompiler::new(&context, type_compiler.clone());
     let malloc_compiler = MallocCompiler::new(module.clone(), compile_configuration.clone());
+    let function_application_compiler = FunctionApplicationCompiler::new(
+        &context,
+        module.clone(),
+        type_compiler.clone(),
+        closure_operation_compiler.clone(),
+        malloc_compiler.clone(),
+    );
+    let expression_compiler_factory = ExpressionCompilerFactory::new(
+        &context,
+        module.clone(),
+        function_application_compiler.clone(),
+        type_compiler.clone(),
+        closure_operation_compiler.clone(),
+        malloc_compiler.clone(),
+        compile_configuration.clone(),
+    );
+    let function_compiler_factory = FunctionCompilerFactory::new(
+        &context,
+        module.clone(),
+        expression_compiler_factory,
+        type_compiler.clone(),
+    );
 
     ModuleCompiler::new(
         &context,
         module.clone(),
+        function_compiler_factory,
         type_compiler,
-        closure_operation_compiler,
-        malloc_compiler,
         compile_configuration,
     )
     .compile(ir_module)?;
