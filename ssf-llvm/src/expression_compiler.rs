@@ -599,10 +599,10 @@ impl<'c> ExpressionCompiler<'c> {
         variable: &ssf::ir::Variable,
         variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
-        match variables.get(variable.name()) {
-            Some(value) => Ok(*value),
-            None => Err(CompileError::VariableNotFound(variable.name().into())),
-        }
+        variables
+            .get(variable.name())
+            .copied()
+            .ok_or_else(|| CompileError::VariableNotFound(variable.name().into()))
     }
 
     fn append_basic_block(&self, name: &str) -> inkwell::basic_block::BasicBlock<'c> {
