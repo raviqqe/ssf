@@ -19,7 +19,7 @@ jobs:
   code-coverage:
     runs-on: ubuntu-latest
     steps:
-      - run: curl -f https://apt.llvm.org/llvm.sh | sudo bash /dev/stdin 10
+      - run: curl -f https://apt.llvm.org/llvm.sh | sudo bash /dev/stdin 11
       - uses: actions/checkout@master
       - uses: actions-rs/toolchain@v1
         with:
