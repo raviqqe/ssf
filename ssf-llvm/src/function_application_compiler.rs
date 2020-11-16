@@ -261,18 +261,13 @@ impl<'c> FunctionApplicationCompiler<'c> {
                 self.compile_partially_applied_function(target_function_type, environment_type)?;
 
             let closure = self.malloc_compiler.compile_struct_malloc(
-                builder.clone(),
+                &builder,
                 self.type_compiler
                     .compile_raw_closure(function.get_type(), environment_type),
             );
 
             self.closure_operation_compiler
-                .compile_store_closure_content(
-                    builder.clone(),
-                    closure,
-                    function,
-                    &environment_values,
-                )?;
+                .compile_store_closure_content(&builder, closure, function, &environment_values)?;
 
             Ok(Some(
                 builder

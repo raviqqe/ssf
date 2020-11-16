@@ -96,7 +96,7 @@ impl<'c> ClosureOperationCompiler<'c> {
 
     pub fn compile_store_closure_content(
         &self,
-        builder: Arc<inkwell::builder::Builder<'c>>,
+        builder: &inkwell::builder::Builder<'c>,
         closure_pointer: inkwell::values::PointerValue<'c>,
         entry_function: inkwell::values::FunctionValue<'c>,
         environment_values: &[inkwell::values::BasicValueEnum<'c>],

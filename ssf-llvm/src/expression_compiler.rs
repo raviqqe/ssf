@@ -187,7 +187,7 @@ impl<'c> ExpressionCompiler<'c> {
 
                     self.closure_operation_compiler
                         .compile_store_closure_content(
-                            self.builder.clone(),
+                            &self.builder,
                             closure,
                             self.function_compiler.compile(definition)?,
                             &definition
@@ -621,7 +621,7 @@ impl<'c> ExpressionCompiler<'c> {
         type_: inkwell::types::StructType<'c>,
     ) -> inkwell::values::PointerValue<'c> {
         self.malloc_compiler
-            .compile_struct_malloc(self.builder.clone(), type_)
+            .compile_struct_malloc(&self.builder, type_)
     }
 
     fn compile_unreachable(&self) {
