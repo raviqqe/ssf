@@ -4,7 +4,6 @@ use std::fmt::Display;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum AnalysisError {
-    CircularInitialization,
     TypeCheck(TypeCheckError),
 }
 
