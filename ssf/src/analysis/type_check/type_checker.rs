@@ -159,13 +159,7 @@ impl TypeChecker {
     ) -> Result<Type, TypeCheckError> {
         match case {
             Case::Algebraic(algebraic_case) => {
-                let argument_type = algebraic_case.type_();
-
-                self.check_equality(
-                    &self.check_expression(algebraic_case.argument(), variables)?,
-                    &argument_type.clone().into(),
-                )?;
-
+                let argument_type = self.check_expression(algebraic_case.argument(), variables)?;
                 let mut expression_type = None;
 
                 for alternative in algebraic_case.alternatives() {
@@ -173,7 +167,7 @@ impl TypeChecker {
 
                     self.check_equality(
                         &constructor.algebraic_type().clone().into(),
-                        &argument_type.clone().into(),
+                        &argument_type.clone(),
                     )?;
 
                     let mut variables = variables.clone();
@@ -189,72 +183,52 @@ impl TypeChecker {
                     let alternative_type =
                         self.check_expression(alternative.expression(), &variables)?;
 
-                    match &expression_type {
-                        Some(expression_type) => {
-                            self.check_equality(&alternative_type, expression_type)?;
-                        }
-                        None => expression_type = Some(alternative_type),
+                    if let Some(expression_type) = &expression_type {
+                        self.check_equality(&alternative_type, expression_type)?;
+                    } else {
+                        expression_type = Some(alternative_type);
                     }
                 }
 
-                if let Some(default_alternative) = algebraic_case.default_alternative() {
-                    let mut variables = variables.clone();
+                if let Some(expression) = algebraic_case.default_alternative() {
+                    let alternative_type = self.check_expression(expression, &variables)?;
 
-                    variables.insert(default_alternative.variable(), argument_type.clone().into());
-
-                    let alternative_type =
-                        self.check_expression(default_alternative.expression(), &variables)?;
-
-                    match &expression_type {
-                        Some(expression_type) => {
-                            self.check_equality(&alternative_type, expression_type)?;
-                        }
-                        None => expression_type = Some(alternative_type),
+                    if let Some(expression_type) = &expression_type {
+                        self.check_equality(&alternative_type, expression_type)?;
+                    } else {
+                        expression_type = Some(alternative_type);
                     }
                 }
 
                 expression_type.ok_or_else(|| TypeCheckError::NoAlternativeFound(case.clone()))
             }
             Case::Primitive(primitive_case) => {
-                let argument_type = primitive_case.type_();
-
-                self.check_equality(
-                    &self.check_expression(primitive_case.argument(), variables)?,
-                    &argument_type.clone().into(),
-                )?;
-
+                let argument_type = self.check_expression(primitive_case.argument(), variables)?;
                 let mut expression_type = None;
 
                 for alternative in primitive_case.alternatives() {
                     self.check_equality(
                         &self.check_primitive(alternative.primitive()).into(),
-                        &argument_type.clone().into(),
+                        &argument_type.clone(),
                     )?;
 
                     let alternative_type =
                         self.check_expression(alternative.expression(), variables)?;
 
-                    match &expression_type {
-                        Some(expression_type) => {
-                            self.check_equality(&alternative_type, expression_type)?;
-                        }
-                        None => expression_type = Some(alternative_type),
+                    if let Some(expression_type) = &expression_type {
+                        self.check_equality(&alternative_type, expression_type)?;
+                    } else {
+                        expression_type = Some(alternative_type);
                     }
                 }
 
-                if let Some(default_alternative) = primitive_case.default_alternative() {
-                    let mut variables = variables.clone();
+                if let Some(expression) = primitive_case.default_alternative() {
+                    let alternative_type = self.check_expression(expression, &variables)?;
 
-                    variables.insert(default_alternative.variable(), argument_type.into());
-
-                    let alternative_type =
-                        self.check_expression(default_alternative.expression(), &variables)?;
-
-                    match &expression_type {
-                        Some(expression_type) => {
-                            self.check_equality(&alternative_type, expression_type)?;
-                        }
-                        None => expression_type = Some(alternative_type),
+                    if let Some(expression_type) = &expression_type {
+                        self.check_equality(&alternative_type, expression_type)?;
+                    } else {
+                        expression_type = Some(alternative_type);
                     }
                 }
 
