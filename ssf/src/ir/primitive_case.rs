@@ -1,3 +1,4 @@
+use super::default_alternative::DefaultAlternative;
 use super::expression::Expression;
 use super::primitive_alternative::PrimitiveAlternative;
 use crate::types::{self, Type};
@@ -9,7 +10,7 @@ pub struct PrimitiveCase {
     type_: types::Primitive,
     argument: Arc<Expression>,
     alternatives: Vec<PrimitiveAlternative>,
-    default_alternative: Option<Arc<Expression>>,
+    default_alternative: Option<DefaultAlternative>,
 }
 
 impl PrimitiveCase {
@@ -17,13 +18,13 @@ impl PrimitiveCase {
         type_: types::Primitive,
         argument: impl Into<Expression>,
         alternatives: Vec<PrimitiveAlternative>,
-        default_alternative: Option<Expression>,
+        default_alternative: Option<DefaultAlternative>,
     ) -> Self {
         Self {
             type_,
             argument: Arc::new(argument.into()),
             alternatives,
-            default_alternative: default_alternative.map(|expression| expression.into()),
+            default_alternative,
         }
     }
 
@@ -39,10 +40,8 @@ impl PrimitiveCase {
         &self.alternatives
     }
 
-    pub fn default_alternative(&self) -> Option<&Expression> {
-        self.default_alternative
-            .as_ref()
-            .map(|expression| expression.as_ref())
+    pub fn default_alternative(&self) -> Option<&DefaultAlternative> {
+        self.default_alternative.as_ref()
     }
 
     pub(crate) fn find_variables(&self) -> HashSet<String> {
@@ -71,7 +70,9 @@ impl PrimitiveCase {
             default_alternative: self
                 .default_alternative
                 .as_ref()
-                .map(|expression| expression.infer_environment(variables).into()),
+                .map(|default_alternative| {
+                    default_alternative.infer_environment(self.type_, variables)
+                }),
         }
     }
 
@@ -89,7 +90,7 @@ impl PrimitiveCase {
             default_alternative: self
                 .default_alternative
                 .as_ref()
-                .map(|expression| expression.convert_types(convert).into()),
+                .map(|default_alternative| default_alternative.convert_types(convert)),
         }
     }
 }
