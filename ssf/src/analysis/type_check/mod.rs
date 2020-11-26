@@ -285,12 +285,7 @@ mod tests {
                         vec![Definition::new(
                             "f",
                             vec![Argument::new("x", algebraic_type.clone(),)],
-                            AlgebraicCase::new(
-                                algebraic_type,
-                                Variable::new("x"),
-                                vec![],
-                                Some(42.0.into()),
-                            ),
+                            AlgebraicCase::new(Variable::new("x"), vec![], Some(42.0.into()),),
                             types::Primitive::Float64,
                         )]
                     )),
@@ -309,7 +304,6 @@ mod tests {
                             "f",
                             vec![Argument::new("x", algebraic_type.clone())],
                             AlgebraicCase::new(
-                                algebraic_type.clone(),
                                 Variable::new("x"),
                                 vec![AlgebraicAlternative::new(
                                     Constructor::new(algebraic_type, 0),
@@ -338,7 +332,6 @@ mod tests {
                             "f",
                             vec![Argument::new("x", algebraic_type.clone())],
                             AlgebraicCase::new(
-                                algebraic_type.clone(),
                                 Variable::new("x"),
                                 vec![AlgebraicAlternative::new(
                                     Constructor::new(algebraic_type, 0),
@@ -363,7 +356,7 @@ mod tests {
                     vec![Definition::new(
                         "f",
                         vec![Argument::new("x", algebraic_type.clone())],
-                        AlgebraicCase::new(algebraic_type, Variable::new("x"), vec![], None),
+                        AlgebraicCase::new(Variable::new("x"), vec![], None),
                         types::Primitive::Float64,
                     )],
                 );
@@ -387,7 +380,6 @@ mod tests {
                             types::Algebraic::new(vec![types::Constructor::boxed(vec![])]),
                         )],
                         AlgebraicCase::new(
-                            algebraic_type.clone(),
                             Variable::new("x"),
                             vec![
                                 AlgebraicAlternative::new(
@@ -426,7 +418,6 @@ mod tests {
                             vec![],
                             vec![Argument::new("x", algebraic_type.clone())],
                             AlgebraicCase::new(
-                                algebraic_type.clone(),
                                 Variable::new("x"),
                                 vec![AlgebraicAlternative::new(
                                     Constructor::new(algebraic_type.clone(), 0),
@@ -445,6 +436,8 @@ mod tests {
             #[test]
             fn fail_for_unmatched_case_type() {
                 let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
+                let other_algebraic_type =
+                    types::Algebraic::new(vec![types::Constructor::unboxed(vec![])]);
 
                 assert!(matches!(
                     check_types(&Module::without_validation(
@@ -454,10 +447,9 @@ mod tests {
                             vec![],
                             vec![Argument::new("x", algebraic_type.clone())],
                             AlgebraicCase::new(
-                                types::Algebraic::new(vec![types::Constructor::unboxed(vec![])]),
                                 Variable::new("x"),
                                 vec![AlgebraicAlternative::new(
-                                    Constructor::new(algebraic_type, 0),
+                                    Constructor::new(other_algebraic_type, 0),
                                     vec![],
                                     42.0
                                 )],
@@ -483,12 +475,7 @@ mod tests {
                             "f",
                             vec![],
                             vec![Argument::new("x", types::Primitive::Float64)],
-                            PrimitiveCase::new(
-                                types::Primitive::Float64,
-                                42.0,
-                                vec![],
-                                Some(42.0.into()),
-                            ),
+                            PrimitiveCase::new(42.0, vec![], Some(42.0.into()),),
                             types::Primitive::Float64,
                         )]
                     )),
@@ -506,7 +493,6 @@ mod tests {
                             vec![],
                             vec![Argument::new("x", types::Primitive::Float64)],
                             PrimitiveCase::new(
-                                types::Primitive::Float64,
                                 42.0,
                                 vec![PrimitiveAlternative::new(42.0, 42.0)],
                                 None
@@ -528,7 +514,6 @@ mod tests {
                             vec![],
                             vec![Argument::new("x", types::Primitive::Float64)],
                             PrimitiveCase::new(
-                                types::Primitive::Float64,
                                 42.0,
                                 vec![PrimitiveAlternative::new(42.0, 42.0)],
                                 Some(42.0.into())
@@ -550,9 +535,8 @@ mod tests {
                             vec![],
                             vec![Argument::new("x", types::Primitive::Float64)],
                             PrimitiveCase::new(
-                                types::Primitive::Integer64,
                                 42.0,
-                                vec![PrimitiveAlternative::new(42.0, 42.0)],
+                                vec![PrimitiveAlternative::new(42, 42.0)],
                                 Some(42.0.into())
                             ),
                             types::Primitive::Float64,
