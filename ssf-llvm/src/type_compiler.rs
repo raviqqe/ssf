@@ -69,13 +69,11 @@ impl<'c> TypeCompiler<'c> {
         }
 
         if !algebraic.is_enum() {
-            if let Some(index) = index {
-                elements.push(
-                    self.compile_constructor(&algebraic.unfold().constructors()[&index], false),
-                );
+            elements.push(if let Some(index) = index {
+                self.compile_constructor(&algebraic.unfold().constructors()[&index], false)
             } else {
-                elements.push(self.compile_unsized_constructor(algebraic));
-            }
+                self.compile_unsized_constructor(algebraic)
+            });
         }
 
         self.context.struct_type(&elements, false)
@@ -133,11 +131,7 @@ impl<'c> TypeCompiler<'c> {
         );
 
         self.context.struct_type(
-            &(0..if size == 0 {
-                0
-            } else {
-                (size as isize - 1) / 8 + 1
-            })
+            &(0..self.calculate_i64_array_size(size as usize))
                 .map(|_| self.context.i64_type().into())
                 .collect::<Vec<_>>(),
             false,
@@ -272,20 +266,21 @@ impl<'c> TypeCompiler<'c> {
         &self,
         algebraic_type: &ssf::types::Algebraic,
     ) -> inkwell::types::BasicTypeEnum<'c> {
-        // TODO Use i64 array type.
         self.context
-            .i8_type()
+            .i64_type()
             .array_type(
-                algebraic_type
-                    .constructors()
-                    .iter()
-                    .map(|(_, constructor)| {
-                        self.target_machine
-                            .get_target_data()
-                            .get_store_size(&self.compile_constructor(constructor, true))
-                    })
-                    .max()
-                    .unwrap() as u32,
+                self.calculate_i64_array_size(
+                    algebraic_type
+                        .constructors()
+                        .iter()
+                        .map(|(_, constructor)| {
+                            self.target_machine
+                                .get_target_data()
+                                .get_store_size(&self.compile_constructor(constructor, true))
+                        })
+                        .max()
+                        .unwrap() as usize,
+                ) as u32,
             )
             .into()
     }
@@ -296,6 +291,14 @@ impl<'c> TypeCompiler<'c> {
 
     pub fn compile_arity(&self) -> inkwell::types::IntType<'c> {
         self.context.i64_type()
+    }
+
+    fn calculate_i64_array_size(&self, size: usize) -> usize {
+        if size == 0 {
+            0
+        } else {
+            ((size as isize - 1) / 8 + 1) as usize
+        }
     }
 }
 
