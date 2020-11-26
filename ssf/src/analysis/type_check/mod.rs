@@ -289,32 +289,9 @@ mod tests {
                                 algebraic_type,
                                 Variable::new("x"),
                                 vec![],
-                                Some(DefaultAlternative::new("x", 42.0)),
+                                Some(42.0.into()),
                             ),
                             types::Primitive::Float64,
-                        )]
-                    )),
-                    Ok(())
-                );
-            }
-
-            #[test]
-            fn check_case_expressions_only_with_default_alternative_and_bound_variable() {
-                let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
-
-                assert_eq!(
-                    check_types(&Module::without_validation(
-                        vec![],
-                        vec![Definition::new(
-                            "f",
-                            vec![Argument::new("x", algebraic_type.clone())],
-                            AlgebraicCase::new(
-                                algebraic_type.clone(),
-                                Variable::new("x"),
-                                vec![],
-                                Some(DefaultAlternative::new("y", Variable::new("y"))),
-                            ),
-                            algebraic_type,
                         )]
                     )),
                     Ok(())
@@ -510,7 +487,7 @@ mod tests {
                                 types::Primitive::Float64,
                                 42.0,
                                 vec![],
-                                Some(DefaultAlternative::new("x", 42.0)),
+                                Some(42.0.into()),
                             ),
                             types::Primitive::Float64,
                         )]
@@ -554,7 +531,7 @@ mod tests {
                                 types::Primitive::Float64,
                                 42.0,
                                 vec![PrimitiveAlternative::new(42.0, 42.0)],
-                                Some(DefaultAlternative::new("x", 42.0))
+                                Some(42.0.into())
                             ),
                             types::Primitive::Float64,
                         )],
@@ -576,7 +553,7 @@ mod tests {
                                 types::Primitive::Integer64,
                                 42.0,
                                 vec![PrimitiveAlternative::new(42.0, 42.0)],
-                                Some(DefaultAlternative::new("x", 42.0))
+                                Some(42.0.into())
                             ),
                             types::Primitive::Float64,
                         )],
