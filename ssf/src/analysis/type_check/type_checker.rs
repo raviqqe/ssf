@@ -197,13 +197,19 @@ impl TypeChecker {
                     }
                 }
 
-                if let Some(expression) = algebraic_case.default_alternative() {
-                    let alternative_type = self.check_expression(expression, &variables)?;
+                if let Some(default_alternative) = algebraic_case.default_alternative() {
+                    let mut variables = variables.clone();
 
-                    if let Some(expression_type) = &expression_type {
-                        self.check_equality(&alternative_type, expression_type)?;
-                    } else {
-                        expression_type = Some(alternative_type);
+                    variables.insert(default_alternative.variable(), argument_type.clone().into());
+
+                    let alternative_type =
+                        self.check_expression(default_alternative.expression(), &variables)?;
+
+                    match &expression_type {
+                        Some(expression_type) => {
+                            self.check_equality(&alternative_type, expression_type)?;
+                        }
+                        None => expression_type = Some(alternative_type),
                     }
                 }
 
@@ -236,13 +242,19 @@ impl TypeChecker {
                     }
                 }
 
-                if let Some(expression) = primitive_case.default_alternative() {
-                    let alternative_type = self.check_expression(expression, &variables)?;
+                if let Some(default_alternative) = primitive_case.default_alternative() {
+                    let mut variables = variables.clone();
 
-                    if let Some(expression_type) = &expression_type {
-                        self.check_equality(&alternative_type, expression_type)?;
-                    } else {
-                        expression_type = Some(alternative_type);
+                    variables.insert(default_alternative.variable(), argument_type.into());
+
+                    let alternative_type =
+                        self.check_expression(default_alternative.expression(), &variables)?;
+
+                    match &expression_type {
+                        Some(expression_type) => {
+                            self.check_equality(&alternative_type, expression_type)?;
+                        }
+                        None => expression_type = Some(alternative_type),
                     }
                 }
 
