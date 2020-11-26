@@ -167,7 +167,7 @@ impl TypeChecker {
 
                     self.check_equality(
                         &constructor.algebraic_type().clone().into(),
-                        &argument_type.clone().into(),
+                        &argument_type.clone(),
                     )?;
 
                     let mut variables = variables.clone();
@@ -209,7 +209,7 @@ impl TypeChecker {
                 for alternative in primitive_case.alternatives() {
                     self.check_equality(
                         &self.check_primitive(alternative.primitive()).into(),
-                        &argument_type.clone().into(),
+                        &argument_type.clone(),
                     )?;
 
                     let alternative_type =

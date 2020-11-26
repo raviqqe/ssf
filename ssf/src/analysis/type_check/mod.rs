@@ -284,7 +284,7 @@ mod tests {
                         vec![],
                         vec![Definition::new(
                             "f",
-                            vec![Argument::new("x", algebraic_type.clone(),)],
+                            vec![Argument::new("x", algebraic_type,)],
                             AlgebraicCase::new(Variable::new("x"), vec![], Some(42.0.into()),),
                             types::Primitive::Float64,
                         )]
@@ -355,7 +355,7 @@ mod tests {
                     vec![],
                     vec![Definition::new(
                         "f",
-                        vec![Argument::new("x", algebraic_type.clone())],
+                        vec![Argument::new("x", algebraic_type)],
                         AlgebraicCase::new(Variable::new("x"), vec![], None),
                         types::Primitive::Float64,
                     )],
@@ -445,7 +445,7 @@ mod tests {
                         vec![Definition::with_environment(
                             "f",
                             vec![],
-                            vec![Argument::new("x", algebraic_type.clone())],
+                            vec![Argument::new("x", algebraic_type)],
                             AlgebraicCase::new(
                                 Variable::new("x"),
                                 vec![AlgebraicAlternative::new(
