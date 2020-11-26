@@ -1,12 +1,11 @@
 use super::algebraic_alternative::AlgebraicAlternative;
 use super::expression::Expression;
-use crate::types::{self, Type};
+use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct AlgebraicCase {
-    type_: types::Algebraic,
     argument: Arc<Expression>,
     alternatives: Vec<AlgebraicAlternative>,
     default_alternative: Option<Arc<Expression>>,
@@ -14,21 +13,15 @@ pub struct AlgebraicCase {
 
 impl AlgebraicCase {
     pub fn new(
-        type_: types::Algebraic,
         argument: impl Into<Expression>,
         alternatives: Vec<AlgebraicAlternative>,
         default_alternative: Option<Expression>,
     ) -> Self {
         Self {
-            type_,
             argument: Arc::new(argument.into()),
             alternatives,
             default_alternative: default_alternative.map(|expression| expression.into()),
         }
-    }
-
-    pub fn type_(&self) -> &types::Algebraic {
-        &self.type_
     }
 
     pub fn argument(&self) -> &Expression {
@@ -61,7 +54,6 @@ impl AlgebraicCase {
 
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         Self {
-            type_: self.type_.clone(),
             argument: self.argument.infer_environment(variables).into(),
             alternatives: self
                 .alternatives
@@ -77,9 +69,6 @@ impl AlgebraicCase {
 
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         Self {
-            type_: convert(&self.type_.clone().into())
-                .into_algebraic()
-                .unwrap(),
             argument: self.argument.convert_types(convert).into(),
             alternatives: self
                 .alternatives
