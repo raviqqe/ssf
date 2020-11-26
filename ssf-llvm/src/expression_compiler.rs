@@ -426,12 +426,15 @@ impl<'c> ExpressionCompiler<'c> {
                     self.builder.build_unconditional_branch(phi_block);
                 }
 
-                let mut default_value = None;
+                let mut default_case = None;
                 let default_block = self.append_basic_block("default");
                 self.builder.position_at_end(default_block);
 
                 if let Some(expression) = algebraic_case.default_alternative() {
-                    default_value = Some(self.compile(expression, &variables)?);
+                    default_case = Some((
+                        self.compile(expression, &variables)?,
+                        self.builder.get_insert_block().unwrap(),
+                    ));
                     self.builder.build_unconditional_branch(phi_block);
                 } else {
                     self.compile_unreachable();
@@ -452,7 +455,7 @@ impl<'c> ExpressionCompiler<'c> {
                     cases
                         .get(0)
                         .map(|(_, _, _, value)| value.get_type())
-                        .unwrap_or_else(|| default_value.unwrap().get_type()),
+                        .unwrap_or_else(|| default_case.unwrap().0.get_type()),
                     "",
                 );
                 phi.add_incoming(
@@ -461,13 +464,9 @@ impl<'c> ExpressionCompiler<'c> {
                         .map(|(_, _, end_block, value)| {
                             (value as &dyn inkwell::values::BasicValue<'c>, *end_block)
                         })
-                        .chain(match &default_value {
-                            Some(default_value) => vec![(
-                                default_value as &dyn inkwell::values::BasicValue<'c>,
-                                default_block,
-                            )],
-                            None => vec![],
-                        })
+                        .chain(default_case.as_ref().map(|(value, block)| {
+                            (value as &dyn inkwell::values::BasicValue<'c>, *block)
+                        }))
                         .collect::<Vec<_>>(),
                 );
 
@@ -776,6 +775,26 @@ mod tests {
                         ],
                         Some(42.0.into()),
                     ),
+                    ssf::ir::AlgebraicCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::AlgebraicAlternative::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                            vec![],
+                            42.0,
+                        )],
+                        Some(
+                            ssf::ir::AlgebraicCase::new(
+                                ssf::ir::Variable::new("x"),
+                                vec![ssf::ir::AlgebraicAlternative::new(
+                                    ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                                    vec![],
+                                    42.0,
+                                )],
+                                Some(42.0.into()),
+                            )
+                            .into(),
+                        ),
+                    ),
                 ] {
                     let context = inkwell::context::Context::create();
                     let (expression_compiler, type_compiler, builder, module, function) =
@@ -1039,6 +1058,18 @@ mod tests {
                             ssf::ir::PrimitiveAlternative::new(1.0, 42.0),
                         ],
                         Some(42.0.into()),
+                    ),
+                    ssf::ir::PrimitiveCase::new(
+                        ssf::ir::Primitive::Float64(42.0),
+                        vec![ssf::ir::PrimitiveAlternative::new(0.0, 42.0)],
+                        Some(
+                            ssf::ir::PrimitiveCase::new(
+                                ssf::ir::Primitive::Float64(42.0),
+                                vec![ssf::ir::PrimitiveAlternative::new(0.0, 42.0)],
+                                Some(42.0.into()),
+                            )
+                            .into(),
+                        ),
                     ),
                 ] {
                     let context = inkwell::context::Context::create();
