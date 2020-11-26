@@ -69,13 +69,11 @@ impl<'c> TypeCompiler<'c> {
         }
 
         if !algebraic.is_enum() {
-            if let Some(index) = index {
-                elements.push(
-                    self.compile_constructor(&algebraic.unfold().constructors()[&index], false),
-                );
+            elements.push(if let Some(index) = index {
+                self.compile_constructor(&algebraic.unfold().constructors()[&index], false)
             } else {
-                elements.push(self.compile_unsized_constructor(algebraic));
-            }
+                self.compile_unsized_constructor(algebraic)
+            });
         }
 
         self.context.struct_type(&elements, false)
