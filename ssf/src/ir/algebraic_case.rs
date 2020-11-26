@@ -1,5 +1,4 @@
 use super::algebraic_alternative::AlgebraicAlternative;
-use super::default_alternative::DefaultAlternative;
 use super::expression::Expression;
 use crate::types::{self, Type};
 use std::collections::{HashMap, HashSet};
@@ -10,7 +9,7 @@ pub struct AlgebraicCase {
     type_: types::Algebraic,
     argument: Arc<Expression>,
     alternatives: Vec<AlgebraicAlternative>,
-    default_alternative: Option<DefaultAlternative>,
+    default_alternative: Option<Arc<Expression>>,
 }
 
 impl AlgebraicCase {
@@ -18,13 +17,13 @@ impl AlgebraicCase {
         type_: types::Algebraic,
         argument: impl Into<Expression>,
         alternatives: Vec<AlgebraicAlternative>,
-        default_alternative: Option<DefaultAlternative>,
+        default_alternative: Option<Expression>,
     ) -> Self {
         Self {
             type_,
             argument: Arc::new(argument.into()),
             alternatives,
-            default_alternative,
+            default_alternative: default_alternative.map(|expression| expression.into()),
         }
     }
 
@@ -40,8 +39,10 @@ impl AlgebraicCase {
         &self.alternatives
     }
 
-    pub fn default_alternative(&self) -> Option<&DefaultAlternative> {
-        self.default_alternative.as_ref()
+    pub fn default_alternative(&self) -> Option<&Expression> {
+        self.default_alternative
+            .as_ref()
+            .map(|expression| expression.as_ref())
     }
 
     pub(crate) fn find_variables(&self) -> HashSet<String> {
@@ -70,9 +71,7 @@ impl AlgebraicCase {
             default_alternative: self
                 .default_alternative
                 .as_ref()
-                .map(|default_alternative| {
-                    default_alternative.infer_environment(self.type_.clone(), variables)
-                }),
+                .map(|expression| expression.infer_environment(variables).into()),
         }
     }
 
@@ -90,7 +89,7 @@ impl AlgebraicCase {
             default_alternative: self
                 .default_alternative
                 .as_ref()
-                .map(|default_alternative| default_alternative.convert_types(convert)),
+                .map(|expression| expression.convert_types(convert).into()),
         }
     }
 }
