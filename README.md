@@ -46,7 +46,6 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 
 - Tags are pointer-sized integers.
 - Constructor payloads boxed or unboxed contain their elements.
-- In the following tables, offsets are in bytes.
 
 #### Single constructor with no payload
 
@@ -60,15 +59,15 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 
 #### Multiple constructors with no payload
 
-| 8   |
-| --- |
-| tag |
+| 8 bytes |
+| ------- |
+| tag     |
 
 #### Multiple constructors with payload
 
-| 8   | (max payload size) |
-| --- | ------------------ |
-| tag | payload            |
+| 8 bytes | (max payload size) |
+| ------- | ------------------ |
+| tag     | payload            |
 
 ## Examples
 
