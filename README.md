@@ -54,9 +54,9 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 
 #### Single constructor with payload
 
-| (max payload size) |
-| ------------------ |
-| payload            |
+| (payload size) |
+| -------------- |
+| payload        |
 
 #### Multiple constructors with no payload
 
