@@ -21,7 +21,6 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 
 - Inference of closure environment types
 - Partial application
-- Optimization of algebraic data types
 - Bitcast
 - Lazy evaluation
 
@@ -42,6 +41,34 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
   - 8-bit integer
   - 64-bit integer
   - 64-bit floating point number
+
+### Binary representation of ADTs
+
+- Tags are pointer-sized integers.
+- Constructor payloads boxed or unboxed contain their elements.
+- In the following tables, offsets are in bytes.
+
+#### Single constructor with no payload
+
+- Empty data
+
+#### Single constructor with payload
+
+| (max payload size) |
+| ------------------ |
+| payload            |
+
+#### Multiple constructors with no payload
+
+| 8   |
+| --- |
+| tag |
+
+#### Multiple constructors with payload
+
+| 8   | (max payload size) |
+| --- | ------------------ |
+| tag | payload            |
 
 ## Examples
 
