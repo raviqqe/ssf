@@ -3,6 +3,7 @@ mod compile_configuration;
 mod error;
 mod expression_compiler;
 mod expression_compiler_factory;
+mod ffi_function_type;
 mod function_application_compiler;
 mod function_compiler;
 mod function_compiler_factory;
