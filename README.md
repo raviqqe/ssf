@@ -59,15 +59,15 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 
 #### Multiple constructors with no payload
 
-| 8 bytes |
-| ------- |
-| tag     |
+| (pointer size) |
+| -------------- |
+| tag            |
 
 #### Multiple constructors with payload
 
-| 8 bytes | (max payload size) |
-| ------- | ------------------ |
-| tag     | payload            |
+| (pointer size) | (max payload size) |
+| -------------- | ------------------ |
+| tag            | payload            |
 
 ## Examples
 
