@@ -5,6 +5,7 @@ use super::function_application_compiler::FunctionApplicationCompiler;
 use super::function_compiler::FunctionCompiler;
 use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
+use inkwell::types::AnyType;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -65,7 +66,10 @@ impl<'c> ExpressionCompiler<'c> {
                         self.type_compiler.compile(bitcast.type_()),
                         "",
                     )
-                } else {
+                } else if self
+                    .type_compiler
+                    .equal_bit_sizes(argument.get_type(), to_type)
+                {
                     let pointer = self.builder.build_alloca(argument.get_type(), "");
                     self.builder.build_store(pointer, argument);
 
@@ -80,6 +84,11 @@ impl<'c> ExpressionCompiler<'c> {
                             .into_pointer_value(),
                         "",
                     )
+                } else {
+                    return Err(CompileError::InvalidBitcast(
+                        argument.get_type().print_to_string().to_string(),
+                        to_type.print_to_string().to_string(),
+                    ));
                 }
             }
             ssf::ir::Expression::Case(case) => self.compile_case(case, variables)?,

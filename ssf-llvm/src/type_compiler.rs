@@ -293,6 +293,16 @@ impl<'c> TypeCompiler<'c> {
         self.context.i64_type()
     }
 
+    pub fn equal_bit_sizes(
+        &self,
+        one: inkwell::types::BasicTypeEnum<'c>,
+        other: inkwell::types::BasicTypeEnum<'c>,
+    ) -> bool {
+        let target_data = self.target_machine.get_target_data();
+
+        target_data.get_bit_size(&one) == target_data.get_bit_size(&other)
+    }
+
     fn calculate_i64_array_size(&self, size: usize) -> usize {
         if size == 0 {
             0
