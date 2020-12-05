@@ -367,6 +367,59 @@ mod tests {
     }
 
     #[test]
+    fn compile_bitcast_of_algebraic_data_types() {
+        let algebraic_type_1 =
+            ssf::types::Algebraic::new(vec![ssf::types::Constructor::unboxed(vec![
+                ssf::types::Primitive::Integer64.into(),
+            ])]);
+        let algebraic_type_2 =
+            ssf::types::Algebraic::new(vec![ssf::types::Constructor::unboxed(vec![
+                ssf::types::Primitive::Float64.into(),
+            ])]);
+
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::Definition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", algebraic_type_1)],
+                    ssf::ir::Bitcast::new(ssf::ir::Variable::new("x"), algebraic_type_2.clone()),
+                    algebraic_type_2,
+                )],
+            )
+            .unwrap(),
+            COMPILE_CONFIGURATION.clone(),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn compile_bitcast_from_interger_to_algebraic_data_type() {
+        let algebraic_type =
+            ssf::types::Algebraic::new(vec![ssf::types::Constructor::unboxed(vec![
+                ssf::types::Primitive::Integer64.into(),
+            ])]);
+
+        compile(
+            &ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::Definition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new(
+                        "x",
+                        ssf::types::Primitive::Integer64,
+                    )],
+                    ssf::ir::Bitcast::new(ssf::ir::Variable::new("x"), algebraic_type.clone()),
+                    algebraic_type,
+                )],
+            )
+            .unwrap(),
+            COMPILE_CONFIGURATION.clone(),
+        )
+        .unwrap();
+    }
+
+    #[test]
     fn compile_function_applications() {
         compile(
             &ssf::ir::Module::new(
