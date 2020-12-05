@@ -394,7 +394,7 @@ mod tests {
     }
 
     #[test]
-    fn compile_bitcast_from_interger_to_algebraic_data_type() {
+    fn compile_bitcast_from_integer_to_algebraic_data_type() {
         let algebraic_type =
             ssf::types::Algebraic::new(vec![ssf::types::Constructor::unboxed(vec![
                 ssf::types::Primitive::Integer64.into(),
