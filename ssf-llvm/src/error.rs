@@ -3,6 +3,7 @@ use std::fmt::Display;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CompileError {
+    InvalidBitcast(String, String),
     Llvm(String),
     VariableNotFound(String),
 }
