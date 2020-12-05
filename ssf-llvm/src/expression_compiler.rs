@@ -52,13 +52,37 @@ impl<'c> ExpressionCompiler<'c> {
         expression: &ssf::ir::Expression,
         variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
-        match expression {
-            ssf::ir::Expression::Bitcast(bitcast) => Ok(self.builder.build_bitcast(
-                self.compile(bitcast.expression(), variables)?,
-                self.type_compiler.compile(bitcast.type_()),
-                "",
-            )),
-            ssf::ir::Expression::Case(case) => self.compile_case(case, variables),
+        Ok(match expression {
+            ssf::ir::Expression::Bitcast(bitcast) => {
+                let argument = self.compile(bitcast.expression(), variables)?;
+                let to_type = self.type_compiler.compile(bitcast.type_());
+
+                if self.is_bitcast_supported(argument.get_type())
+                    && self.is_bitcast_supported(to_type)
+                {
+                    self.builder.build_bitcast(
+                        argument,
+                        self.type_compiler.compile(bitcast.type_()),
+                        "",
+                    )
+                } else {
+                    let pointer = self.builder.build_alloca(argument.get_type(), "");
+                    self.builder.build_store(pointer, argument);
+
+                    // TODO Use BasicTypeEnum::ptr_type() when it's implemented.
+                    self.builder.build_load(
+                        self.builder
+                            .build_bitcast(
+                                pointer,
+                                self.builder.build_alloca(to_type, "").get_type(),
+                                "",
+                            )
+                            .into_pointer_value(),
+                        "",
+                    )
+                }
+            }
+            ssf::ir::Expression::Case(case) => self.compile_case(case, variables)?,
             ssf::ir::Expression::ConstructorApplication(constructor_application) => {
                 let constructor = constructor_application.constructor();
                 let algebraic_type = constructor.algebraic_type();
@@ -147,7 +171,7 @@ impl<'c> ExpressionCompiler<'c> {
                     algebraic_value,
                 );
 
-                Ok(self.builder.build_load(algebraic_pointer, ""))
+                self.builder.build_load(algebraic_pointer, "")
             }
             ssf::ir::Expression::FunctionApplication(function_application) => {
                 self.function_application_compiler.compile(
@@ -159,7 +183,7 @@ impl<'c> ExpressionCompiler<'c> {
                         .into_iter()
                         .map(|argument| self.compile(argument, variables))
                         .collect::<Result<Vec<_>, _>>()?,
-                )
+                )?
             }
             ssf::ir::Expression::LetRecursive(let_recursive) => {
                 let mut variables = variables.clone();
@@ -202,7 +226,7 @@ impl<'c> ExpressionCompiler<'c> {
                         )?;
                 }
 
-                self.compile(let_recursive.expression(), &variables)
+                self.compile(let_recursive.expression(), &variables)?
             }
             ssf::ir::Expression::Let(let_) => {
                 let mut variables = variables.clone();
@@ -212,9 +236,9 @@ impl<'c> ExpressionCompiler<'c> {
                     self.compile(let_.bound_expression(), &variables)?,
                 );
 
-                self.compile(let_.expression(), &variables)
+                self.compile(let_.expression(), &variables)?
             }
-            ssf::ir::Expression::Primitive(primitive) => Ok(self.compile_primitive(primitive)),
+            ssf::ir::Expression::Primitive(primitive) => self.compile_primitive(primitive),
             ssf::ir::Expression::Operation(operation) => {
                 match (
                     self.compile(operation.lhs(), variables)?,
@@ -223,7 +247,7 @@ impl<'c> ExpressionCompiler<'c> {
                     (
                         inkwell::values::BasicValueEnum::IntValue(lhs),
                         inkwell::values::BasicValueEnum::IntValue(rhs),
-                    ) => Ok(match operation.operator() {
+                    ) => match operation.operator() {
                         ssf::ir::Operator::Add => self.builder.build_int_add(lhs, rhs, "").into(),
                         ssf::ir::Operator::Subtract => {
                             self.builder.build_int_sub(lhs, rhs, "").into()
@@ -267,11 +291,11 @@ impl<'c> ExpressionCompiler<'c> {
                                 lhs,
                                 rhs,
                             ),
-                    }),
+                    },
                     (
                         inkwell::values::BasicValueEnum::FloatValue(lhs),
                         inkwell::values::BasicValueEnum::FloatValue(rhs),
-                    ) => Ok(match operation.operator() {
+                    ) => match operation.operator() {
                         ssf::ir::Operator::Add => self.builder.build_float_add(lhs, rhs, "").into(),
                         ssf::ir::Operator::Subtract => {
                             self.builder.build_float_sub(lhs, rhs, "").into()
@@ -314,12 +338,14 @@ impl<'c> ExpressionCompiler<'c> {
                                 lhs,
                                 rhs,
                             ),
-                    }),
+                    },
                     _ => unreachable!(),
                 }
             }
-            ssf::ir::Expression::Variable(variable) => self.compile_variable(variable, variables),
-        }
+            ssf::ir::Expression::Variable(variable) => {
+                self.compile_variable(variable, variables)?
+            }
+        })
     }
 
     fn compile_case(
@@ -629,6 +655,10 @@ impl<'c> ExpressionCompiler<'c> {
         }
 
         self.builder.build_unreachable();
+    }
+
+    fn is_bitcast_supported(&self, type_: inkwell::types::BasicTypeEnum<'c>) -> bool {
+        type_.is_int_type() || type_.is_float_type() || type_.is_pointer_type()
     }
 }
 
