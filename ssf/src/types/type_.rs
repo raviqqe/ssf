@@ -1,10 +1,12 @@
 use super::algebraic::Algebraic;
+use super::array::*;
 use super::function::Function;
 use super::primitive::Primitive;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Type {
     Algebraic(Algebraic),
+    Array(Array),
     Function(Function),
     Index(usize),
     Primitive(Primitive),
@@ -14,6 +16,7 @@ impl Type {
     pub fn to_id(&self) -> String {
         match self {
             Self::Algebraic(algebraic) => algebraic.to_id(),
+            Self::Array(array) => array.to_id(),
             Self::Function(function) => function.to_id(),
             Self::Index(index) => format!("{}", index),
             Self::Primitive(primitive) => primitive.to_id(),
@@ -49,6 +52,12 @@ impl Type {
 impl From<Algebraic> for Type {
     fn from(algebraic: Algebraic) -> Self {
         Self::Algebraic(algebraic)
+    }
+}
+
+impl From<Array> for Type {
+    fn from(array: Array) -> Self {
+        Self::Array(array)
     }
 }
 
