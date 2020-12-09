@@ -918,4 +918,26 @@ mod tests {
             .unwrap();
         }
     }
+
+    mod array {
+        use super::*;
+
+        #[test]
+        fn compile_array_expression() {
+            compile(
+                &ssf::ir::Module::new(
+                    vec![],
+                    vec![ssf::ir::Definition::new(
+                        "f",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        ssf::ir::Array::new(ssf::types::Primitive::Float64, vec![42.0.into()]),
+                        ssf::types::Array::new(ssf::types::Primitive::Float64),
+                    )],
+                )
+                .unwrap(),
+                COMPILE_CONFIGURATION.clone(),
+            )
+            .unwrap();
+        }
+    }
 }

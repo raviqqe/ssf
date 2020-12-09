@@ -1,4 +1,5 @@
 use super::algebraic_case::AlgebraicCase;
+use super::array::Array;
 use super::bitcast::Bitcast;
 use super::case::Case;
 use super::constructor_application::ConstructorApplication;
@@ -14,6 +15,7 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expression {
+    Array(Array),
     Bitcast(Bitcast),
     Case(Case),
     ConstructorApplication(ConstructorApplication),
@@ -35,6 +37,7 @@ impl Expression {
 
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         match self {
+            Self::Array(array) => array.find_variables(),
             Self::Bitcast(bitcast) => bitcast.find_variables(),
             Self::Case(case) => case.find_variables(),
             Self::ConstructorApplication(constructor_application) => {
@@ -53,6 +56,7 @@ impl Expression {
 
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         match self {
+            Self::Array(array) => array.infer_environment(variables).into(),
             Self::Bitcast(bitcast) => bitcast.infer_environment(variables).into(),
             Self::Case(case) => case.infer_environment(variables).into(),
             Self::ConstructorApplication(constructor_application) => {
@@ -70,6 +74,7 @@ impl Expression {
 
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         match self {
+            Self::Array(array) => array.convert_types(convert).into(),
             Self::Bitcast(bitcast) => bitcast.convert_types(convert).into(),
             Self::Case(case) => case.convert_types(convert).into(),
             Self::ConstructorApplication(constructor_application) => {
@@ -89,6 +94,12 @@ impl Expression {
 impl From<AlgebraicCase> for Expression {
     fn from(algebraic_case: AlgebraicCase) -> Self {
         Self::Case(algebraic_case.into())
+    }
+}
+
+impl From<Array> for Expression {
+    fn from(array: Array) -> Self {
+        Self::Array(array)
     }
 }
 
