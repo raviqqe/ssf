@@ -35,15 +35,15 @@ impl ArrayIndexOperation {
 
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         Self::new(
-            self.array.infer_environment(variables).clone(),
-            self.index.infer_environment(variables).clone(),
+            self.array.infer_environment(variables),
+            self.index.infer_environment(variables),
         )
     }
 
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         Self::new(
-            self.array.convert_types(convert).clone(),
-            self.index.convert_types(convert).clone(),
+            self.array.convert_types(convert),
+            self.index.convert_types(convert),
         )
     }
 }

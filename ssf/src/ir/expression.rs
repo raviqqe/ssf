@@ -40,7 +40,7 @@ impl Expression {
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         match self {
             Self::Array(array) => array.find_variables(),
-            Self::ArrayIndexOperation(operation) => operation.find_variables().into(),
+            Self::ArrayIndexOperation(operation) => operation.find_variables(),
             Self::Bitcast(bitcast) => bitcast.find_variables(),
             Self::Case(case) => case.find_variables(),
             Self::ConstructorApplication(constructor_application) => {
