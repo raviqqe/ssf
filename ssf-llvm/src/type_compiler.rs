@@ -299,6 +299,10 @@ impl<'c> TypeCompiler<'c> {
         self.context.i64_type()
     }
 
+    pub fn get_store_size(&self, type_: impl inkwell::types::AnyType<'c>) -> u64 {
+        self.target_machine.get_target_data().get_store_size(&type_)
+    }
+
     pub fn equal_bit_sizes(
         &self,
         one: inkwell::types::BasicTypeEnum<'c>,

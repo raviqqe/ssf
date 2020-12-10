@@ -331,7 +331,11 @@ mod tests {
         let type_compiler = TypeCompiler::new(context);
         let closure_operation_compiler =
             ClosureOperationCompiler::new(context, type_compiler.clone());
-        let malloc_compiler = MallocCompiler::new(module.clone(), COMPILE_CONFIGURATION.clone());
+        let malloc_compiler = MallocCompiler::new(
+            module.clone(),
+            type_compiler.clone(),
+            COMPILE_CONFIGURATION.clone(),
+        );
 
         (
             FunctionApplicationCompiler::new(
