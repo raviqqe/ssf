@@ -73,20 +73,20 @@ mod tests {
     use super::*;
     use lazy_static::lazy_static;
 
-    const NUMBER_ARITHMETIC_OPERATORS: [ssf::ir::Operator; 4] = [
-        ssf::ir::Operator::Add,
-        ssf::ir::Operator::Subtract,
-        ssf::ir::Operator::Multiply,
-        ssf::ir::Operator::Divide,
+    const NUMBER_ARITHMETIC_OPERATORS: [ssf::ir::PrimitiveOperator; 4] = [
+        ssf::ir::PrimitiveOperator::Add,
+        ssf::ir::PrimitiveOperator::Subtract,
+        ssf::ir::PrimitiveOperator::Multiply,
+        ssf::ir::PrimitiveOperator::Divide,
     ];
 
-    const NUMBER_COMPARISON_OPERATORS: [ssf::ir::Operator; 6] = [
-        ssf::ir::Operator::Equal,
-        ssf::ir::Operator::NotEqual,
-        ssf::ir::Operator::GreaterThan,
-        ssf::ir::Operator::GreaterThanOrEqual,
-        ssf::ir::Operator::LessThan,
-        ssf::ir::Operator::LessThanOrEqual,
+    const NUMBER_COMPARISON_OPERATORS: [ssf::ir::PrimitiveOperator; 6] = [
+        ssf::ir::PrimitiveOperator::Equal,
+        ssf::ir::PrimitiveOperator::NotEqual,
+        ssf::ir::PrimitiveOperator::GreaterThan,
+        ssf::ir::PrimitiveOperator::GreaterThanOrEqual,
+        ssf::ir::PrimitiveOperator::LessThan,
+        ssf::ir::PrimitiveOperator::LessThanOrEqual,
     ];
 
     lazy_static! {
@@ -484,7 +484,7 @@ mod tests {
                     vec![ssf::ir::Definition::new(
                         "f",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                        ssf::ir::Operation::new(*operator, 42, 42),
+                        ssf::ir::PrimitiveOperation::new(*operator, 42, 42),
                         ssf::types::Primitive::Integer64,
                     )],
                 )
@@ -504,7 +504,7 @@ mod tests {
                     vec![ssf::ir::Definition::new(
                         "f",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                        ssf::ir::Operation::new(*operator, 42.0, 42.0),
+                        ssf::ir::PrimitiveOperation::new(*operator, 42.0, 42.0),
                         ssf::types::Primitive::Float64,
                     )],
                 )
@@ -524,7 +524,7 @@ mod tests {
                     vec![ssf::ir::Definition::new(
                         "f",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                        ssf::ir::Operation::new(*operator, 42, 42),
+                        ssf::ir::PrimitiveOperation::new(*operator, 42, 42),
                         ssf::types::Primitive::Integer8,
                     )],
                 )
@@ -544,7 +544,7 @@ mod tests {
                     vec![ssf::ir::Definition::new(
                         "f",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                        ssf::ir::Operation::new(*operator, 42.0, 42.0),
+                        ssf::ir::PrimitiveOperation::new(*operator, 42.0, 42.0),
                         ssf::types::Primitive::Integer8,
                     )],
                 )
@@ -750,8 +750,8 @@ mod tests {
                         vec![ssf::ir::Definition::new(
                             "g",
                             vec![ssf::ir::Argument::new("z", ssf::types::Primitive::Float64)],
-                            ssf::ir::Operation::new(
-                                ssf::ir::Operator::Add,
+                            ssf::ir::PrimitiveOperation::new(
+                                ssf::ir::PrimitiveOperator::Add,
                                 ssf::ir::Variable::new("x"),
                                 ssf::ir::Variable::new("y"),
                             ),

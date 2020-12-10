@@ -697,7 +697,7 @@ mod tests {
                 "f",
                 vec![],
                 vec![Argument::new("x", types::Primitive::Float64)],
-                Operation::new(Operator::Equal, 42.0, 42.0),
+                PrimitiveOperation::new(PrimitiveOperator::Equal, 42.0, 42.0),
                 types::Primitive::Integer8,
             )],
         );

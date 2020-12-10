@@ -55,7 +55,7 @@ impl TypeChecker {
         expression: &Expression,
         variables: &HashMap<&str, Type>,
     ) -> Result<Type, TypeCheckError> {
-        match expression {
+        Ok(match expression {
             Expression::Array(array) => {
                 for element in array.elements() {
                     self.check_equality(
@@ -64,13 +64,13 @@ impl TypeChecker {
                     )?;
                 }
 
-                Ok(types::Array::new(array.element_type().clone()).into())
+                types::Array::new(array.element_type().clone()).into()
             }
             Expression::Bitcast(bitcast) => {
                 self.check_expression(bitcast.expression(), variables)?;
-                Ok(bitcast.type_().clone())
+                bitcast.type_().clone()
             }
-            Expression::Case(case) => self.check_case(case, variables),
+            Expression::Case(case) => self.check_case(case, variables)?,
             Expression::ConstructorApplication(constructor_application) => {
                 let constructor = constructor_application.constructor();
 
@@ -91,25 +91,26 @@ impl TypeChecker {
                     )?;
                 }
 
-                Ok(constructor_application
+                constructor_application
                     .constructor()
                     .algebraic_type()
                     .clone()
-                    .into())
+                    .into()
             }
             Expression::FunctionApplication(function_application) => {
-                match self.check_expression(function_application.function(), variables)? {
-                    Type::Function(function_type) => {
-                        self.check_equality(
-                            &self.check_expression(function_application.argument(), variables)?,
-                            function_type.argument(),
-                        )?;
+                if let Type::Function(function_type) =
+                    self.check_expression(function_application.function(), variables)?
+                {
+                    self.check_equality(
+                        &self.check_expression(function_application.argument(), variables)?,
+                        function_type.argument(),
+                    )?;
 
-                        Ok(function_type.result().clone())
-                    }
-                    _ => Err(TypeCheckError::FunctionExpected(
+                    function_type.result().clone()
+                } else {
+                    return Err(TypeCheckError::FunctionExpected(
                         function_application.function().clone(),
-                    )),
+                    ));
                 }
             }
             Expression::LetRecursive(let_recursive) => {
@@ -123,7 +124,7 @@ impl TypeChecker {
                     self.check_definition(definition, &variables)?;
                 }
 
-                self.check_expression(let_recursive.expression(), &variables)
+                self.check_expression(let_recursive.expression(), &variables)?
             }
             Expression::Let(let_) => {
                 self.check_equality(
@@ -134,32 +135,32 @@ impl TypeChecker {
                 let mut variables = variables.clone();
                 variables.insert(let_.name(), let_.type_().clone());
 
-                self.check_expression(let_.expression(), &variables)
+                self.check_expression(let_.expression(), &variables)?
             }
-            Expression::Primitive(primitive) => Ok(self.check_primitive(primitive).into()),
-            Expression::Operation(operation) => {
+            Expression::Primitive(primitive) => Ok(self.check_primitive(primitive).into())?,
+            Expression::PrimitiveOperation(operation) => {
                 let lhs_type = self.check_expression(operation.lhs(), variables)?;
                 let rhs_type = self.check_expression(operation.rhs(), variables)?;
 
-                if lhs_type.is_primitive() && rhs_type.is_primitive() && lhs_type == rhs_type {
-                    Ok(match operation.operator() {
-                        Operator::Equal
-                        | Operator::NotEqual
-                        | Operator::GreaterThan
-                        | Operator::GreaterThanOrEqual
-                        | Operator::LessThan
-                        | Operator::LessThanOrEqual => types::Primitive::Integer8.into(),
-                        Operator::Add
-                        | Operator::Subtract
-                        | Operator::Multiply
-                        | Operator::Divide => lhs_type,
-                    })
-                } else {
-                    Err(TypeCheckError::TypesNotMatched(lhs_type, rhs_type))
+                if !lhs_type.is_primitive() || !rhs_type.is_primitive() || lhs_type != rhs_type {
+                    return Err(TypeCheckError::TypesNotMatched(lhs_type, rhs_type));
+                }
+
+                match operation.operator() {
+                    PrimitiveOperator::Equal
+                    | PrimitiveOperator::NotEqual
+                    | PrimitiveOperator::GreaterThan
+                    | PrimitiveOperator::GreaterThanOrEqual
+                    | PrimitiveOperator::LessThan
+                    | PrimitiveOperator::LessThanOrEqual => types::Primitive::Integer8.into(),
+                    PrimitiveOperator::Add
+                    | PrimitiveOperator::Subtract
+                    | PrimitiveOperator::Multiply
+                    | PrimitiveOperator::Divide => lhs_type,
                 }
             }
-            Expression::Variable(variable) => self.check_variable(variable, variables),
-        }
+            Expression::Variable(variable) => self.check_variable(variable, variables)?,
+        })
     }
 
     fn check_case(
