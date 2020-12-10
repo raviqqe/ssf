@@ -398,7 +398,7 @@ impl<'c> ExpressionCompiler<'c> {
                 length,
                 match element {
                     ssf::ir::ArrayElement::Multiple(element) => {
-                        self.compile(element.size(), variables)?.into_int_value()
+                        self.compile(element.length(), variables)?.into_int_value()
                     }
                     ssf::ir::ArrayElement::Single(_) => length.get_type().const_int(1, false),
                 },
@@ -415,7 +415,7 @@ impl<'c> ExpressionCompiler<'c> {
         for element in array.elements().iter() {
             match element {
                 ssf::ir::ArrayElement::Multiple(element) => {
-                    let length = self.compile(element.size(), variables)?.into_int_value();
+                    let length = self.compile(element.length(), variables)?.into_int_value();
 
                     self.builder.build_memcpy(
                         unsafe { self.builder.build_gep(pointer, &[index], "") },

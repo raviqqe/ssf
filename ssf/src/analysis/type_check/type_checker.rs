@@ -68,7 +68,7 @@ impl TypeChecker {
                             )?;
 
                             self.check_equality(
-                                &self.check_expression(element.size(), variables)?,
+                                &self.check_expression(element.length(), variables)?,
                                 &ARRAY_INDEX_TYPE.into(),
                             )?;
                         }
