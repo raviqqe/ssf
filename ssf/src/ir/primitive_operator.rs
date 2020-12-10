@@ -1,5 +1,5 @@
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum Operator {
+pub enum PrimitiveOperator {
     Add,
     Subtract,
     Multiply,

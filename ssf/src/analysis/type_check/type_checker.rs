@@ -138,7 +138,7 @@ impl TypeChecker {
                 self.check_expression(let_.expression(), &variables)?
             }
             Expression::Primitive(primitive) => Ok(self.check_primitive(primitive).into())?,
-            Expression::Operation(operation) => {
+            Expression::PrimitiveOperation(operation) => {
                 let lhs_type = self.check_expression(operation.lhs(), variables)?;
                 let rhs_type = self.check_expression(operation.rhs(), variables)?;
 
@@ -147,15 +147,16 @@ impl TypeChecker {
                 }
 
                 match operation.operator() {
-                    Operator::Equal
-                    | Operator::NotEqual
-                    | Operator::GreaterThan
-                    | Operator::GreaterThanOrEqual
-                    | Operator::LessThan
-                    | Operator::LessThanOrEqual => types::Primitive::Integer8.into(),
-                    Operator::Add | Operator::Subtract | Operator::Multiply | Operator::Divide => {
-                        lhs_type
-                    }
+                    PrimitiveOperator::Equal
+                    | PrimitiveOperator::NotEqual
+                    | PrimitiveOperator::GreaterThan
+                    | PrimitiveOperator::GreaterThanOrEqual
+                    | PrimitiveOperator::LessThan
+                    | PrimitiveOperator::LessThanOrEqual => types::Primitive::Integer8.into(),
+                    PrimitiveOperator::Add
+                    | PrimitiveOperator::Subtract
+                    | PrimitiveOperator::Multiply
+                    | PrimitiveOperator::Divide => lhs_type,
                 }
             }
             Expression::Variable(variable) => self.check_variable(variable, variables)?,

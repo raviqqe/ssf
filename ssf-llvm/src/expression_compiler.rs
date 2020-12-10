@@ -275,7 +275,7 @@ impl<'c> ExpressionCompiler<'c> {
                 self.compile(let_.expression(), &variables)?
             }
             ssf::ir::Expression::Primitive(primitive) => self.compile_primitive(primitive),
-            ssf::ir::Expression::Operation(operation) => {
+            ssf::ir::Expression::PrimitiveOperation(operation) => {
                 match (
                     self.compile(operation.lhs(), variables)?,
                     self.compile(operation.rhs(), variables)?,
@@ -284,44 +284,49 @@ impl<'c> ExpressionCompiler<'c> {
                         inkwell::values::BasicValueEnum::IntValue(lhs),
                         inkwell::values::BasicValueEnum::IntValue(rhs),
                     ) => match operation.operator() {
-                        ssf::ir::Operator::Add => self.builder.build_int_add(lhs, rhs, "").into(),
-                        ssf::ir::Operator::Subtract => {
+                        ssf::ir::PrimitiveOperator::Add => {
+                            self.builder.build_int_add(lhs, rhs, "").into()
+                        }
+                        ssf::ir::PrimitiveOperator::Subtract => {
                             self.builder.build_int_sub(lhs, rhs, "").into()
                         }
-                        ssf::ir::Operator::Multiply => {
+                        ssf::ir::PrimitiveOperator::Multiply => {
                             self.builder.build_int_mul(lhs, rhs, "").into()
                         }
-                        ssf::ir::Operator::Divide => {
+                        ssf::ir::PrimitiveOperator::Divide => {
                             self.builder.build_int_signed_div(lhs, rhs, "").into()
                         }
-                        ssf::ir::Operator::Equal => self.compile_integer_comparison_operations(
-                            inkwell::IntPredicate::EQ,
-                            lhs,
-                            rhs,
-                        ),
-                        ssf::ir::Operator::NotEqual => self.compile_integer_comparison_operations(
-                            inkwell::IntPredicate::NE,
-                            lhs,
-                            rhs,
-                        ),
-                        ssf::ir::Operator::GreaterThan => self
+                        ssf::ir::PrimitiveOperator::Equal => self
+                            .compile_integer_comparison_operations(
+                                inkwell::IntPredicate::EQ,
+                                lhs,
+                                rhs,
+                            ),
+                        ssf::ir::PrimitiveOperator::NotEqual => self
+                            .compile_integer_comparison_operations(
+                                inkwell::IntPredicate::NE,
+                                lhs,
+                                rhs,
+                            ),
+                        ssf::ir::PrimitiveOperator::GreaterThan => self
                             .compile_integer_comparison_operations(
                                 inkwell::IntPredicate::SGT,
                                 lhs,
                                 rhs,
                             ),
-                        ssf::ir::Operator::GreaterThanOrEqual => self
+                        ssf::ir::PrimitiveOperator::GreaterThanOrEqual => self
                             .compile_integer_comparison_operations(
                                 inkwell::IntPredicate::SGE,
                                 lhs,
                                 rhs,
                             ),
-                        ssf::ir::Operator::LessThan => self.compile_integer_comparison_operations(
-                            inkwell::IntPredicate::SLT,
-                            lhs,
-                            rhs,
-                        ),
-                        ssf::ir::Operator::LessThanOrEqual => self
+                        ssf::ir::PrimitiveOperator::LessThan => self
+                            .compile_integer_comparison_operations(
+                                inkwell::IntPredicate::SLT,
+                                lhs,
+                                rhs,
+                            ),
+                        ssf::ir::PrimitiveOperator::LessThanOrEqual => self
                             .compile_integer_comparison_operations(
                                 inkwell::IntPredicate::SLE,
                                 lhs,
@@ -332,43 +337,49 @@ impl<'c> ExpressionCompiler<'c> {
                         inkwell::values::BasicValueEnum::FloatValue(lhs),
                         inkwell::values::BasicValueEnum::FloatValue(rhs),
                     ) => match operation.operator() {
-                        ssf::ir::Operator::Add => self.builder.build_float_add(lhs, rhs, "").into(),
-                        ssf::ir::Operator::Subtract => {
+                        ssf::ir::PrimitiveOperator::Add => {
+                            self.builder.build_float_add(lhs, rhs, "").into()
+                        }
+                        ssf::ir::PrimitiveOperator::Subtract => {
                             self.builder.build_float_sub(lhs, rhs, "").into()
                         }
-                        ssf::ir::Operator::Multiply => {
+                        ssf::ir::PrimitiveOperator::Multiply => {
                             self.builder.build_float_mul(lhs, rhs, "").into()
                         }
-                        ssf::ir::Operator::Divide => {
+                        ssf::ir::PrimitiveOperator::Divide => {
                             self.builder.build_float_div(lhs, rhs, "").into()
                         }
-                        ssf::ir::Operator::Equal => self.compile_float_comparison_operations(
-                            inkwell::FloatPredicate::OEQ,
-                            lhs,
-                            rhs,
-                        ),
-                        ssf::ir::Operator::NotEqual => self.compile_float_comparison_operations(
-                            inkwell::FloatPredicate::ONE,
-                            lhs,
-                            rhs,
-                        ),
-                        ssf::ir::Operator::GreaterThan => self.compile_float_comparison_operations(
-                            inkwell::FloatPredicate::OGT,
-                            lhs,
-                            rhs,
-                        ),
-                        ssf::ir::Operator::GreaterThanOrEqual => self
+                        ssf::ir::PrimitiveOperator::Equal => self
+                            .compile_float_comparison_operations(
+                                inkwell::FloatPredicate::OEQ,
+                                lhs,
+                                rhs,
+                            ),
+                        ssf::ir::PrimitiveOperator::NotEqual => self
+                            .compile_float_comparison_operations(
+                                inkwell::FloatPredicate::ONE,
+                                lhs,
+                                rhs,
+                            ),
+                        ssf::ir::PrimitiveOperator::GreaterThan => self
+                            .compile_float_comparison_operations(
+                                inkwell::FloatPredicate::OGT,
+                                lhs,
+                                rhs,
+                            ),
+                        ssf::ir::PrimitiveOperator::GreaterThanOrEqual => self
                             .compile_float_comparison_operations(
                                 inkwell::FloatPredicate::OGE,
                                 lhs,
                                 rhs,
                             ),
-                        ssf::ir::Operator::LessThan => self.compile_float_comparison_operations(
-                            inkwell::FloatPredicate::OLT,
-                            lhs,
-                            rhs,
-                        ),
-                        ssf::ir::Operator::LessThanOrEqual => self
+                        ssf::ir::PrimitiveOperator::LessThan => self
+                            .compile_float_comparison_operations(
+                                inkwell::FloatPredicate::OLT,
+                                lhs,
+                                rhs,
+                            ),
+                        ssf::ir::PrimitiveOperator::LessThanOrEqual => self
                             .compile_float_comparison_operations(
                                 inkwell::FloatPredicate::OLE,
                                 lhs,

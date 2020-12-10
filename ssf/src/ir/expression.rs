@@ -6,9 +6,9 @@ use super::constructor_application::ConstructorApplication;
 use super::function_application::FunctionApplication;
 use super::let_::Let;
 use super::let_recursive::LetRecursive;
-use super::operation::Operation;
 use super::primitive::Primitive;
 use super::primitive_case::PrimitiveCase;
+use super::primitive_operation::PrimitiveOperation;
 use super::variable::Variable;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
@@ -23,7 +23,7 @@ pub enum Expression {
     LetRecursive(LetRecursive),
     Let(Let),
     Primitive(Primitive),
-    Operation(Operation),
+    PrimitiveOperation(PrimitiveOperation),
     Variable(Variable),
 }
 
@@ -48,7 +48,7 @@ impl Expression {
             }
             Self::LetRecursive(let_recursive) => let_recursive.find_variables(),
             Self::Let(let_) => let_.find_variables(),
-            Self::Operation(operation) => operation.find_variables(),
+            Self::PrimitiveOperation(operation) => operation.find_variables(),
             Self::Variable(variable) => variable.find_variables(),
             Self::Primitive(_) => HashSet::new(),
         }
@@ -67,7 +67,7 @@ impl Expression {
             }
             Self::LetRecursive(let_recursive) => let_recursive.infer_environment(variables).into(),
             Self::Let(let_) => let_.infer_environment(variables).into(),
-            Self::Operation(operation) => operation.infer_environment(variables).into(),
+            Self::PrimitiveOperation(operation) => operation.infer_environment(variables).into(),
             Self::Primitive(_) | Self::Variable(_) => self.clone(),
         }
     }
@@ -85,7 +85,7 @@ impl Expression {
             }
             Self::LetRecursive(let_recursive) => let_recursive.convert_types(convert).into(),
             Self::Let(let_) => let_.convert_types(convert).into(),
-            Self::Operation(operation) => operation.convert_types(convert).into(),
+            Self::PrimitiveOperation(operation) => operation.convert_types(convert).into(),
             Self::Primitive(_) | Self::Variable(_) => self.clone(),
         }
     }
@@ -139,9 +139,9 @@ impl From<Let> for Expression {
     }
 }
 
-impl From<Operation> for Expression {
-    fn from(operation: Operation) -> Self {
-        Self::Operation(operation)
+impl From<PrimitiveOperation> for Expression {
+    fn from(operation: PrimitiveOperation) -> Self {
+        Self::PrimitiveOperation(operation)
     }
 }
 

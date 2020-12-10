@@ -1,18 +1,22 @@
 use super::expression::Expression;
-use super::operator::Operator;
+use super::primitive_operator::PrimitiveOperator;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Operation {
-    operator: Operator,
+pub struct PrimitiveOperation {
+    operator: PrimitiveOperator,
     lhs: Arc<Expression>,
     rhs: Arc<Expression>,
 }
 
-impl Operation {
-    pub fn new(operator: Operator, lhs: impl Into<Expression>, rhs: impl Into<Expression>) -> Self {
+impl PrimitiveOperation {
+    pub fn new(
+        operator: PrimitiveOperator,
+        lhs: impl Into<Expression>,
+        rhs: impl Into<Expression>,
+    ) -> Self {
         Self {
             operator,
             lhs: Arc::new(lhs.into()),
@@ -20,7 +24,7 @@ impl Operation {
         }
     }
 
-    pub fn operator(&self) -> &Operator {
+    pub fn operator(&self) -> &PrimitiveOperator {
         &self.operator
     }
 
