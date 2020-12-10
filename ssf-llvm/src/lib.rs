@@ -939,5 +939,29 @@ mod tests {
             )
             .unwrap();
         }
+
+        #[test]
+        fn compile_array_index_operation() {
+            compile(
+                &ssf::ir::Module::new(
+                    vec![],
+                    vec![ssf::ir::Definition::new(
+                        "f",
+                        vec![ssf::ir::Argument::new(
+                            "x",
+                            ssf::types::Primitive::Integer64,
+                        )],
+                        ssf::ir::ArrayIndexOperation::new(
+                            ssf::ir::Array::new(ssf::types::Primitive::Float64, vec![]),
+                            ssf::ir::Variable::new("x"),
+                        ),
+                        ssf::types::Primitive::Float64,
+                    )],
+                )
+                .unwrap(),
+                COMPILE_CONFIGURATION.clone(),
+            )
+            .unwrap();
+        }
     }
 }

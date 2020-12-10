@@ -81,6 +81,21 @@ impl<'c> ExpressionCompiler<'c> {
                     "",
                 )
             }
+            ssf::ir::Expression::ArrayIndexOperation(operation) => {
+                let array = self.compile(operation.array(), variables)?;
+                let index = self.compile(operation.index(), variables)?;
+
+                self.builder.build_load(
+                    unsafe {
+                        self.builder.build_gep(
+                            array.into_pointer_value(),
+                            &[index.into_int_value()],
+                            "",
+                        )
+                    },
+                    "",
+                )
+            }
             ssf::ir::Expression::Bitcast(bitcast) => {
                 let argument = self.compile(bitcast.expression(), variables)?;
                 let to_type = self.type_compiler.compile(bitcast.type_());

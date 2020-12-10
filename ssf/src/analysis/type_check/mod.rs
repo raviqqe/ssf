@@ -718,4 +718,66 @@ mod tests {
         );
         assert_eq!(check_types(&module), Ok(()));
     }
+
+    #[test]
+    fn check_array_index() {
+        let module = Module::without_validation(
+            vec![],
+            vec![Definition::with_environment(
+                "f",
+                vec![],
+                vec![Argument::new("x", types::Primitive::Integer64)],
+                ArrayIndexOperation::new(
+                    Array::new(types::Primitive::Float64, vec![]),
+                    Variable::new("x"),
+                ),
+                types::Primitive::Float64,
+            )],
+        );
+        assert_eq!(check_types(&module), Ok(()));
+    }
+
+    #[test]
+    fn check_array_index_with_wrong_array_type() {
+        let module = Module::without_validation(
+            vec![],
+            vec![Definition::with_environment(
+                "f",
+                vec![],
+                vec![Argument::new("x", types::Primitive::Integer64)],
+                ArrayIndexOperation::new(42.0, Variable::new("x")),
+                types::Primitive::Float64,
+            )],
+        );
+        assert_eq!(
+            check_types(&module),
+            Err(TypeCheckError::ArrayExpected(
+                types::Primitive::Float64.into()
+            ))
+        );
+    }
+
+    #[test]
+    fn check_array_index_with_wrong_index_type() {
+        let module = Module::without_validation(
+            vec![],
+            vec![Definition::with_environment(
+                "f",
+                vec![],
+                vec![Argument::new("x", types::Primitive::Float64)],
+                ArrayIndexOperation::new(
+                    Array::new(types::Primitive::Float64, vec![]),
+                    Variable::new("x"),
+                ),
+                types::Primitive::Float64,
+            )],
+        );
+        assert_eq!(
+            check_types(&module),
+            Err(TypeCheckError::TypesNotMatched(
+                types::Primitive::Float64.into(),
+                types::Primitive::Integer64.into(),
+            ))
+        );
+    }
 }
