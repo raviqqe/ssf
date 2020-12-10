@@ -35,7 +35,7 @@ impl<'c> MallocCompiler<'c> {
         &self,
         builder: &inkwell::builder::Builder<'c>,
         element_type: inkwell::types::BasicTypeEnum<'c>,
-        count: inkwell::values::IntValue<'c>,
+        length: inkwell::values::IntValue<'c>,
     ) -> inkwell::values::PointerValue<'c> {
         builder
             .build_bitcast(
@@ -46,11 +46,11 @@ impl<'c> MallocCompiler<'c> {
                             .unwrap(),
                         &[builder
                             .build_int_mul(
-                                count.get_type().const_int(
+                                length.get_type().const_int(
                                     self.type_compiler.get_store_size(element_type),
                                     false,
                                 ),
-                                count,
+                                length,
                                 "",
                             )
                             .into()],
