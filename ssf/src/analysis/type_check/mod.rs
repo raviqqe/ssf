@@ -703,4 +703,19 @@ mod tests {
         );
         assert_eq!(check_types(&module), Ok(()));
     }
+
+    #[test]
+    fn check_array() {
+        let module = Module::without_validation(
+            vec![],
+            vec![Definition::with_environment(
+                "f",
+                vec![],
+                vec![Argument::new("x", types::Primitive::Float64)],
+                Array::new(types::Primitive::Float64, vec![42.0.into()]),
+                types::Array::new(types::Primitive::Float64),
+            )],
+        );
+        assert_eq!(check_types(&module), Ok(()));
+    }
 }

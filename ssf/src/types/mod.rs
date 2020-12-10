@@ -1,4 +1,5 @@
 mod algebraic;
+mod array;
 mod canonicalize;
 mod constructor;
 mod function;
@@ -7,6 +8,7 @@ mod type_;
 mod unfold;
 
 pub use algebraic::*;
+pub use array::*;
 pub(crate) use canonicalize::canonicalize;
 pub use constructor::*;
 pub use function::*;

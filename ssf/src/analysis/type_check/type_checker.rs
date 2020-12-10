@@ -56,6 +56,16 @@ impl TypeChecker {
         variables: &HashMap<&str, Type>,
     ) -> Result<Type, TypeCheckError> {
         match expression {
+            Expression::Array(array) => {
+                for element in array.elements() {
+                    self.check_equality(
+                        &self.check_expression(element, variables)?,
+                        array.element_type(),
+                    )?;
+                }
+
+                Ok(types::Array::new(array.element_type().clone()).into())
+            }
             Expression::Bitcast(bitcast) => {
                 self.check_expression(bitcast.expression(), variables)?;
                 Ok(bitcast.type_().clone())

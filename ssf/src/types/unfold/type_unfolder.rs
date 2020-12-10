@@ -16,6 +16,7 @@ impl TypeUnfolder {
     pub fn unfold(&self, type_: &Type) -> Type {
         match type_ {
             Type::Algebraic(algebraic) => self.unfold_algebraic(algebraic).into(),
+            Type::Array(array) => Array::new(self.unfold(array.element())).into(),
             Type::Function(function) => Function::new(
                 self.unfold(function.argument()),
                 self.unfold(function.result()),
