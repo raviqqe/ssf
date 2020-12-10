@@ -46,13 +46,10 @@ impl<'c> MallocCompiler<'c> {
                             .unwrap(),
                         &[builder
                             .build_int_mul(
-                                count
-                                    .get_type()
-                                    .const_int(
-                                        self.type_compiler.get_store_size(element_type),
-                                        false,
-                                    )
-                                    .into(),
+                                count.get_type().const_int(
+                                    self.type_compiler.get_store_size(element_type),
+                                    false,
+                                ),
                                 count,
                                 "",
                             )
