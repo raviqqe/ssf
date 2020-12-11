@@ -57,7 +57,7 @@ impl<'c> ExpressionCompiler<'c> {
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         Ok(match expression {
             ssf::ir::Expression::Array(array) => self.compile_array(array, variables)?.into(),
-            ssf::ir::Expression::ArrayIndexOperation(operation) => {
+            ssf::ir::Expression::ArrayGetOperation(operation) => {
                 let array = self.compile(operation.array(), variables)?;
                 let index = self.compile(operation.index(), variables)?;
 

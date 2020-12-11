@@ -749,7 +749,7 @@ mod tests {
                 "f",
                 vec![],
                 vec![Argument::new("x", types::Primitive::Integer64)],
-                ArrayIndexOperation::new(
+                ArrayGetOperation::new(
                     Array::new(types::Primitive::Float64, vec![]),
                     Variable::new("x"),
                 ),
@@ -767,7 +767,7 @@ mod tests {
                 "f",
                 vec![],
                 vec![Argument::new("x", types::Primitive::Integer64)],
-                ArrayIndexOperation::new(42.0, Variable::new("x")),
+                ArrayGetOperation::new(42.0, Variable::new("x")),
                 types::Primitive::Float64,
             )],
         );
@@ -787,7 +787,7 @@ mod tests {
                 "f",
                 vec![],
                 vec![Argument::new("x", types::Primitive::Float64)],
-                ArrayIndexOperation::new(
+                ArrayGetOperation::new(
                     Array::new(types::Primitive::Float64, vec![]),
                     Variable::new("x"),
                 ),

@@ -1006,7 +1006,7 @@ mod tests {
         }
 
         #[test]
-        fn compile_array_index_operation() {
+        fn compile_array_get_operation() {
             compile(
                 &ssf::ir::Module::new(
                     vec![],
@@ -1016,7 +1016,7 @@ mod tests {
                             "x",
                             ssf::types::Primitive::Integer64,
                         )],
-                        ssf::ir::ArrayIndexOperation::new(
+                        ssf::ir::ArrayGetOperation::new(
                             ssf::ir::Array::new(ssf::types::Primitive::Float64, vec![]),
                             ssf::ir::Variable::new("x"),
                         ),

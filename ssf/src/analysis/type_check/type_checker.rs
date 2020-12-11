@@ -83,7 +83,7 @@ impl TypeChecker {
 
                 types::Array::new(array.element_type().clone()).into()
             }
-            Expression::ArrayIndexOperation(operation) => {
+            Expression::ArrayGetOperation(operation) => {
                 let type_ = self.check_expression(operation.array(), variables)?;
 
                 if let Type::Array(array_type) = type_ {
