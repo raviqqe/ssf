@@ -802,4 +802,69 @@ mod tests {
             ))
         );
     }
+
+    #[test]
+    fn check_array_join() {
+        let module = Module::without_validation(
+            vec![],
+            vec![Definition::with_environment(
+                "f",
+                vec![],
+                vec![Argument::new("x", types::Primitive::Integer64)],
+                ArrayJoinOperation::new(
+                    Array::new(types::Primitive::Float64, vec![]),
+                    Array::new(types::Primitive::Float64, vec![]),
+                ),
+                types::Array::new(types::Primitive::Float64),
+            )],
+        );
+
+        assert_eq!(check_types(&module), Ok(()));
+    }
+
+    #[test]
+    fn check_array_join_with_unmatched_array_types() {
+        let module = Module::without_validation(
+            vec![],
+            vec![Definition::with_environment(
+                "f",
+                vec![],
+                vec![Argument::new("x", types::Primitive::Integer64)],
+                ArrayJoinOperation::new(
+                    Array::new(types::Primitive::Float64, vec![]),
+                    Array::new(types::Primitive::Integer64, vec![]),
+                ),
+                types::Array::new(types::Primitive::Float64),
+            )],
+        );
+
+        assert_eq!(
+            check_types(&module),
+            Err(TypeCheckError::TypesNotMatched(
+                types::Array::new(types::Primitive::Float64).into(),
+                types::Array::new(types::Primitive::Integer64).into(),
+            ))
+        );
+    }
+
+    #[test]
+    fn check_array_join_with_non_array_type() {
+        let module = Module::without_validation(
+            vec![],
+            vec![Definition::with_environment(
+                "f",
+                vec![],
+                vec![Argument::new("x", types::Primitive::Integer64)],
+                ArrayJoinOperation::new(42.0, Array::new(types::Primitive::Integer64, vec![])),
+                types::Array::new(types::Primitive::Float64),
+            )],
+        );
+
+        assert_eq!(
+            check_types(&module),
+            Err(TypeCheckError::ArrayExpected(
+                types::Primitive::Float64.into(),
+            ))
+        );
+    }
 }

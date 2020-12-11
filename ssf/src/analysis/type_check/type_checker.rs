@@ -101,6 +101,18 @@ impl TypeChecker {
                     return Err(TypeCheckError::ArrayExpected(type_));
                 }
             }
+            Expression::ArrayJoinOperation(operation) => {
+                let lhs_type = self.check_expression(operation.lhs(), variables)?;
+                let rhs_type = self.check_expression(operation.rhs(), variables)?;
+
+                if !matches!(lhs_type, Type::Array(_)) || !matches!(rhs_type, Type::Array(_)) {
+                    return Err(TypeCheckError::ArrayExpected(lhs_type));
+                } else if lhs_type != rhs_type {
+                    return Err(TypeCheckError::TypesNotMatched(lhs_type, rhs_type));
+                }
+
+                lhs_type.clone()
+            }
             Expression::Bitcast(bitcast) => {
                 self.check_expression(bitcast.expression(), variables)?;
                 bitcast.type_().clone()
