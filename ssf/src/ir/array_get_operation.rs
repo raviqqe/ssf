@@ -4,12 +4,12 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ArrayIndexOperation {
+pub struct ArrayGetOperation {
     array: Arc<Expression>,
     index: Arc<Expression>,
 }
 
-impl ArrayIndexOperation {
+impl ArrayGetOperation {
     pub fn new(array: impl Into<Expression>, index: impl Into<Expression>) -> Self {
         Self {
             array: array.into().into(),
