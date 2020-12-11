@@ -17,7 +17,7 @@ use std::collections::{HashMap, HashSet};
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expression {
     Array(Array),
-    ArrayGetOperation(ArrayIndexOperation),
+    ArrayGetOperation(ArrayGetOperation),
     Bitcast(Bitcast),
     Case(Case),
     ConstructorApplication(ConstructorApplication),
