@@ -18,6 +18,7 @@
     "intrinsics",
     "llvm",
     "malloc",
+    "memcpy",
     "reloc",
     "uncurried"
   ]
