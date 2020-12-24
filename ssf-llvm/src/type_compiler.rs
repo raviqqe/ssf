@@ -423,6 +423,7 @@ mod tests {
     fn compile_updatable_closure() {
         let module = ssf::ir::Module::new(
             vec![],
+            vec![],
             vec![ssf::ir::Definition::new(
                 "f",
                 vec![ssf::ir::Argument::new(

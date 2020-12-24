@@ -45,6 +45,10 @@ impl Module {
         }
     }
 
+    pub fn foreign_declarations(&self) -> &[ForeignDeclaration] {
+        &self.foreign_declarations
+    }
+
     pub fn declarations(&self) -> &[Declaration] {
         &self.declarations
     }

@@ -836,4 +836,50 @@ mod tests {
             ))
         );
     }
+
+    mod foreign_declarations {
+        use super::*;
+
+        #[test]
+        fn check_types_of_foreign_declarations() {
+            let module = Module::without_validation(
+                vec![ForeignDeclaration::new(
+                    "f",
+                    "g",
+                    types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
+                )],
+                vec![],
+                vec![Definition::new(
+                    "g",
+                    vec![Argument::new("x", types::Primitive::Float64)],
+                    FunctionApplication::new(Variable::new("f"), Variable::new("x")),
+                    types::Primitive::Float64,
+                )],
+            );
+            assert_eq!(check_types(&module), Ok(()));
+        }
+
+        #[test]
+        fn fail_to_check_types_of_foreign_declarations() {
+            let module = Module::without_validation(
+                vec![ForeignDeclaration::new(
+                    "f",
+                    "g",
+                    types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
+                )],
+                vec![],
+                vec![Definition::new(
+                    "g",
+                    vec![Argument::new("x", types::Primitive::Float64)],
+                    Variable::new("f"),
+                    types::Primitive::Float64,
+                )],
+            );
+
+            assert!(matches!(
+                check_types(&module),
+                Err(TypeCheckError::TypesNotMatched(_, _))
+            ));
+        }
+    }
 }
