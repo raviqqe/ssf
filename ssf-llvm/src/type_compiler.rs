@@ -90,7 +90,7 @@ impl<'c> TypeCompiler<'c> {
         definition: &ssf::ir::Definition,
     ) -> inkwell::types::StructType<'c> {
         self.compile_raw_closure(
-            self.compile_entry_function(definition),
+            self.compile_entry_function_from_definition(definition),
             self.compile_payload(definition),
         )
     }
@@ -214,11 +214,11 @@ impl<'c> TypeCompiler<'c> {
         )
     }
 
-    pub fn compile_entry_function(
+    pub fn compile_entry_function_from_definition(
         &self,
         definition: &ssf::ir::Definition,
     ) -> inkwell::types::FunctionType<'c> {
-        self.compile_entry_function_from_types(
+        self.compile_entry_function(
             definition
                 .arguments()
                 .iter()
@@ -227,7 +227,7 @@ impl<'c> TypeCompiler<'c> {
         )
     }
 
-    pub fn compile_entry_function_from_types<'a>(
+    pub fn compile_entry_function<'a>(
         &self,
         arguments: impl IntoIterator<Item = &'a ssf::types::Type>,
         result: &ssf::types::Type,

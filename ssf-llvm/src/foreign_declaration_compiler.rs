@@ -73,7 +73,7 @@ impl<'c> ForeignDeclarationCompiler<'c> {
     ) -> inkwell::values::FunctionValue<'c> {
         let entry_function = self.module.add_function(
             &format!("{}.entry", declaration.name()),
-            self.type_compiler.compile_entry_function_from_types(
+            self.type_compiler.compile_entry_function(
                 declaration.type_().arguments(),
                 declaration.type_().last_result(),
             ),
