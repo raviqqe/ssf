@@ -36,14 +36,7 @@ impl<'c> ForeignDeclarationCompiler<'c> {
             .module
             .add_global(closure_type, None, declaration.name());
 
-        global_variables.insert(
-            declaration.name().into(),
-            GlobalVariable::new(
-                global_value,
-                closure_type.ptr_type(inkwell::AddressSpace::Generic),
-            ),
-        );
-
+        global_value.set_constant(true);
         global_value.set_initializer(
             &closure_type.const_named_struct(&[
                 self.compile_entry_function(declaration)
@@ -62,6 +55,14 @@ impl<'c> ForeignDeclarationCompiler<'c> {
                     .get_undef()
                     .into(),
             ]),
+        );
+
+        global_variables.insert(
+            declaration.name().into(),
+            GlobalVariable::new(
+                global_value,
+                closure_type.ptr_type(inkwell::AddressSpace::Generic),
+            ),
         );
 
         Ok(())
