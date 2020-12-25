@@ -57,6 +57,11 @@ impl<'c> TypeCompiler<'c> {
             ssf::types::Primitive::Integer8 => self.context.i8_type().into(),
             ssf::types::Primitive::Integer32 => self.context.i32_type().into(),
             ssf::types::Primitive::Integer64 => self.context.i64_type().into(),
+            ssf::types::Primitive::Pointer => self
+                .context
+                .i8_type()
+                .ptr_type(inkwell::AddressSpace::Generic)
+                .into(),
         }
     }
 

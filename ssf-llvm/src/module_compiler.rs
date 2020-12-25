@@ -117,6 +117,7 @@ impl<'c> ModuleCompiler<'c> {
             .get_element_type()
             .into_struct_type();
 
+        global_value.set_constant(!definition.is_thunk());
         global_value.set_initializer(
             &closure_type.const_named_struct(&[
                 self.function_compiler_factory

@@ -43,6 +43,7 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
   - 64-bit integer
   - 32-bit floating point number
   - 64-bit floating point number
+  - Pointer
 
 ### Binary representation of ADTs
 
@@ -93,7 +94,7 @@ let bitcode = ssf_llvm::compile(
         .into()],
     )
     .unwrap(),
-    &CompileConfiguration::new("init", vec![], None, None),
+    &CompileConfiguration::new(None, None),
 )?;
 ```
 
