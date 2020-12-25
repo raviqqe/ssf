@@ -19,12 +19,6 @@ impl From<f64> for Primitive {
     }
 }
 
-impl From<u32> for Primitive {
-    fn from(number: u32) -> Self {
-        Self::Integer32(number)
-    }
-}
-
 impl From<u64> for Primitive {
     fn from(number: u64) -> Self {
         Self::Integer64(number)
