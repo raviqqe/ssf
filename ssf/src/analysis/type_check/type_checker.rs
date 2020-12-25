@@ -289,8 +289,10 @@ impl TypeChecker {
 
     fn check_primitive(&self, primitive: &Primitive) -> types::Primitive {
         match primitive {
+            Primitive::Float32(_) => types::Primitive::Float32,
             Primitive::Float64(_) => types::Primitive::Float64,
             Primitive::Integer8(_) => types::Primitive::Integer8,
+            Primitive::Integer32(_) => types::Primitive::Integer32,
             Primitive::Integer64(_) => types::Primitive::Integer64,
         }
     }

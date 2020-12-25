@@ -703,12 +703,20 @@ impl<'c> ExpressionCompiler<'c> {
         primitive: &ssf::ir::Primitive,
     ) -> inkwell::values::BasicValueEnum<'c> {
         match primitive {
+            ssf::ir::Primitive::Float32(number) => {
+                self.context.f32_type().const_float(*number as f64).into()
+            }
             ssf::ir::Primitive::Float64(number) => {
                 self.context.f64_type().const_float(*number).into()
             }
             ssf::ir::Primitive::Integer8(number) => self
                 .context
                 .i8_type()
+                .const_int(*number as u64, false)
+                .into(),
+            ssf::ir::Primitive::Integer32(number) => self
+                .context
+                .i32_type()
                 .const_int(*number as u64, false)
                 .into(),
             ssf::ir::Primitive::Integer64(number) => {
