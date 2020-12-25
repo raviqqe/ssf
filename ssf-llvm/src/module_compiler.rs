@@ -1,5 +1,6 @@
 use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
+use super::foreign_declaration_compiler::ForeignDeclarationCompiler;
 use super::function_compiler_factory::FunctionCompilerFactory;
 use super::global_variable::GlobalVariable;
 use super::type_compiler::TypeCompiler;
@@ -10,6 +11,7 @@ pub struct ModuleCompiler<'c> {
     context: &'c inkwell::context::Context,
     module: Arc<inkwell::module::Module<'c>>,
     function_compiler_factory: Arc<FunctionCompilerFactory<'c>>,
+    foreign_declaration_compiler: Arc<ForeignDeclarationCompiler<'c>>,
     type_compiler: Arc<TypeCompiler<'c>>,
     compile_configuration: Arc<CompileConfiguration>,
 }
@@ -19,6 +21,7 @@ impl<'c> ModuleCompiler<'c> {
         context: &'c inkwell::context::Context,
         module: Arc<inkwell::module::Module<'c>>,
         function_compiler_factory: Arc<FunctionCompilerFactory<'c>>,
+        foreign_declaration_compiler: Arc<ForeignDeclarationCompiler<'c>>,
         type_compiler: Arc<TypeCompiler<'c>>,
         compile_configuration: Arc<CompileConfiguration>,
     ) -> Self {
@@ -26,6 +29,7 @@ impl<'c> ModuleCompiler<'c> {
             context,
             module,
             function_compiler_factory,
+            foreign_declaration_compiler,
             type_compiler,
             compile_configuration,
         }
@@ -35,6 +39,11 @@ impl<'c> ModuleCompiler<'c> {
         self.declare_intrinsics();
 
         let mut global_variables = HashMap::<String, GlobalVariable<'c>>::new();
+
+        for declaration in ir_module.foreign_declarations() {
+            self.foreign_declaration_compiler
+                .compile(&mut global_variables, declaration)?;
+        }
 
         for declaration in ir_module.declarations() {
             self.declare_function(&mut global_variables, declaration);

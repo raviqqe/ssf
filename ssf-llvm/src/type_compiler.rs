@@ -90,7 +90,7 @@ impl<'c> TypeCompiler<'c> {
         definition: &ssf::ir::Definition,
     ) -> inkwell::types::StructType<'c> {
         self.compile_raw_closure(
-            self.compile_entry_function(definition),
+            self.compile_entry_function_from_definition(definition),
             self.compile_payload(definition),
         )
     }
@@ -214,24 +214,51 @@ impl<'c> TypeCompiler<'c> {
         )
     }
 
-    pub fn compile_entry_function(
+    pub fn compile_entry_function_from_definition(
         &self,
         definition: &ssf::ir::Definition,
     ) -> inkwell::types::FunctionType<'c> {
-        self.compile(definition.result_type()).fn_type(
+        self.compile_entry_function(
+            definition
+                .arguments()
+                .iter()
+                .map(|argument| argument.type_()),
+            definition.result_type(),
+        )
+    }
+
+    pub fn compile_entry_function<'a>(
+        &self,
+        arguments: impl IntoIterator<Item = &'a ssf::types::Type>,
+        result: &ssf::types::Type,
+    ) -> inkwell::types::FunctionType<'c> {
+        self.compile(result).fn_type(
             &vec![self
                 .compile_unsized_environment()
                 .ptr_type(inkwell::AddressSpace::Generic)
                 .into()]
             .into_iter()
             .chain(
-                definition
-                    .arguments()
-                    .iter()
-                    .map(|argument| self.compile(argument.type_()))
+                arguments
+                    .into_iter()
+                    .map(|type_| self.compile(type_))
                     .collect::<Vec<_>>(),
             )
             .collect::<Vec<_>>(),
+            false,
+        )
+    }
+
+    pub fn compile_foreign_function(
+        &self,
+        type_: &ssf::types::Function,
+    ) -> inkwell::types::FunctionType<'c> {
+        self.compile(type_.result()).fn_type(
+            &type_
+                .arguments()
+                .into_iter()
+                .map(|type_| self.compile(type_))
+                .collect::<Vec<_>>(),
             false,
         )
     }
@@ -422,6 +449,7 @@ mod tests {
     #[test]
     fn compile_updatable_closure() {
         let module = ssf::ir::Module::new(
+            vec![],
             vec![],
             vec![ssf::ir::Definition::new(
                 "f",

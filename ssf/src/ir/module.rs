@@ -1,20 +1,24 @@
 use super::declaration::Declaration;
 use super::definition::Definition;
+use super::foreign_declaration::ForeignDeclaration;
 use crate::analysis::{check_types, AnalysisError};
 use crate::types::canonicalize;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Module {
+    foreign_declarations: Vec<ForeignDeclaration>,
     declarations: Vec<Declaration>,
     definitions: Vec<Definition>,
 }
 
 impl Module {
     pub fn new(
+        foreign_declarations: Vec<ForeignDeclaration>,
         declarations: Vec<Declaration>,
         definitions: Vec<Definition>,
     ) -> Result<Self, AnalysisError> {
         let module = Self {
+            foreign_declarations,
             declarations,
             definitions: definitions
                 .iter()
@@ -30,13 +34,19 @@ impl Module {
 
     #[cfg(test)]
     pub fn without_validation(
+        foreign_declarations: Vec<ForeignDeclaration>,
         declarations: Vec<Declaration>,
         definitions: Vec<Definition>,
     ) -> Self {
         Self {
+            foreign_declarations,
             declarations,
             definitions,
         }
+    }
+
+    pub fn foreign_declarations(&self) -> &[ForeignDeclaration] {
+        &self.foreign_declarations
     }
 
     pub fn declarations(&self) -> &[Declaration] {
@@ -49,6 +59,11 @@ impl Module {
 
     fn canonicalize_types(&self) -> Self {
         Self {
+            foreign_declarations: self
+                .foreign_declarations
+                .iter()
+                .map(|declaration| declaration.convert_types(&canonicalize))
+                .collect(),
             declarations: self
                 .declarations
                 .iter()
@@ -75,6 +90,7 @@ mod tests {
         assert_eq!(
             Module::new(
                 vec![],
+                vec![],
                 vec![Definition::new(
                     "f",
                     vec![Argument::new("x", types::Primitive::Float64)],
@@ -83,6 +99,7 @@ mod tests {
                 )]
             ),
             Ok(Module::without_validation(
+                vec![],
                 vec![],
                 vec![Definition::with_environment(
                     "f",
@@ -100,6 +117,7 @@ mod tests {
         assert_eq!(
             Module::new(
                 vec![],
+                vec![],
                 vec![
                     Definition::new(
                         "g",
@@ -116,6 +134,7 @@ mod tests {
                 ]
             ),
             Ok(Module::without_validation(
+                vec![],
                 vec![],
                 vec![
                     Definition::with_environment(
@@ -142,6 +161,7 @@ mod tests {
         assert_eq!(
             Module::new(
                 vec![],
+                vec![],
                 vec![Definition::new(
                     "f",
                     vec![Argument::new("x", types::Primitive::Float64)],
@@ -158,6 +178,7 @@ mod tests {
                 )],
             ),
             Ok(Module::without_validation(
+                vec![],
                 vec![],
                 vec![Definition::with_environment(
                     "f",
@@ -184,6 +205,7 @@ mod tests {
         assert_eq!(
             Module::new(
                 vec![],
+                vec![],
                 vec![Definition::new(
                     "f",
                     vec![Argument::new("x", types::Primitive::Float64)],
@@ -200,6 +222,7 @@ mod tests {
                 )]
             ),
             Ok(Module::without_validation(
+                vec![],
                 vec![],
                 vec![Definition::new(
                     "f",

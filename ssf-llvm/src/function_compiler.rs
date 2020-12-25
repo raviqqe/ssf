@@ -52,7 +52,8 @@ impl<'c> FunctionCompiler<'c> {
     ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
         let entry_function = self.add_function(
             &Self::generate_closure_entry_name(definition.name()),
-            self.type_compiler.compile_entry_function(definition),
+            self.type_compiler
+                .compile_entry_function_from_definition(definition),
         );
 
         let builder = Arc::new(self.context.create_builder());
@@ -71,7 +72,8 @@ impl<'c> FunctionCompiler<'c> {
     ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
         let entry_function = self.add_function(
             &Self::generate_closure_entry_name(definition.name()),
-            self.type_compiler.compile_entry_function(definition),
+            self.type_compiler
+                .compile_entry_function_from_definition(definition),
         );
 
         let builder = Arc::new(self.context.create_builder());
@@ -211,7 +213,8 @@ impl<'c> FunctionCompiler<'c> {
     ) -> inkwell::values::FunctionValue<'c> {
         let entry_function = self.add_function(
             &Self::generate_normal_entry_name(definition.name()),
-            self.type_compiler.compile_entry_function(definition),
+            self.type_compiler
+                .compile_entry_function_from_definition(definition),
         );
 
         let builder = self.context.create_builder();
@@ -230,7 +233,8 @@ impl<'c> FunctionCompiler<'c> {
     ) -> inkwell::values::FunctionValue<'c> {
         let entry_function = self.add_function(
             &Self::generate_locked_entry_name(definition.name()),
-            self.type_compiler.compile_entry_function(definition),
+            self.type_compiler
+                .compile_entry_function_from_definition(definition),
         );
 
         let builder = self.context.create_builder();

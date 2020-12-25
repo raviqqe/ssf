@@ -22,6 +22,7 @@ impl<'c> GlobalVariable<'c> {
         &self,
         builder: &inkwell::builder::Builder<'c>,
     ) -> inkwell::values::PointerValue<'c> {
+        // Global variables can be thunks and have non-empty environment.
         builder
             .build_bitcast(self.global_value.as_pointer_value(), self.pointer_type, "")
             .into_pointer_value()
