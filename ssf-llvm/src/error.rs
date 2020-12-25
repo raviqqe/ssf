@@ -16,12 +16,6 @@ impl Display for CompileError {
 
 impl Error for CompileError {}
 
-impl From<&str> for CompileError {
-    fn from(string: &str) -> Self {
-        Self::Llvm(string.to_string())
-    }
-}
-
 impl From<inkwell::support::LLVMString> for CompileError {
     fn from(string: inkwell::support::LLVMString) -> Self {
         Self::Llvm(string.to_string())

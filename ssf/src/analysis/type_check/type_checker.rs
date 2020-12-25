@@ -64,25 +64,10 @@ impl TypeChecker {
         Ok(match expression {
             Expression::Array(array) => {
                 for element in array.elements() {
-                    match element {
-                        ArrayElement::Multiple(element) => {
-                            self.check_equality(
-                                &self.check_expression(element.array(), variables)?,
-                                &types::Array::new(array.element_type().clone()).into(),
-                            )?;
-
-                            self.check_equality(
-                                &self.check_expression(element.length(), variables)?,
-                                &ARRAY_INDEX_TYPE.into(),
-                            )?;
-                        }
-                        ArrayElement::Single(element) => {
-                            self.check_equality(
-                                &self.check_expression(element, variables)?,
-                                array.element_type(),
-                            )?;
-                        }
-                    }
+                    self.check_equality(
+                        &self.check_expression(element, variables)?,
+                        array.element_type(),
+                    )?;
                 }
 
                 types::Array::new(array.element_type().clone()).into()
