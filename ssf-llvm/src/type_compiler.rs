@@ -52,8 +52,10 @@ impl<'c> TypeCompiler<'c> {
         primitive: &ssf::types::Primitive,
     ) -> inkwell::types::BasicTypeEnum<'c> {
         match primitive {
+            ssf::types::Primitive::Float32 => self.context.f32_type().into(),
             ssf::types::Primitive::Float64 => self.context.f64_type().into(),
             ssf::types::Primitive::Integer8 => self.context.i8_type().into(),
+            ssf::types::Primitive::Integer32 => self.context.i32_type().into(),
             ssf::types::Primitive::Integer64 => self.context.i64_type().into(),
         }
     }
