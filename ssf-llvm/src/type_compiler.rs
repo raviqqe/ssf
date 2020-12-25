@@ -218,20 +218,47 @@ impl<'c> TypeCompiler<'c> {
         &self,
         definition: &ssf::ir::Definition,
     ) -> inkwell::types::FunctionType<'c> {
-        self.compile(definition.result_type()).fn_type(
+        self.compile_entry_function_from_types(
+            definition
+                .arguments()
+                .iter()
+                .map(|argument| argument.type_()),
+            definition.result_type(),
+        )
+    }
+
+    pub fn compile_entry_function_from_types<'a>(
+        &self,
+        arguments: impl IntoIterator<Item = &'a ssf::types::Type>,
+        result: &ssf::types::Type,
+    ) -> inkwell::types::FunctionType<'c> {
+        self.compile(result).fn_type(
             &vec![self
                 .compile_unsized_environment()
                 .ptr_type(inkwell::AddressSpace::Generic)
                 .into()]
             .into_iter()
             .chain(
-                definition
-                    .arguments()
-                    .iter()
-                    .map(|argument| self.compile(argument.type_()))
+                arguments
+                    .into_iter()
+                    .map(|type_| self.compile(type_))
                     .collect::<Vec<_>>(),
             )
             .collect::<Vec<_>>(),
+            false,
+        )
+    }
+
+    pub fn compile_foreign_function(
+        &self,
+        type_: &ssf::types::Function,
+    ) -> inkwell::types::FunctionType<'c> {
+        self.compile(type_.result()).fn_type(
+            &type_
+                .arguments()
+                .into_iter()
+                .map(|type_| self.compile(type_))
+                .collect::<Vec<_>>(),
             false,
         )
     }
