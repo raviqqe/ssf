@@ -39,7 +39,9 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
   - Constructors are boxed or unboxed explicitly.
 - Primitives
   - 8-bit integer
+  - 32-bit integer
   - 64-bit integer
+  - 32-bit floating point number
   - 64-bit floating point number
 
 ### Binary representation of ADTs
