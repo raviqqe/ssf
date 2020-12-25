@@ -93,7 +93,7 @@ let bitcode = ssf_llvm::compile(
         .into()],
     )
     .unwrap(),
-    &CompileConfiguration::new("init", vec![], None, None),
+    &CompileConfiguration::new(None, None),
 )?;
 ```
 
