@@ -42,7 +42,11 @@ impl<'c> ModuleCompiler<'c> {
 
         for declaration in ir_module.foreign_declarations() {
             self.foreign_declaration_compiler
-                .compile(&mut global_variables, declaration);
+                .compile(&mut global_variables, declaration)?;
+        }
+
+        for declaration in ir_module.declarations() {
+            self.declare_function(&mut global_variables, declaration);
         }
 
         for definition in ir_module.definitions() {
