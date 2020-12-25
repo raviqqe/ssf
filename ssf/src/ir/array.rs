@@ -1,15 +1,15 @@
-use super::array_element::ArrayElement;
+use super::expression::Expression;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Array {
     element_type: Type,
-    elements: Vec<ArrayElement>,
+    elements: Vec<Expression>,
 }
 
 impl Array {
-    pub fn new(element_type: impl Into<Type>, elements: Vec<ArrayElement>) -> Self {
+    pub fn new(element_type: impl Into<Type>, elements: Vec<Expression>) -> Self {
         Self {
             element_type: element_type.into(),
             elements,
@@ -20,7 +20,7 @@ impl Array {
         &self.element_type
     }
 
-    pub fn elements(&self) -> &[ArrayElement] {
+    pub fn elements(&self) -> &[Expression] {
         &self.elements
     }
 

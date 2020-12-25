@@ -5,11 +5,9 @@ use super::function_application_compiler::FunctionApplicationCompiler;
 use super::function_compiler::FunctionCompiler;
 use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
-use inkwell::types::AnyType;
+use inkwell::types::{AnyType, BasicType};
 use std::collections::HashMap;
 use std::sync::Arc;
-
-const ALIGNMENT: u32 = 8;
 
 pub struct ExpressionCompiler<'c> {
     context: &'c inkwell::context::Context,
@@ -56,7 +54,33 @@ impl<'c> ExpressionCompiler<'c> {
         variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         Ok(match expression {
-            ssf::ir::Expression::Array(array) => self.compile_array(array, variables)?.into(),
+            ssf::ir::Expression::Array(array) => {
+                let element_type = self.type_compiler.compile(array.element_type());
+                let array_type = element_type.array_type(array.elements().len() as u32);
+                let array_value = array_type.const_zero();
+
+                for (index, element) in array.elements().iter().enumerate() {
+                    self.builder.build_insert_value(
+                        array_value,
+                        self.compile(element, variables)?,
+                        index as u32,
+                        "",
+                    );
+                }
+
+                let pointer = self
+                    .malloc_compiler
+                    .compile_array_malloc(&self.builder, array_type);
+
+                self.builder.build_store(pointer, array_value);
+
+                self.builder.build_bitcast(
+                    pointer,
+                    self.type_compiler
+                        .compile_array(&ssf::types::Array::new(array.element_type().clone())),
+                    "",
+                )
+            }
             ssf::ir::Expression::ArrayGetOperation(operation) => {
                 let array = self.compile(operation.array(), variables)?;
                 let index = self.compile(operation.index(), variables)?;
@@ -384,70 +408,6 @@ impl<'c> ExpressionCompiler<'c> {
                 self.compile_variable(variable, variables)?
             }
         })
-    }
-
-    fn compile_array(
-        &self,
-        array: &ssf::ir::Array,
-        variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
-    ) -> Result<inkwell::values::PointerValue<'c>, CompileError> {
-        let mut length = self.context.i64_type().const_zero();
-
-        for element in array.elements().iter() {
-            length = self.builder.build_int_add(
-                length,
-                match element {
-                    ssf::ir::ArrayElement::Multiple(element) => {
-                        self.compile(element.length(), variables)?.into_int_value()
-                    }
-                    ssf::ir::ArrayElement::Single(_) => length.get_type().const_int(1, false),
-                },
-                "",
-            );
-        }
-
-        let element_type = self.type_compiler.compile(array.element_type());
-        let pointer =
-            self.malloc_compiler
-                .compile_array_malloc(&self.builder, element_type, length);
-        let mut index = self.context.i64_type().const_zero();
-
-        for element in array.elements().iter() {
-            match element {
-                ssf::ir::ArrayElement::Multiple(element) => {
-                    let length = self.compile(element.length(), variables)?.into_int_value();
-
-                    self.builder.build_memcpy(
-                        unsafe { self.builder.build_gep(pointer, &[index], "") },
-                        ALIGNMENT,
-                        self.compile(element.array(), variables)?
-                            .into_pointer_value(),
-                        ALIGNMENT,
-                        self.builder.build_int_mul(
-                            length,
-                            length
-                                .get_type()
-                                .const_int(self.type_compiler.get_store_size(element_type), false),
-                            "",
-                        ),
-                    )?;
-
-                    index = self.builder.build_int_add(index, length, "");
-                }
-                ssf::ir::ArrayElement::Single(element) => {
-                    self.builder.build_store(
-                        unsafe { self.builder.build_gep(pointer, &[index], "") },
-                        self.compile(element, variables)?,
-                    );
-
-                    index =
-                        self.builder
-                            .build_int_add(index, index.get_type().const_int(1, false), "");
-                }
-            }
-        }
-
-        Ok(pointer)
     }
 
     fn compile_case(
@@ -810,11 +770,7 @@ mod tests {
         let type_compiler = TypeCompiler::new(&context);
         let closure_operation_compiler =
             ClosureOperationCompiler::new(context, type_compiler.clone());
-        let malloc_compiler = MallocCompiler::new(
-            module.clone(),
-            type_compiler.clone(),
-            COMPILE_CONFIGURATION.clone(),
-        );
+        let malloc_compiler = MallocCompiler::new(module.clone(), COMPILE_CONFIGURATION.clone());
         let function_application_compiler = FunctionApplicationCompiler::new(
             &context,
             module.clone(),

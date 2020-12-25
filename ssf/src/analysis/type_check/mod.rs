@@ -750,29 +750,6 @@ mod tests {
     }
 
     #[test]
-    fn check_array_with_multiple_element() {
-        let module = Module::without_validation(
-            vec![],
-            vec![],
-            vec![Definition::with_environment(
-                "f",
-                vec![],
-                vec![Argument::new("x", types::Primitive::Float64)],
-                Array::new(
-                    types::Primitive::Float64,
-                    vec![ArrayMultipleElement::new(
-                        Array::new(types::Primitive::Float64, vec![42.0.into()]),
-                        1,
-                    )
-                    .into()],
-                ),
-                types::Array::new(types::Primitive::Float64),
-            )],
-        );
-        assert_eq!(check_types(&module), Ok(()));
-    }
-
-    #[test]
     fn check_array_index() {
         let module = Module::without_validation(
             vec![],

@@ -34,11 +34,7 @@ pub fn compile(
     let module = Arc::new(context.create_module("main"));
     let type_compiler = TypeCompiler::new(&context);
     let closure_operation_compiler = ClosureOperationCompiler::new(&context, type_compiler.clone());
-    let malloc_compiler = MallocCompiler::new(
-        module.clone(),
-        type_compiler.clone(),
-        compile_configuration.clone(),
-    );
+    let malloc_compiler = MallocCompiler::new(module.clone(), compile_configuration.clone());
     let function_application_compiler = FunctionApplicationCompiler::new(
         &context,
         module.clone(),
@@ -970,69 +966,6 @@ mod tests {
                         "f",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
                         ssf::ir::Array::new(ssf::types::Primitive::Float64, vec![42.0.into()]),
-                        ssf::types::Array::new(ssf::types::Primitive::Float64),
-                    )],
-                )
-                .unwrap(),
-                COMPILE_CONFIGURATION.clone(),
-            )
-            .unwrap();
-        }
-
-        #[test]
-        fn compile_array_expression_with_multiple_element() {
-            compile(
-                &ssf::ir::Module::new(
-                    vec![],
-                    vec![],
-                    vec![ssf::ir::Definition::new(
-                        "f",
-                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                        ssf::ir::Array::new(
-                            ssf::types::Primitive::Float64,
-                            vec![ssf::ir::ArrayElement::Multiple(
-                                ssf::ir::ArrayMultipleElement::new(
-                                    ssf::ir::Array::new(
-                                        ssf::types::Primitive::Float64,
-                                        vec![42.0.into()],
-                                    ),
-                                    1,
-                                ),
-                            )],
-                        ),
-                        ssf::types::Array::new(ssf::types::Primitive::Float64),
-                    )],
-                )
-                .unwrap(),
-                COMPILE_CONFIGURATION.clone(),
-            )
-            .unwrap();
-        }
-
-        #[test]
-        fn compile_array_expression_with_single_and_multiple_elements() {
-            compile(
-                &ssf::ir::Module::new(
-                    vec![],
-                    vec![],
-                    vec![ssf::ir::Definition::new(
-                        "f",
-                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                        ssf::ir::Array::new(
-                            ssf::types::Primitive::Float64,
-                            vec![
-                                13.0.into(),
-                                ssf::ir::ArrayElement::Multiple(
-                                    ssf::ir::ArrayMultipleElement::new(
-                                        ssf::ir::Array::new(
-                                            ssf::types::Primitive::Float64,
-                                            vec![42.0.into()],
-                                        ),
-                                        1,
-                                    ),
-                                ),
-                            ],
-                        ),
                         ssf::types::Array::new(ssf::types::Primitive::Float64),
                     )],
                 )
