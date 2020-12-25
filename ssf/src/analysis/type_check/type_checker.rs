@@ -152,6 +152,7 @@ impl TypeChecker {
                     ));
                 }
             }
+            Expression::Data(_) => types::Primitive::Pointer.into(),
             Expression::LetRecursive(let_recursive) => {
                 let mut variables = variables.clone();
 

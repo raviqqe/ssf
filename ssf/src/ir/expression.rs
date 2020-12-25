@@ -4,6 +4,7 @@ use super::array_get_operation::ArrayGetOperation;
 use super::bitcast::Bitcast;
 use super::case::Case;
 use super::constructor_application::ConstructorApplication;
+use super::data::Data;
 use super::function_application::FunctionApplication;
 use super::let_::Let;
 use super::let_recursive::LetRecursive;
@@ -21,6 +22,7 @@ pub enum Expression {
     Bitcast(Bitcast),
     Case(Case),
     ConstructorApplication(ConstructorApplication),
+    Data(Data),
     FunctionApplication(FunctionApplication),
     LetRecursive(LetRecursive),
     Let(Let),
@@ -53,7 +55,7 @@ impl Expression {
             Self::Let(let_) => let_.find_variables(),
             Self::PrimitiveOperation(operation) => operation.find_variables(),
             Self::Variable(variable) => variable.find_variables(),
-            Self::Primitive(_) => HashSet::new(),
+            Self::Data(_) | Self::Primitive(_) => HashSet::new(),
         }
     }
 
@@ -72,7 +74,7 @@ impl Expression {
             Self::LetRecursive(let_recursive) => let_recursive.infer_environment(variables).into(),
             Self::Let(let_) => let_.infer_environment(variables).into(),
             Self::PrimitiveOperation(operation) => operation.infer_environment(variables).into(),
-            Self::Primitive(_) | Self::Variable(_) => self.clone(),
+            Self::Data(_) | Self::Primitive(_) | Self::Variable(_) => self.clone(),
         }
     }
 
@@ -91,7 +93,7 @@ impl Expression {
             Self::LetRecursive(let_recursive) => let_recursive.convert_types(convert).into(),
             Self::Let(let_) => let_.convert_types(convert).into(),
             Self::PrimitiveOperation(operation) => operation.convert_types(convert).into(),
-            Self::Primitive(_) | Self::Variable(_) => self.clone(),
+            Self::Data(_) | Self::Primitive(_) | Self::Variable(_) => self.clone(),
         }
     }
 }
