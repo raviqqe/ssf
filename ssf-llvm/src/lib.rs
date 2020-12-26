@@ -1032,5 +1032,40 @@ mod tests {
             )
             .unwrap();
         }
+
+        #[test]
+        fn compile_foreign_declaration_with_multiple_arguments() {
+            compile(
+                &ssf::ir::Module::new(
+                    vec![ssf::ir::ForeignDeclaration::new(
+                        "f",
+                        "g",
+                        ssf::types::Function::new(
+                            ssf::types::Primitive::Float64,
+                            ssf::types::Function::new(
+                                ssf::types::Primitive::Float64,
+                                ssf::types::Primitive::Float64,
+                            ),
+                        ),
+                    )],
+                    vec![],
+                    vec![ssf::ir::Definition::new(
+                        "h",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        ssf::ir::FunctionApplication::new(
+                            ssf::ir::FunctionApplication::new(
+                                ssf::ir::Variable::new("f"),
+                                ssf::ir::Variable::new("x"),
+                            ),
+                            ssf::ir::Variable::new("x"),
+                        ),
+                        ssf::types::Primitive::Float64,
+                    )],
+                )
+                .unwrap(),
+                COMPILE_CONFIGURATION.clone(),
+            )
+            .unwrap();
+        }
     }
 }

@@ -260,7 +260,7 @@ impl<'c> TypeCompiler<'c> {
         &self,
         type_: &ssf::types::Function,
     ) -> inkwell::types::FunctionType<'c> {
-        self.compile(type_.result()).fn_type(
+        self.compile(type_.last_result()).fn_type(
             &type_
                 .arguments()
                 .into_iter()
