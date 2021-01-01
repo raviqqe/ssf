@@ -73,8 +73,8 @@ pub fn compile(
 
 #[cfg(test)]
 mod tests {
+    use super::compile_configuration::COMPILE_CONFIGURATION;
     use super::*;
-    use lazy_static::lazy_static;
 
     const NUMBER_ARITHMETIC_OPERATORS: [ssf::ir::PrimitiveOperator; 4] = [
         ssf::ir::PrimitiveOperator::Add,
@@ -91,13 +91,6 @@ mod tests {
         ssf::ir::PrimitiveOperator::LessThan,
         ssf::ir::PrimitiveOperator::LessThanOrEqual,
     ];
-
-    lazy_static! {
-        static ref COMPILE_CONFIGURATION: Arc<CompileConfiguration> = CompileConfiguration {
-            malloc_function_name: "malloc".into()
-        }
-        .into();
-    }
 
     #[test]
     fn compile_() {

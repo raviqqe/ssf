@@ -677,17 +677,9 @@ impl<'c> ExpressionCompiler<'c> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::compile_configuration::CompileConfiguration;
+    use super::super::compile_configuration::COMPILE_CONFIGURATION;
     use super::super::expression_compiler_factory::ExpressionCompilerFactory;
     use super::*;
-    use lazy_static::lazy_static;
-
-    lazy_static! {
-        static ref COMPILE_CONFIGURATION: Arc<CompileConfiguration> = CompileConfiguration {
-            malloc_function_name: "malloc".into()
-        }
-        .into();
-    }
 
     fn create_expression_compiler(
         context: &inkwell::context::Context,
