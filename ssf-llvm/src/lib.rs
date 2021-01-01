@@ -30,6 +30,8 @@ pub fn compile(
     ir_module: &ssf::ir::Module,
     compile_configuration: Arc<CompileConfiguration>,
 ) -> Result<Vec<u8>, CompileError> {
+    ssf::analysis::check_types(ir_module)?;
+
     let context = inkwell::context::Context::create();
     let module = Arc::new(context.create_module("main"));
     let type_compiler = TypeCompiler::new(&context);
