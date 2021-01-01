@@ -18,10 +18,7 @@ mod tests {
 
     #[test]
     fn check_types_with_empty_modules() {
-        assert_eq!(
-            check_types(&Module::new(vec![], vec![], vec![])),
-            Ok(())
-        );
+        assert_eq!(check_types(&Module::new(vec![], vec![], vec![])), Ok(()));
     }
 
     #[test]
