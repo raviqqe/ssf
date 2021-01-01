@@ -118,6 +118,7 @@ impl TypeChecker {
                     .clone()
                     .into()
             }
+            Expression::CpsFunctionApplication(_) => return Err(TypeCheckError::CpsNotSupported),
             Expression::FunctionApplication(function_application) => {
                 let function_type = self
                     .check_expression(function_application.function(), variables)?

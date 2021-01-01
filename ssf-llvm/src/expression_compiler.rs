@@ -224,6 +224,7 @@ impl<'c> ExpressionCompiler<'c> {
 
                 self.builder.build_load(algebraic_pointer, "")
             }
+            ssf::ir::Expression::CpsFunctionApplication(_) => todo!(),
             ssf::ir::Expression::FunctionApplication(function_application) => {
                 self.function_application_compiler.compile(
                     &self.builder,

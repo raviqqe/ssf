@@ -4,6 +4,7 @@ use super::array_get_operation::ArrayGetOperation;
 use super::bitcast::Bitcast;
 use super::case::Case;
 use super::constructor_application::ConstructorApplication;
+use super::cps_function_application::CpsFunctionApplication;
 use super::function_application::FunctionApplication;
 use super::let_::Let;
 use super::let_recursive::LetRecursive;
@@ -21,6 +22,7 @@ pub enum Expression {
     Bitcast(Bitcast),
     Case(Case),
     ConstructorApplication(ConstructorApplication),
+    CpsFunctionApplication(CpsFunctionApplication),
     FunctionApplication(FunctionApplication),
     LetRecursive(LetRecursive),
     Let(Let),
@@ -46,6 +48,7 @@ impl Expression {
             Self::ConstructorApplication(constructor_application) => {
                 constructor_application.find_variables()
             }
+            Self::CpsFunctionApplication(application) => application.find_variables().into(),
             Self::FunctionApplication(function_application) => {
                 function_application.find_variables()
             }
@@ -66,6 +69,9 @@ impl Expression {
             Self::ConstructorApplication(constructor_application) => {
                 constructor_application.infer_environment(variables).into()
             }
+            Self::CpsFunctionApplication(application) => {
+                application.infer_environment(variables).into()
+            }
             Self::FunctionApplication(function_application) => {
                 function_application.infer_environment(variables).into()
             }
@@ -85,6 +91,7 @@ impl Expression {
             Self::ConstructorApplication(constructor_application) => {
                 constructor_application.convert_types(convert).into()
             }
+            Self::CpsFunctionApplication(application) => application.convert_types(convert).into(),
             Self::FunctionApplication(function_application) => {
                 function_application.convert_types(convert).into()
             }
@@ -129,6 +136,12 @@ impl From<Case> for Expression {
 impl From<ConstructorApplication> for Expression {
     fn from(constructor_application: ConstructorApplication) -> Self {
         Self::ConstructorApplication(constructor_application)
+    }
+}
+
+impl From<CpsFunctionApplication> for Expression {
+    fn from(application: CpsFunctionApplication) -> Self {
+        Self::CpsFunctionApplication(application)
     }
 }
 
