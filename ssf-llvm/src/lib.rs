@@ -44,12 +44,10 @@ pub fn compile(
     );
     let expression_compiler_factory = ExpressionCompilerFactory::new(
         &context,
-        module.clone(),
         function_application_compiler.clone(),
         type_compiler.clone(),
         closure_operation_compiler.clone(),
         malloc_compiler.clone(),
-        compile_configuration.clone(),
     );
     let function_compiler_factory = FunctionCompilerFactory::new(
         &context,
@@ -75,8 +73,8 @@ pub fn compile(
 
 #[cfg(test)]
 mod tests {
+    use super::compile_configuration::COMPILE_CONFIGURATION;
     use super::*;
-    use lazy_static::lazy_static;
 
     const NUMBER_ARITHMETIC_OPERATORS: [ssf::ir::PrimitiveOperator; 4] = [
         ssf::ir::PrimitiveOperator::Add,
@@ -93,11 +91,6 @@ mod tests {
         ssf::ir::PrimitiveOperator::LessThan,
         ssf::ir::PrimitiveOperator::LessThanOrEqual,
     ];
-
-    lazy_static! {
-        static ref COMPILE_CONFIGURATION: Arc<CompileConfiguration> =
-            CompileConfiguration::new(None, None);
-    }
 
     #[test]
     fn compile_() {
@@ -131,30 +124,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            CompileConfiguration::new(Some("custom_malloc".into()), None),
-        )
-        .unwrap();
-    }
-
-    #[test]
-    fn compile_with_panic_function() {
-        compile(
-            &ssf::ir::Module::new(
-                vec![],
-                vec![],
-                vec![ssf::ir::Definition::new(
-                    "f",
-                    vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                    ssf::ir::PrimitiveCase::new(
-                        ssf::ir::Variable::new("x"),
-                        vec![ssf::ir::PrimitiveAlternative::new(42.0, 42.0)],
-                        None,
-                    ),
-                    ssf::types::Primitive::Float64,
-                )],
-            )
-            .unwrap(),
-            CompileConfiguration::new(None, Some("panic".into())),
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -602,7 +572,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            CompileConfiguration::new(None, Some("panic".into())),
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }
@@ -632,7 +602,7 @@ mod tests {
                 )],
             )
             .unwrap(),
-            CompileConfiguration::new(None, Some("panic".into())),
+            COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
     }

@@ -28,7 +28,7 @@ impl<'c> MallocCompiler<'c> {
                 builder
                     .build_call(
                         self.module
-                            .get_function(self.compile_configuration.malloc_function_name())
+                            .get_function(&self.compile_configuration.malloc_function_name)
                             .unwrap(),
                         &[type_.size_of().unwrap().into()],
                         "",
