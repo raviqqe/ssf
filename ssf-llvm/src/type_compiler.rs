@@ -203,9 +203,9 @@ impl<'c> TypeCompiler<'c> {
         &self,
         type_: &ssf::types::Function,
     ) -> inkwell::types::FunctionType<'c> {
-        self.compile(type_.last_result()).fn_type(
+        self.compile_void().fn_type(
             &self
-                .compile_internal_arguments()
+                .compile_internal_arguments(type_.last_result())
                 .into_iter()
                 .into_iter()
                 .chain(
@@ -238,9 +238,9 @@ impl<'c> TypeCompiler<'c> {
         arguments: impl IntoIterator<Item = &'a ssf::types::Type>,
         result: &ssf::types::Type,
     ) -> inkwell::types::FunctionType<'c> {
-        self.compile(result).fn_type(
+        self.compile_void().fn_type(
             &self
-                .compile_internal_arguments()
+                .compile_internal_arguments(result)
                 .into_iter()
                 .chain(
                     arguments
@@ -253,11 +253,23 @@ impl<'c> TypeCompiler<'c> {
         )
     }
 
-    fn compile_internal_arguments(&self) -> Vec<inkwell::types::BasicTypeEnum<'c>> {
-        vec![self
-            .compile_unsized_environment()
-            .ptr_type(inkwell::AddressSpace::Generic)
-            .into()]
+    fn compile_internal_arguments(
+        &self,
+        result_type: &ssf::types::Type,
+    ) -> Vec<inkwell::types::BasicTypeEnum<'c>> {
+        vec![
+            self.context
+                .i8_type()
+                .ptr_type(inkwell::AddressSpace::Generic)
+                .into(),
+            self.compile_void()
+                .fn_type(&[self.compile(result_type)], false)
+                .ptr_type(inkwell::AddressSpace::Generic)
+                .into(),
+            self.compile_unsized_environment()
+                .ptr_type(inkwell::AddressSpace::Generic)
+                .into(),
+        ]
     }
 
     pub fn compile_foreign_function(
@@ -353,6 +365,10 @@ impl<'c> TypeCompiler<'c> {
         } else {
             ((size as isize - 1) / 8 + 1) as usize
         }
+    }
+
+    fn compile_void(&self) -> inkwell::types::VoidType<'c> {
+        self.context.void_type()
     }
 }
 
