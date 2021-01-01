@@ -476,7 +476,7 @@ impl<'c> ExpressionCompiler<'c> {
                     ));
                     self.builder.build_unconditional_branch(phi_block);
                 } else {
-                    self.compile_unreachable();
+                    self.builder.build_unreachable();
                 }
 
                 self.builder.position_at_end(switch_block);
@@ -560,7 +560,7 @@ impl<'c> ExpressionCompiler<'c> {
                     ));
                     self.builder.build_unconditional_branch(phi_block);
                 } else {
-                    self.compile_unreachable();
+                    self.builder.build_unreachable();
                 }
 
                 self.builder.position_at_end(phi_block);
@@ -664,10 +664,6 @@ impl<'c> ExpressionCompiler<'c> {
     ) -> inkwell::values::PointerValue<'c> {
         self.malloc_compiler
             .compile_struct_malloc(&self.builder, type_)
-    }
-
-    fn compile_unreachable(&self) {
-        self.builder.build_unreachable();
     }
 
     fn is_bitcast_supported(&self, type_: inkwell::types::BasicTypeEnum<'c>) -> bool {
