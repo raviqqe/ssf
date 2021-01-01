@@ -24,6 +24,13 @@ impl Type {
         }
     }
 
+    pub fn into_array(self) -> Option<Array> {
+        match self {
+            Self::Array(array) => Some(array),
+            _ => None,
+        }
+    }
+
     pub fn into_function(self) -> Option<Function> {
         match self {
             Self::Function(function) => Some(function),
@@ -60,19 +67,5 @@ impl From<Function> for Type {
 impl From<Primitive> for Type {
     fn from(primitive: Primitive) -> Self {
         Self::Primitive(primitive)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::super::primitive::Primitive;
-    use super::*;
-
-    #[test]
-    fn to_id() {
-        assert_eq!(
-            &Type::from(Function::new(Primitive::Float64, Primitive::Float64)).to_id(),
-            "(Float64->Float64)"
-        );
     }
 }

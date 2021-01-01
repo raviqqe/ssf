@@ -52,30 +52,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn to_id() {
-        assert_eq!(
-            &Function::new(Primitive::Float64, Primitive::Float64).to_id(),
-            "(Float64->Float64)"
-        );
-        assert_eq!(
-            &Function::new(
-                Primitive::Float64,
-                Function::new(Primitive::Float64, Primitive::Float64),
-            )
-            .to_id(),
-            "(Float64->(Float64->Float64))"
-        );
-        assert_eq!(
-            &Function::new(
-                Function::new(Primitive::Float64, Primitive::Float64),
-                Primitive::Float64
-            )
-            .to_id(),
-            "((Float64->Float64)->Float64)"
-        );
-    }
-
-    #[test]
     fn argument() {
         assert_eq!(
             Function::new(Primitive::Float64, Primitive::Float64).argument(),

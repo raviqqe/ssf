@@ -73,22 +73,19 @@ impl TypeChecker {
                 types::Array::new(array.element_type().clone()).into()
             }
             Expression::ArrayGetOperation(operation) => {
+                self.check_equality(
+                    &self.check_expression(operation.index(), variables)?,
+                    &ARRAY_INDEX_TYPE.into(),
+                )?;
+
                 let type_ = self.check_expression(operation.array(), variables)?;
 
-                if let Type::Array(array_type) = type_ {
-                    let type_ = self.check_expression(operation.index(), variables)?;
-
-                    if type_ != ARRAY_INDEX_TYPE.into() {
-                        return Err(TypeCheckError::TypesNotMatched(
-                            type_,
-                            ARRAY_INDEX_TYPE.into(),
-                        ));
-                    }
-
-                    array_type.element().clone()
-                } else {
-                    return Err(TypeCheckError::ArrayExpected(type_));
-                }
+                type_
+                    .clone()
+                    .into_array()
+                    .ok_or(TypeCheckError::ArrayExpected(type_))?
+                    .element()
+                    .clone()
             }
             Expression::Bitcast(bitcast) => {
                 self.check_expression(bitcast.expression(), variables)?;
@@ -122,20 +119,19 @@ impl TypeChecker {
                     .into()
             }
             Expression::FunctionApplication(function_application) => {
-                if let Type::Function(function_type) =
-                    self.check_expression(function_application.function(), variables)?
-                {
-                    self.check_equality(
-                        &self.check_expression(function_application.argument(), variables)?,
-                        function_type.argument(),
-                    )?;
+                let function_type = self
+                    .check_expression(function_application.function(), variables)?
+                    .into_function()
+                    .ok_or_else(|| {
+                        TypeCheckError::FunctionExpected(function_application.function().clone())
+                    })?;
 
-                    function_type.result().clone()
-                } else {
-                    return Err(TypeCheckError::FunctionExpected(
-                        function_application.function().clone(),
-                    ));
-                }
+                self.check_equality(
+                    &self.check_expression(function_application.argument(), variables)?,
+                    function_type.argument(),
+                )?;
+
+                function_type.result().clone()
             }
             Expression::LetRecursive(let_recursive) => {
                 let mut variables = variables.clone();

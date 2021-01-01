@@ -47,45 +47,11 @@ impl Algebraic {
 
 #[cfg(test)]
 mod tests {
-    use super::super::primitive::Primitive;
     use super::*;
 
     #[test]
     #[should_panic]
     fn new_with_no_constructor() {
         Algebraic::new(vec![]);
-    }
-
-    #[test]
-    fn to_id() {
-        assert_eq!(
-            &Algebraic::new(vec![Constructor::boxed(vec![])]).to_id(),
-            "{0:{}}"
-        );
-        assert_eq!(
-            &Algebraic::new(vec![Constructor::boxed(vec![]), Constructor::boxed(vec![])]).to_id(),
-            "{0:{},1:{}}"
-        );
-        assert_eq!(
-            &Algebraic::new(vec![
-                Constructor::boxed(vec![]),
-                Constructor::boxed(vec![Primitive::Float64.into()])
-            ])
-            .to_id(),
-            "{0:{},1:{Float64}}"
-        );
-        assert_eq!(
-            &Algebraic::new(vec![
-                Constructor::boxed(vec![Primitive::Float64.into()]),
-                Constructor::boxed(vec![])
-            ])
-            .to_id(),
-            "{0:{Float64},1:{}}"
-        );
-        assert_eq!(
-            &Algebraic::with_tags(vec![(42, Constructor::boxed(vec![]))].into_iter().collect())
-                .to_id(),
-            "{2a:{}}"
-        );
     }
 }
