@@ -141,12 +141,29 @@ impl<'c> ModuleCompiler<'c> {
     }
 
     fn declare_intrinsics(&self) {
+        let pointer_type = self
+            .context
+            .i8_type()
+            .ptr_type(inkwell::AddressSpace::Generic);
+
         self.module.add_function(
             &self.compile_configuration.malloc_function_name,
-            self.context
-                .i8_type()
-                .ptr_type(inkwell::AddressSpace::Generic)
-                .fn_type(&[self.context.i64_type().into()], false),
+            pointer_type.fn_type(
+                &[self.type_compiler.compile_pointer_sized_integer().into()],
+                false,
+            ),
+            None,
+        );
+
+        self.module.add_function(
+            &self.compile_configuration.realloc_function_name,
+            pointer_type.fn_type(
+                &[
+                    pointer_type.into(),
+                    self.type_compiler.compile_pointer_sized_integer().into(),
+                ],
+                false,
+            ),
             None,
         );
     }

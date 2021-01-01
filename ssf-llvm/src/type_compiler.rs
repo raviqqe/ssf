@@ -139,7 +139,7 @@ impl<'c> TypeCompiler<'c> {
         );
 
         self.context.struct_type(
-            &(0..self.calculate_i64_array_size(size as usize))
+            &(0..self.calculate_i64_aligned_size(size as usize))
                 .map(|_| self.context.i64_type().into())
                 .collect::<Vec<_>>(),
             false,
@@ -268,10 +268,20 @@ impl<'c> TypeCompiler<'c> {
         ]
     }
 
-    pub fn compile_control_stack(&self) -> inkwell::types::PointerType<'c> {
-        self.context
-            .i8_type()
-            .ptr_type(inkwell::AddressSpace::Generic)
+    pub fn compile_control_stack(&self) -> inkwell::types::StructType<'c> {
+        self.context.struct_type(
+            &[
+                self.context
+                    .i8_type()
+                    .ptr_type(inkwell::AddressSpace::Generic)
+                    .into(),
+                // length
+                self.compile_pointer_sized_integer().into(),
+                // capacity
+                self.compile_pointer_sized_integer().into(),
+            ],
+            false,
+        )
     }
 
     pub fn compile_continuation_pointer(
@@ -337,7 +347,7 @@ impl<'c> TypeCompiler<'c> {
         self.context
             .i64_type()
             .array_type(
-                self.calculate_i64_array_size(
+                self.calculate_i64_aligned_size(
                     algebraic_type
                         .constructors()
                         .iter()
@@ -371,12 +381,23 @@ impl<'c> TypeCompiler<'c> {
         target_data.get_bit_size(&one) == target_data.get_bit_size(&other)
     }
 
-    fn calculate_i64_array_size(&self, size: usize) -> usize {
+    pub fn calculate_aligned_size(&self, type_: inkwell::types::BasicTypeEnum<'c>) -> usize {
+        self.calculate_i64_aligned_size(
+            self.target_machine.get_target_data().get_store_size(&type_) as usize,
+        ) * 8
+    }
+
+    fn calculate_i64_aligned_size(&self, size: usize) -> usize {
         if size == 0 {
             0
         } else {
             ((size as isize - 1) / 8 + 1) as usize
         }
+    }
+
+    pub fn compile_pointer_sized_integer(&self) -> inkwell::types::IntType<'c> {
+        self.context
+            .ptr_sized_int_type(&self.target_machine.get_target_data(), None)
     }
 
     fn compile_void(&self) -> inkwell::types::VoidType<'c> {
