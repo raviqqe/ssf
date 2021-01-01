@@ -1,49 +1,42 @@
 use super::closure_operation_compiler::ClosureOperationCompiler;
-use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::function_application_compiler::FunctionApplicationCompiler;
 use super::function_compiler::FunctionCompiler;
 use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
-use inkwell::types::{AnyType, BasicType};
+use inkwell::types::AnyType;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 pub struct ExpressionCompiler<'c> {
     context: &'c inkwell::context::Context,
-    module: Arc<inkwell::module::Module<'c>>,
     builder: Arc<inkwell::builder::Builder<'c>>,
     function_compiler: Arc<FunctionCompiler<'c>>,
     function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
     type_compiler: Arc<TypeCompiler<'c>>,
     closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
     malloc_compiler: Arc<MallocCompiler<'c>>,
-    compile_configuration: Arc<CompileConfiguration>,
 }
 
 impl<'c> ExpressionCompiler<'c> {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         context: &'c inkwell::context::Context,
-        module: Arc<inkwell::module::Module<'c>>,
         builder: Arc<inkwell::builder::Builder<'c>>,
         function_compiler: Arc<FunctionCompiler<'c>>,
         function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
         type_compiler: Arc<TypeCompiler<'c>>,
         closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
         malloc_compiler: Arc<MallocCompiler<'c>>,
-        compile_configuration: Arc<CompileConfiguration>,
     ) -> Arc<Self> {
         Self {
             context,
-            module,
             builder,
             function_compiler,
             function_application_compiler,
             type_compiler,
             closure_operation_compiler,
             malloc_compiler,
-            compile_configuration,
         }
         .into()
     }
@@ -54,48 +47,6 @@ impl<'c> ExpressionCompiler<'c> {
         variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         Ok(match expression {
-            ssf::ir::Expression::Array(array) => {
-                let element_type = self.type_compiler.compile(array.element_type());
-                let array_type = element_type.array_type(array.elements().len() as u32);
-                let array_value = array_type.const_zero();
-
-                for (index, element) in array.elements().iter().enumerate() {
-                    self.builder.build_insert_value(
-                        array_value,
-                        self.compile(element, variables)?,
-                        index as u32,
-                        "",
-                    );
-                }
-
-                let pointer = self
-                    .malloc_compiler
-                    .compile_array_malloc(&self.builder, array_type);
-
-                self.builder.build_store(pointer, array_value);
-
-                self.builder.build_bitcast(
-                    pointer,
-                    self.type_compiler
-                        .compile_array(&ssf::types::Array::new(array.element_type().clone())),
-                    "",
-                )
-            }
-            ssf::ir::Expression::ArrayGetOperation(operation) => {
-                let array = self.compile(operation.array(), variables)?;
-                let index = self.compile(operation.index(), variables)?;
-
-                self.builder.build_load(
-                    unsafe {
-                        self.builder.build_gep(
-                            array.into_pointer_value(),
-                            &[index.into_int_value()],
-                            "",
-                        )
-                    },
-                    "",
-                )
-            }
             ssf::ir::Expression::Bitcast(bitcast) => {
                 let argument = self.compile(bitcast.expression(), variables)?;
                 let to_type = self.type_compiler.compile(bitcast.type_());
@@ -526,7 +477,7 @@ impl<'c> ExpressionCompiler<'c> {
                     ));
                     self.builder.build_unconditional_branch(phi_block);
                 } else {
-                    self.compile_unreachable();
+                    self.builder.build_unreachable();
                 }
 
                 self.builder.position_at_end(switch_block);
@@ -610,7 +561,7 @@ impl<'c> ExpressionCompiler<'c> {
                     ));
                     self.builder.build_unconditional_branch(phi_block);
                 } else {
-                    self.compile_unreachable();
+                    self.builder.build_unreachable();
                 }
 
                 self.builder.position_at_end(phi_block);
@@ -716,18 +667,6 @@ impl<'c> ExpressionCompiler<'c> {
             .compile_struct_malloc(&self.builder, type_)
     }
 
-    fn compile_unreachable(&self) {
-        if let Some(panic_function_name) = &self.compile_configuration.panic_function_name {
-            self.builder.build_call(
-                self.module.get_function(&panic_function_name).unwrap(),
-                &[],
-                "",
-            );
-        }
-
-        self.builder.build_unreachable();
-    }
-
     fn is_bitcast_supported(&self, type_: inkwell::types::BasicTypeEnum<'c>) -> bool {
         type_.is_int_type() || type_.is_float_type() || type_.is_pointer_type()
     }
@@ -735,14 +674,9 @@ impl<'c> ExpressionCompiler<'c> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::compile_configuration::COMPILE_CONFIGURATION;
     use super::super::expression_compiler_factory::ExpressionCompilerFactory;
     use super::*;
-    use lazy_static::lazy_static;
-
-    lazy_static! {
-        static ref COMPILE_CONFIGURATION: Arc<CompileConfiguration> =
-            CompileConfiguration::new(None, None);
-    }
 
     fn create_expression_compiler(
         context: &inkwell::context::Context,
@@ -756,7 +690,7 @@ mod tests {
         let module = Arc::new(context.create_module(""));
 
         module.add_function(
-            COMPILE_CONFIGURATION.malloc_function_name(),
+            &COMPILE_CONFIGURATION.malloc_function_name,
             context
                 .i8_type()
                 .ptr_type(inkwell::AddressSpace::Generic)
@@ -781,12 +715,10 @@ mod tests {
         );
         let expression_compiler_factory = ExpressionCompilerFactory::new(
             context,
-            module.clone(),
             function_application_compiler.clone(),
             type_compiler.clone(),
             closure_operation_compiler.clone(),
             malloc_compiler.clone(),
-            COMPILE_CONFIGURATION.clone(),
         );
 
         (

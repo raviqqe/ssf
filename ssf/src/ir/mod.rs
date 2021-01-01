@@ -1,8 +1,6 @@
 mod algebraic_alternative;
 mod algebraic_case;
 mod argument;
-mod array;
-mod array_get_operation;
 mod bitcast;
 mod case;
 mod constructor;
@@ -28,8 +26,6 @@ mod variable;
 pub use algebraic_alternative::*;
 pub use algebraic_case::*;
 pub use argument::*;
-pub use array::*;
-pub use array_get_operation::*;
 pub use bitcast::*;
 pub use case::*;
 pub use constructor::*;

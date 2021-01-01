@@ -3,8 +3,6 @@ use crate::ir::*;
 use crate::types::{self, Type};
 use std::collections::*;
 
-const ARRAY_INDEX_TYPE: types::Primitive = types::Primitive::Integer64;
-
 #[derive(Clone, Debug)]
 pub struct TypeChecker {}
 
@@ -62,31 +60,6 @@ impl TypeChecker {
         variables: &HashMap<&str, Type>,
     ) -> Result<Type, TypeCheckError> {
         Ok(match expression {
-            Expression::Array(array) => {
-                for element in array.elements() {
-                    self.check_equality(
-                        &self.check_expression(element, variables)?,
-                        array.element_type(),
-                    )?;
-                }
-
-                types::Array::new(array.element_type().clone()).into()
-            }
-            Expression::ArrayGetOperation(operation) => {
-                self.check_equality(
-                    &self.check_expression(operation.index(), variables)?,
-                    &ARRAY_INDEX_TYPE.into(),
-                )?;
-
-                let type_ = self.check_expression(operation.array(), variables)?;
-
-                type_
-                    .clone()
-                    .into_array()
-                    .ok_or(TypeCheckError::ArrayExpected(type_))?
-                    .element()
-                    .clone()
-            }
             Expression::Bitcast(bitcast) => {
                 self.check_expression(bitcast.expression(), variables)?;
                 bitcast.type_().clone()
