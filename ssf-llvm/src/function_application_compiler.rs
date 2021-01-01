@@ -301,8 +301,10 @@ mod tests {
     use lazy_static::lazy_static;
 
     lazy_static! {
-        static ref COMPILE_CONFIGURATION: Arc<CompileConfiguration> =
-            CompileConfiguration::new(None, None);
+        static ref COMPILE_CONFIGURATION: Arc<CompileConfiguration> = CompileConfiguration {
+            malloc_function_name: "malloc".into()
+        }
+        .into();
     }
 
     fn create_function_application_compiler(
@@ -316,7 +318,7 @@ mod tests {
         let module = Arc::new(context.create_module(""));
 
         module.add_function(
-            COMPILE_CONFIGURATION.malloc_function_name(),
+            &COMPILE_CONFIGURATION.malloc_function_name,
             context
                 .i8_type()
                 .ptr_type(inkwell::AddressSpace::Generic)

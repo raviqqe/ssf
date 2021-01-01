@@ -1,5 +1,4 @@
 use super::closure_operation_compiler::ClosureOperationCompiler;
-use super::compile_configuration::CompileConfiguration;
 use super::error::CompileError;
 use super::function_application_compiler::FunctionApplicationCompiler;
 use super::function_compiler::FunctionCompiler;
@@ -11,39 +10,33 @@ use std::sync::Arc;
 
 pub struct ExpressionCompiler<'c> {
     context: &'c inkwell::context::Context,
-    module: Arc<inkwell::module::Module<'c>>,
     builder: Arc<inkwell::builder::Builder<'c>>,
     function_compiler: Arc<FunctionCompiler<'c>>,
     function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
     type_compiler: Arc<TypeCompiler<'c>>,
     closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
     malloc_compiler: Arc<MallocCompiler<'c>>,
-    compile_configuration: Arc<CompileConfiguration>,
 }
 
 impl<'c> ExpressionCompiler<'c> {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         context: &'c inkwell::context::Context,
-        module: Arc<inkwell::module::Module<'c>>,
         builder: Arc<inkwell::builder::Builder<'c>>,
         function_compiler: Arc<FunctionCompiler<'c>>,
         function_application_compiler: Arc<FunctionApplicationCompiler<'c>>,
         type_compiler: Arc<TypeCompiler<'c>>,
         closure_operation_compiler: Arc<ClosureOperationCompiler<'c>>,
         malloc_compiler: Arc<MallocCompiler<'c>>,
-        compile_configuration: Arc<CompileConfiguration>,
     ) -> Arc<Self> {
         Self {
             context,
-            module,
             builder,
             function_compiler,
             function_application_compiler,
             type_compiler,
             closure_operation_compiler,
             malloc_compiler,
-            compile_configuration,
         }
         .into()
     }
@@ -674,14 +667,6 @@ impl<'c> ExpressionCompiler<'c> {
     }
 
     fn compile_unreachable(&self) {
-        if let Some(panic_function_name) = self.compile_configuration.panic_function_name() {
-            self.builder.build_call(
-                self.module.get_function(panic_function_name).unwrap(),
-                &[],
-                "",
-            );
-        }
-
         self.builder.build_unreachable();
     }
 
@@ -692,13 +677,16 @@ impl<'c> ExpressionCompiler<'c> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::compile_configuration::CompileConfiguration;
     use super::super::expression_compiler_factory::ExpressionCompilerFactory;
     use super::*;
     use lazy_static::lazy_static;
 
     lazy_static! {
-        static ref COMPILE_CONFIGURATION: Arc<CompileConfiguration> =
-            CompileConfiguration::new(None, None);
+        static ref COMPILE_CONFIGURATION: Arc<CompileConfiguration> = CompileConfiguration {
+            malloc_function_name: "malloc".into()
+        }
+        .into();
     }
 
     fn create_expression_compiler(
@@ -713,7 +701,7 @@ mod tests {
         let module = Arc::new(context.create_module(""));
 
         module.add_function(
-            COMPILE_CONFIGURATION.malloc_function_name(),
+            &COMPILE_CONFIGURATION.malloc_function_name,
             context
                 .i8_type()
                 .ptr_type(inkwell::AddressSpace::Generic)
@@ -738,12 +726,10 @@ mod tests {
         );
         let expression_compiler_factory = ExpressionCompilerFactory::new(
             context,
-            module.clone(),
             function_application_compiler.clone(),
             type_compiler.clone(),
             closure_operation_compiler.clone(),
             malloc_compiler.clone(),
-            COMPILE_CONFIGURATION.clone(),
         );
 
         (
