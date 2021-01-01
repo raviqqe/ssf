@@ -18,15 +18,12 @@ mod tests {
 
     #[test]
     fn check_types_with_empty_modules() {
-        assert_eq!(
-            check_types(&Module::without_validation(vec![], vec![], vec![])),
-            Ok(())
-        );
+        assert_eq!(check_types(&Module::new(vec![], vec![], vec![])), Ok(()));
     }
 
     #[test]
     fn check_types_of_variables() {
-        let module = Module::without_validation(
+        let module = Module::new(
             vec![],
             vec![],
             vec![Definition::new(
@@ -41,7 +38,7 @@ mod tests {
 
     #[test]
     fn fail_to_check_types_of_variables() {
-        let module = Module::without_validation(
+        let module = Module::new(
             vec![],
             vec![],
             vec![
@@ -68,7 +65,7 @@ mod tests {
 
     #[test]
     fn check_types_of_functions() {
-        let module = Module::without_validation(
+        let module = Module::new(
             vec![],
             vec![],
             vec![Definition::new(
@@ -84,7 +81,7 @@ mod tests {
 
     #[test]
     fn fail_to_check_types_of_functions() {
-        let module = Module::without_validation(
+        let module = Module::new(
             vec![],
             vec![],
             vec![
@@ -111,7 +108,7 @@ mod tests {
 
     #[test]
     fn check_types_of_function_applications() {
-        let module = Module::without_validation(
+        let module = Module::new(
             vec![],
             vec![],
             vec![
@@ -135,7 +132,7 @@ mod tests {
 
     #[test]
     fn fail_to_check_types_of_function_applications() {
-        let module = Module::without_validation(
+        let module = Module::new(
             vec![],
             vec![],
             vec![
@@ -165,7 +162,7 @@ mod tests {
 
     #[test]
     fn fail_to_check_types_because_of_missing_variables() {
-        let module = Module::without_validation(
+        let module = Module::new(
             vec![],
             vec![],
             vec![Definition::new(
@@ -184,7 +181,7 @@ mod tests {
 
     #[test]
     fn check_types_of_nested_let_expressions() {
-        let module = Module::without_validation(
+        let module = Module::new(
             vec![],
             vec![],
             vec![Definition::new(
@@ -210,7 +207,7 @@ mod tests {
 
     #[test]
     fn fail_to_check_types_of_let_expression() {
-        let module = Module::without_validation(
+        let module = Module::new(
             vec![],
             vec![],
             vec![
@@ -242,7 +239,7 @@ mod tests {
 
     #[test]
     fn check_types_of_declarations() {
-        let module = Module::without_validation(
+        let module = Module::new(
             vec![],
             vec![Declaration::new(
                 "f",
@@ -260,7 +257,7 @@ mod tests {
 
     #[test]
     fn fail_to_check_types_of_declarations() {
-        let module = Module::without_validation(
+        let module = Module::new(
             vec![],
             vec![Declaration::new(
                 "f",
@@ -291,7 +288,7 @@ mod tests {
                 let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
 
                 assert_eq!(
-                    check_types(&Module::without_validation(
+                    check_types(&Module::new(
                         vec![],
                         vec![],
                         vec![Definition::new(
@@ -310,7 +307,7 @@ mod tests {
                 let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
 
                 assert_eq!(
-                    check_types(&Module::without_validation(
+                    check_types(&Module::new(
                         vec![],
                         vec![],
                         vec![Definition::new(
@@ -339,7 +336,7 @@ mod tests {
                 ])]);
 
                 assert_eq!(
-                    check_types(&Module::without_validation(
+                    check_types(&Module::new(
                         vec![],
                         vec![],
                         vec![Definition::new(
@@ -365,7 +362,7 @@ mod tests {
             fn fail_to_check_case_expressions_without_alternatives() {
                 let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
 
-                let module = Module::without_validation(
+                let module = Module::new(
                     vec![],
                     vec![],
                     vec![Definition::new(
@@ -385,7 +382,7 @@ mod tests {
             #[test]
             fn fail_to_check_case_expressions_with_inconsistent_alternative_types() {
                 let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
-                let module = Module::without_validation(
+                let module = Module::new(
                     vec![],
                     vec![],
                     vec![Definition::with_environment(
@@ -427,7 +424,7 @@ mod tests {
                     types::Algebraic::new(vec![types::Constructor::boxed(vec![Type::Index(0)])]);
 
                 assert_eq!(
-                    check_types(&Module::without_validation(
+                    check_types(&Module::new(
                         vec![],
                         vec![],
                         vec![Definition::with_environment(
@@ -457,7 +454,7 @@ mod tests {
                     types::Algebraic::new(vec![types::Constructor::unboxed(vec![])]);
 
                 assert!(matches!(
-                    check_types(&Module::without_validation(
+                    check_types(&Module::new(
                         vec![],
                         vec![],
                         vec![Definition::with_environment(
@@ -487,7 +484,7 @@ mod tests {
             #[test]
             fn check_case_expressions_only_with_default_alternative() {
                 assert_eq!(
-                    check_types(&Module::without_validation(
+                    check_types(&Module::new(
                         vec![],
                         vec![],
                         vec![Definition::with_environment(
@@ -505,7 +502,7 @@ mod tests {
             #[test]
             fn check_case_expressions_with_one_alternative() {
                 assert_eq!(
-                    check_types(&Module::without_validation(
+                    check_types(&Module::new(
                         vec![],
                         vec![],
                         vec![Definition::with_environment(
@@ -527,7 +524,7 @@ mod tests {
             #[test]
             fn check_case_expressions_with_one_alternative_and_default_alternative() {
                 assert_eq!(
-                    check_types(&Module::without_validation(
+                    check_types(&Module::new(
                         vec![],
                         vec![],
                         vec![Definition::with_environment(
@@ -549,7 +546,7 @@ mod tests {
             #[test]
             fn fail_for_unmatched_case_type() {
                 assert!(matches!(
-                    check_types(&Module::without_validation(
+                    check_types(&Module::new(
                         vec![],
                         vec![],
                         vec![Definition::with_environment(
@@ -578,7 +575,7 @@ mod tests {
             let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
 
             assert_eq!(
-                check_types(&Module::without_validation(
+                check_types(&Module::new(
                     vec![],
                     vec![],
                     vec![Definition::with_environment(
@@ -603,7 +600,7 @@ mod tests {
             ])]);
 
             assert_eq!(
-                check_types(&Module::without_validation(
+                check_types(&Module::new(
                     vec![],
                     vec![],
                     vec![Definition::with_environment(
@@ -626,7 +623,7 @@ mod tests {
             let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![
                 types::Primitive::Float64.into(),
             ])]);
-            let module = Module::without_validation(
+            let module = Module::new(
                 vec![],
                 vec![],
                 vec![Definition::with_environment(
@@ -652,7 +649,7 @@ mod tests {
             let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![
                 types::Primitive::Float64.into(),
             ])]);
-            let module = Module::without_validation(
+            let module = Module::new(
                 vec![],
                 vec![],
                 vec![Definition::with_environment(
@@ -683,7 +680,7 @@ mod tests {
                 types::Algebraic::new(vec![types::Constructor::boxed(vec![Type::Index(0)])]);
 
             assert_eq!(
-                check_types(&Module::without_validation(
+                check_types(&Module::new(
                     vec![],
                     vec![],
                     vec![Definition::new(
@@ -703,7 +700,7 @@ mod tests {
 
     #[test]
     fn check_bitcast() {
-        let module = Module::without_validation(
+        let module = Module::new(
             vec![],
             vec![],
             vec![Definition::with_environment(
@@ -719,7 +716,7 @@ mod tests {
 
     #[test]
     fn check_equality_operator() {
-        let module = Module::without_validation(
+        let module = Module::new(
             vec![],
             vec![],
             vec![Definition::with_environment(
@@ -738,7 +735,7 @@ mod tests {
 
         #[test]
         fn check_types_of_foreign_declarations() {
-            let module = Module::without_validation(
+            let module = Module::new(
                 vec![ForeignDeclaration::new(
                     "f",
                     "g",
@@ -757,7 +754,7 @@ mod tests {
 
         #[test]
         fn fail_to_check_types_of_foreign_declarations() {
-            let module = Module::without_validation(
+            let module = Module::new(
                 vec![ForeignDeclaration::new(
                     "f",
                     "g",

@@ -457,8 +457,7 @@ mod tests {
                 42,
                 ssf::types::Primitive::Integer64,
             )],
-        )
-        .unwrap();
+        );
 
         let context = inkwell::context::Context::create();
 
