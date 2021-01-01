@@ -5,7 +5,7 @@ use super::function_application_compiler::FunctionApplicationCompiler;
 use super::function_compiler::FunctionCompiler;
 use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
-use inkwell::types::{AnyType, BasicType};
+use inkwell::types::AnyType;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -54,48 +54,6 @@ impl<'c> ExpressionCompiler<'c> {
         variables: &HashMap<String, inkwell::values::BasicValueEnum<'c>>,
     ) -> Result<inkwell::values::BasicValueEnum<'c>, CompileError> {
         Ok(match expression {
-            ssf::ir::Expression::Array(array) => {
-                let element_type = self.type_compiler.compile(array.element_type());
-                let array_type = element_type.array_type(array.elements().len() as u32);
-                let array_value = array_type.const_zero();
-
-                for (index, element) in array.elements().iter().enumerate() {
-                    self.builder.build_insert_value(
-                        array_value,
-                        self.compile(element, variables)?,
-                        index as u32,
-                        "",
-                    );
-                }
-
-                let pointer = self
-                    .malloc_compiler
-                    .compile_array_malloc(&self.builder, array_type);
-
-                self.builder.build_store(pointer, array_value);
-
-                self.builder.build_bitcast(
-                    pointer,
-                    self.type_compiler
-                        .compile_array(&ssf::types::Array::new(array.element_type().clone())),
-                    "",
-                )
-            }
-            ssf::ir::Expression::ArrayGetOperation(operation) => {
-                let array = self.compile(operation.array(), variables)?;
-                let index = self.compile(operation.index(), variables)?;
-
-                self.builder.build_load(
-                    unsafe {
-                        self.builder.build_gep(
-                            array.into_pointer_value(),
-                            &[index.into_int_value()],
-                            "",
-                        )
-                    },
-                    "",
-                )
-            }
             ssf::ir::Expression::Bitcast(bitcast) => {
                 let argument = self.compile(bitcast.expression(), variables)?;
                 let to_type = self.type_compiler.compile(bitcast.type_());

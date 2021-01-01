@@ -37,7 +37,6 @@ impl<'c> TypeCompiler<'c> {
             ssf::types::Type::Algebraic(algebraic) => {
                 self.compile_algebraic(algebraic, None).into()
             }
-            ssf::types::Type::Array(array) => self.compile_array(array).into(),
             ssf::types::Type::Function(function) => self
                 .compile_unsized_closure(function)
                 .ptr_type(inkwell::AddressSpace::Generic)
@@ -63,11 +62,6 @@ impl<'c> TypeCompiler<'c> {
                 .ptr_type(inkwell::AddressSpace::Generic)
                 .into(),
         }
-    }
-
-    pub fn compile_array(&self, array: &ssf::types::Array) -> inkwell::types::PointerType<'c> {
-        self.compile(array.element())
-            .ptr_type(inkwell::AddressSpace::Generic)
     }
 
     pub fn compile_algebraic(

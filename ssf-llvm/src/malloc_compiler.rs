@@ -23,22 +23,6 @@ impl<'c> MallocCompiler<'c> {
         builder: &inkwell::builder::Builder<'c>,
         type_: inkwell::types::StructType<'c>,
     ) -> inkwell::values::PointerValue<'c> {
-        self.compile_aggregate_malloc(builder, type_)
-    }
-
-    pub fn compile_array_malloc(
-        &self,
-        builder: &inkwell::builder::Builder<'c>,
-        type_: inkwell::types::ArrayType<'c>,
-    ) -> inkwell::values::PointerValue<'c> {
-        self.compile_aggregate_malloc(builder, type_)
-    }
-
-    fn compile_aggregate_malloc(
-        &self,
-        builder: &inkwell::builder::Builder<'c>,
-        type_: impl inkwell::types::BasicType<'c>,
-    ) -> inkwell::values::PointerValue<'c> {
         builder
             .build_bitcast(
                 builder
