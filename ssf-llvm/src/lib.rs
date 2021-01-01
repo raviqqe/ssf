@@ -953,54 +953,6 @@ mod tests {
         }
     }
 
-    mod array {
-        use super::*;
-
-        #[test]
-        fn compile_array_expression() {
-            compile(
-                &ssf::ir::Module::new(
-                    vec![],
-                    vec![],
-                    vec![ssf::ir::Definition::new(
-                        "f",
-                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
-                        ssf::ir::Array::new(ssf::types::Primitive::Float64, vec![42.0.into()]),
-                        ssf::types::Array::new(ssf::types::Primitive::Float64),
-                    )],
-                )
-                .unwrap(),
-                COMPILE_CONFIGURATION.clone(),
-            )
-            .unwrap();
-        }
-
-        #[test]
-        fn compile_array_get_operation() {
-            compile(
-                &ssf::ir::Module::new(
-                    vec![],
-                    vec![],
-                    vec![ssf::ir::Definition::new(
-                        "f",
-                        vec![ssf::ir::Argument::new(
-                            "x",
-                            ssf::types::Primitive::Integer64,
-                        )],
-                        ssf::ir::ArrayGetOperation::new(
-                            ssf::ir::Array::new(ssf::types::Primitive::Float64, vec![]),
-                            ssf::ir::Variable::new("x"),
-                        ),
-                        ssf::types::Primitive::Float64,
-                    )],
-                )
-                .unwrap(),
-                COMPILE_CONFIGURATION.clone(),
-            )
-            .unwrap();
-        }
-    }
-
     mod foreign_declarations {
         use super::*;
 
