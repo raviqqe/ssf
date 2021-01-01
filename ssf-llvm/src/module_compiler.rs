@@ -142,7 +142,7 @@ impl<'c> ModuleCompiler<'c> {
 
     fn declare_intrinsics(&self) {
         self.module.add_function(
-            self.compile_configuration.malloc_function_name(),
+            &self.compile_configuration.malloc_function_name,
             self.context
                 .i8_type()
                 .ptr_type(inkwell::AddressSpace::Generic)
@@ -150,7 +150,7 @@ impl<'c> ModuleCompiler<'c> {
             None,
         );
 
-        if let Some(panic_function_name) = self.compile_configuration.panic_function_name() {
+        if let Some(panic_function_name) = self.compile_configuration.panic_function_name.as_ref() {
             self.module.add_function(
                 panic_function_name,
                 self.context.void_type().fn_type(&[], false),

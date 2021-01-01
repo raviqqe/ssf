@@ -717,9 +717,9 @@ impl<'c> ExpressionCompiler<'c> {
     }
 
     fn compile_unreachable(&self) {
-        if let Some(panic_function_name) = self.compile_configuration.panic_function_name() {
+        if let Some(panic_function_name) = &self.compile_configuration.panic_function_name {
             self.builder.build_call(
-                self.module.get_function(panic_function_name).unwrap(),
+                self.module.get_function(&panic_function_name).unwrap(),
                 &[],
                 "",
             );
