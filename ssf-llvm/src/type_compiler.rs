@@ -1,3 +1,4 @@
+use super::utilities::{self, FUNCTION_ARGUMENT_OFFSET};
 use inkwell::types::BasicType;
 use std::cmp::max;
 use std::sync::Arc;
@@ -181,21 +182,28 @@ impl<'c> TypeCompiler<'c> {
         type_: inkwell::types::FunctionType<'c>,
         arity: usize,
     ) -> inkwell::types::FunctionType<'c> {
-        if arity == (type_.count_param_types() as usize) - 1 {
+        if arity == utilities::get_arity(type_) {
             type_
         } else {
             self.compile_raw_closure(
                 type_.get_return_type().unwrap().fn_type(
                     &vec![type_.get_param_types()[0]]
                         .into_iter()
-                        .chain(type_.get_param_types()[arity + 1..].iter().copied())
+                        .chain(
+                            type_.get_param_types()[arity + FUNCTION_ARGUMENT_OFFSET..]
+                                .iter()
+                                .copied(),
+                        )
                         .collect::<Vec<_>>(),
                     false,
                 ),
                 self.compile_unsized_environment(),
             )
             .ptr_type(inkwell::AddressSpace::Generic)
-            .fn_type(&type_.get_param_types()[..arity + 1], false)
+            .fn_type(
+                &type_.get_param_types()[..arity + FUNCTION_ARGUMENT_OFFSET],
+                false,
+            )
         }
     }
 
@@ -258,18 +266,28 @@ impl<'c> TypeCompiler<'c> {
         result_type: &ssf::types::Type,
     ) -> Vec<inkwell::types::BasicTypeEnum<'c>> {
         vec![
-            self.context
-                .i8_type()
-                .ptr_type(inkwell::AddressSpace::Generic)
-                .into(),
-            self.compile_void()
-                .fn_type(&[self.compile(result_type)], false)
-                .ptr_type(inkwell::AddressSpace::Generic)
-                .into(),
+            self.compile_control_stack().into(),
+            self.compile_continuation_pointer(result_type),
             self.compile_unsized_environment()
                 .ptr_type(inkwell::AddressSpace::Generic)
                 .into(),
         ]
+    }
+
+    pub fn compile_control_stack(&self) -> inkwell::types::PointerType<'c> {
+        self.context
+            .i8_type()
+            .ptr_type(inkwell::AddressSpace::Generic)
+    }
+
+    pub fn compile_continuation_pointer(
+        &self,
+        result_type: &ssf::types::Type,
+    ) -> inkwell::types::BasicTypeEnum<'c> {
+        self.compile_void()
+            .fn_type(&[self.compile(result_type)], false)
+            .ptr_type(inkwell::AddressSpace::Generic)
+            .into()
     }
 
     pub fn compile_foreign_function(

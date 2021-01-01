@@ -2,7 +2,7 @@ use super::closure_operation_compiler::ClosureOperationCompiler;
 use super::error::CompileError;
 use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
-use super::utilities;
+use super::utilities::{self, FUNCTION_ARGUMENT_OFFSET};
 use inkwell::types::BasicType;
 use std::sync::Arc;
 
@@ -198,9 +198,12 @@ impl<'c> FunctionApplicationCompiler<'c> {
                         "",
                     )
                     .into_pointer_value(),
-                &vec![self
-                    .closure_operation_compiler
-                    .compile_load_environment(&builder, closure)]
+                &vec![
+                    todo!(),
+                    todo!(),
+                    self.closure_operation_compiler
+                        .compile_load_environment(&builder, closure),
+                ]
                 .into_iter()
                 .chain(arguments.iter().copied())
                 .collect::<Vec<_>>(),
@@ -242,10 +245,12 @@ impl<'c> FunctionApplicationCompiler<'c> {
                 .type_compiler
                 .compile_raw_environment(environment_values.iter().map(|value| value.get_type()));
             let target_function_type = entry_function_type.get_return_type().unwrap().fn_type(
-                &vec![entry_function_type.get_param_types()[0]]
-                    .into_iter()
+                &entry_function_type.get_param_types()[..FUNCTION_ARGUMENT_OFFSET]
+                    .iter()
+                    .copied()
                     .chain(
-                        entry_function_type.get_param_types()[arguments.len() + 1..]
+                        entry_function_type.get_param_types()
+                            [FUNCTION_ARGUMENT_OFFSET + arguments.len()..]
                             .iter()
                             .copied(),
                     )
