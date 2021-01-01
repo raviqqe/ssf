@@ -40,17 +40,6 @@ impl Algebraic {
             .all(|(_, constructor)| constructor.is_enum())
     }
 
-    pub fn to_id(&self) -> String {
-        format!(
-            "{{{}}}",
-            self.constructors
-                .iter()
-                .map(|(tag, constructor)| format!("{:x}:{}", tag, constructor.to_id()))
-                .collect::<Vec<_>>()
-                .join(","),
-        )
-    }
-
     pub fn unfold(&self) -> Self {
         unfold(self)
     }

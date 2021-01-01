@@ -44,10 +44,6 @@ impl Function {
 
         type_.result()
     }
-
-    pub fn to_id(&self) -> String {
-        format!("({}->{})", self.argument.to_id(), self.result.to_id())
-    }
 }
 
 #[cfg(test)]

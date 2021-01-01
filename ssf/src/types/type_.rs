@@ -13,16 +13,6 @@ pub enum Type {
 }
 
 impl Type {
-    pub fn to_id(&self) -> String {
-        match self {
-            Self::Algebraic(algebraic) => algebraic.to_id(),
-            Self::Array(array) => array.to_id(),
-            Self::Function(function) => function.to_id(),
-            Self::Index(index) => format!("{}", index),
-            Self::Primitive(primitive) => primitive.to_id(),
-        }
-    }
-
     pub fn is_primitive(&self) -> bool {
         matches!(self, Self::Primitive(_))
     }
