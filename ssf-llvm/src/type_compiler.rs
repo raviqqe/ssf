@@ -1,4 +1,3 @@
-use super::utilities::{self, FUNCTION_ARGUMENT_OFFSET};
 use inkwell::types::BasicType;
 use std::cmp::max;
 use std::sync::Arc;
@@ -139,7 +138,7 @@ impl<'c> TypeCompiler<'c> {
         );
 
         self.context.struct_type(
-            &(0..self.calculate_i64_aligned_size(size as usize))
+            &(0..self.calculate_i64_array_size(size as usize))
                 .map(|_| self.context.i64_type().into())
                 .collect::<Vec<_>>(),
             false,
@@ -176,28 +175,21 @@ impl<'c> TypeCompiler<'c> {
         type_: inkwell::types::FunctionType<'c>,
         arity: usize,
     ) -> inkwell::types::FunctionType<'c> {
-        if arity == utilities::get_arity(type_) {
+        if arity == (type_.count_param_types() as usize) - 1 {
             type_
         } else {
             self.compile_raw_closure(
                 type_.get_return_type().unwrap().fn_type(
                     &vec![type_.get_param_types()[0]]
                         .into_iter()
-                        .chain(
-                            type_.get_param_types()[arity + FUNCTION_ARGUMENT_OFFSET..]
-                                .iter()
-                                .copied(),
-                        )
+                        .chain(type_.get_param_types()[arity + 1..].iter().copied())
                         .collect::<Vec<_>>(),
                     false,
                 ),
                 self.compile_unsized_environment(),
             )
             .ptr_type(inkwell::AddressSpace::Generic)
-            .fn_type(
-                &type_.get_param_types()[..arity + FUNCTION_ARGUMENT_OFFSET],
-                false,
-            )
+            .fn_type(&type_.get_param_types()[..arity + 1], false)
         }
     }
 
@@ -205,19 +197,20 @@ impl<'c> TypeCompiler<'c> {
         &self,
         type_: &ssf::types::Function,
     ) -> inkwell::types::FunctionType<'c> {
-        self.compile_void().fn_type(
-            &self
-                .compile_internal_arguments(type_.last_result())
-                .into_iter()
-                .into_iter()
-                .chain(
-                    type_
-                        .arguments()
-                        .into_iter()
-                        .map(|type_| self.compile(type_))
-                        .collect::<Vec<_>>(),
-                )
-                .collect::<Vec<_>>(),
+        self.compile(type_.last_result()).fn_type(
+            &vec![self
+                .compile_unsized_environment()
+                .ptr_type(inkwell::AddressSpace::Generic)
+                .into()]
+            .into_iter()
+            .chain(
+                type_
+                    .arguments()
+                    .into_iter()
+                    .map(|type_| self.compile(type_))
+                    .collect::<Vec<_>>(),
+            )
+            .collect::<Vec<_>>(),
             false,
         )
     }
@@ -240,58 +233,21 @@ impl<'c> TypeCompiler<'c> {
         arguments: impl IntoIterator<Item = &'a ssf::types::Type>,
         result: &ssf::types::Type,
     ) -> inkwell::types::FunctionType<'c> {
-        self.compile_void().fn_type(
-            &self
-                .compile_internal_arguments(result)
-                .into_iter()
-                .chain(
-                    arguments
-                        .into_iter()
-                        .map(|type_| self.compile(type_))
-                        .collect::<Vec<_>>(),
-                )
-                .collect::<Vec<_>>(),
-            false,
-        )
-    }
-
-    fn compile_internal_arguments(
-        &self,
-        result_type: &ssf::types::Type,
-    ) -> Vec<inkwell::types::BasicTypeEnum<'c>> {
-        vec![
-            self.compile_control_stack().into(),
-            self.compile_continuation_pointer(result_type),
-            self.compile_unsized_environment()
+        self.compile(result).fn_type(
+            &vec![self
+                .compile_unsized_environment()
                 .ptr_type(inkwell::AddressSpace::Generic)
-                .into(),
-        ]
-    }
-
-    pub fn compile_control_stack(&self) -> inkwell::types::StructType<'c> {
-        self.context.struct_type(
-            &[
-                self.context
-                    .i8_type()
-                    .ptr_type(inkwell::AddressSpace::Generic)
-                    .into(),
-                // length
-                self.compile_pointer_sized_integer().into(),
-                // capacity
-                self.compile_pointer_sized_integer().into(),
-            ],
+                .into()]
+            .into_iter()
+            .chain(
+                arguments
+                    .into_iter()
+                    .map(|type_| self.compile(type_))
+                    .collect::<Vec<_>>(),
+            )
+            .collect::<Vec<_>>(),
             false,
         )
-    }
-
-    pub fn compile_continuation_pointer(
-        &self,
-        result_type: &ssf::types::Type,
-    ) -> inkwell::types::BasicTypeEnum<'c> {
-        self.compile_void()
-            .fn_type(&[self.compile(result_type)], false)
-            .ptr_type(inkwell::AddressSpace::Generic)
-            .into()
     }
 
     pub fn compile_foreign_function(
@@ -347,7 +303,7 @@ impl<'c> TypeCompiler<'c> {
         self.context
             .i64_type()
             .array_type(
-                self.calculate_i64_aligned_size(
+                self.calculate_i64_array_size(
                     algebraic_type
                         .constructors()
                         .iter()
@@ -381,27 +337,12 @@ impl<'c> TypeCompiler<'c> {
         target_data.get_bit_size(&one) == target_data.get_bit_size(&other)
     }
 
-    pub fn calculate_aligned_size(&self, type_: inkwell::types::BasicTypeEnum<'c>) -> usize {
-        self.calculate_i64_aligned_size(
-            self.target_machine.get_target_data().get_store_size(&type_) as usize,
-        ) * 8
-    }
-
-    fn calculate_i64_aligned_size(&self, size: usize) -> usize {
+    fn calculate_i64_array_size(&self, size: usize) -> usize {
         if size == 0 {
             0
         } else {
             ((size as isize - 1) / 8 + 1) as usize
         }
-    }
-
-    pub fn compile_pointer_sized_integer(&self) -> inkwell::types::IntType<'c> {
-        self.context
-            .ptr_sized_int_type(&self.target_machine.get_target_data(), None)
-    }
-
-    fn compile_void(&self) -> inkwell::types::VoidType<'c> {
-        self.context.void_type()
     }
 }
 

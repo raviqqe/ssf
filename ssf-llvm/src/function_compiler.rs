@@ -3,7 +3,7 @@ use super::expression_compiler_factory::ExpressionCompilerFactory;
 use super::global_variable::GlobalVariable;
 use super::instruction_compiler::InstructionCompiler;
 use super::type_compiler::TypeCompiler;
-use super::utilities::{self, FUNCTION_ARGUMENT_OFFSET};
+use super::utilities;
 use inkwell::types::BasicType;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -197,7 +197,7 @@ impl<'c> FunctionCompiler<'c> {
         for (index, argument) in definition.arguments().iter().enumerate() {
             variables.insert(
                 argument.name().into(),
-                entry_function.get_params()[index + FUNCTION_ARGUMENT_OFFSET],
+                entry_function.get_params()[index + 1],
             );
         }
 

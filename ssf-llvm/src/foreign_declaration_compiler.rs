@@ -1,7 +1,6 @@
 use super::error::CompileError;
 use super::global_variable::GlobalVariable;
 use super::type_compiler::TypeCompiler;
-use super::utilities::FUNCTION_ARGUMENT_OFFSET;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -94,7 +93,7 @@ impl<'c> ForeignDeclarationCompiler<'c> {
                             .compile_foreign_function(declaration.type_()),
                         None,
                     ),
-                    &entry_function.get_params()[FUNCTION_ARGUMENT_OFFSET..],
+                    &entry_function.get_params()[1..],
                     "",
                 )
                 .try_as_basic_value()

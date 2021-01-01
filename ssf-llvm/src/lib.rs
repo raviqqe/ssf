@@ -1,6 +1,5 @@
 mod closure_operation_compiler;
 mod compile_configuration;
-mod control_stack_compiler;
 mod error;
 mod expression_compiler;
 mod expression_compiler_factory;

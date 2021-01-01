@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-pub const FUNCTION_ARGUMENT_OFFSET: usize = 3;
-
 pub fn add_function_to_module<'c>(
     module: Arc<inkwell::module::Module<'c>>,
     name: &str,
@@ -11,5 +9,5 @@ pub fn add_function_to_module<'c>(
 }
 
 pub fn get_arity(function_type: inkwell::types::FunctionType) -> usize {
-    function_type.count_param_types() as usize - FUNCTION_ARGUMENT_OFFSET
+    function_type.count_param_types() as usize - 1
 }
