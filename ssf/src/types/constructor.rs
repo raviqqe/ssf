@@ -30,17 +30,6 @@ impl Constructor {
     pub fn is_enum(&self) -> bool {
         self.elements.is_empty() && !self.boxed
     }
-
-    pub fn to_id(&self) -> String {
-        format!(
-            "{{{}}}",
-            self.elements
-                .iter()
-                .map(|element| element.to_id())
-                .collect::<Vec<_>>()
-                .join(","),
-        )
-    }
 }
 
 #[cfg(test)]
@@ -54,18 +43,5 @@ mod tests {
         assert!(!Constructor::boxed(vec![]).is_enum());
         assert!(!Constructor::unboxed(vec![Primitive::Float64.into()]).is_enum());
         assert!(!Constructor::boxed(vec![Primitive::Float64.into()]).is_enum());
-    }
-
-    #[test]
-    fn to_id() {
-        assert_eq!(&Constructor::boxed(vec![]).to_id(), "{}");
-        assert_eq!(
-            &Constructor::boxed(vec![Primitive::Float64.into()]).to_id(),
-            "{Float64}"
-        );
-        assert_eq!(
-            &Constructor::boxed(vec![Primitive::Float64.into(), Primitive::Float64.into()]).to_id(),
-            "{Float64,Float64}"
-        );
     }
 }

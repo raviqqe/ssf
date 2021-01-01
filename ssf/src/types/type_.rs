@@ -13,16 +13,6 @@ pub enum Type {
 }
 
 impl Type {
-    pub fn to_id(&self) -> String {
-        match self {
-            Self::Algebraic(algebraic) => algebraic.to_id(),
-            Self::Array(array) => array.to_id(),
-            Self::Function(function) => function.to_id(),
-            Self::Index(index) => format!("{}", index),
-            Self::Primitive(primitive) => primitive.to_id(),
-        }
-    }
-
     pub fn is_primitive(&self) -> bool {
         matches!(self, Self::Primitive(_))
     }
@@ -30,6 +20,13 @@ impl Type {
     pub fn into_algebraic(self) -> Option<Algebraic> {
         match self {
             Self::Algebraic(algebraic) => Some(algebraic),
+            _ => None,
+        }
+    }
+
+    pub fn into_array(self) -> Option<Array> {
+        match self {
+            Self::Array(array) => Some(array),
             _ => None,
         }
     }
@@ -70,19 +67,5 @@ impl From<Function> for Type {
 impl From<Primitive> for Type {
     fn from(primitive: Primitive) -> Self {
         Self::Primitive(primitive)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::super::primitive::Primitive;
-    use super::*;
-
-    #[test]
-    fn to_id() {
-        assert_eq!(
-            &Type::from(Function::new(Primitive::Float64, Primitive::Float64)).to_id(),
-            "(Float64->Float64)"
-        );
     }
 }

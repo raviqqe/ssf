@@ -44,40 +44,12 @@ impl Function {
 
         type_.result()
     }
-
-    pub fn to_id(&self) -> String {
-        format!("({}->{})", self.argument.to_id(), self.result.to_id())
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::super::primitive::Primitive;
     use super::*;
-
-    #[test]
-    fn to_id() {
-        assert_eq!(
-            &Function::new(Primitive::Float64, Primitive::Float64).to_id(),
-            "(Float64->Float64)"
-        );
-        assert_eq!(
-            &Function::new(
-                Primitive::Float64,
-                Function::new(Primitive::Float64, Primitive::Float64),
-            )
-            .to_id(),
-            "(Float64->(Float64->Float64))"
-        );
-        assert_eq!(
-            &Function::new(
-                Function::new(Primitive::Float64, Primitive::Float64),
-                Primitive::Float64
-            )
-            .to_id(),
-            "((Float64->Float64)->Float64)"
-        );
-    }
 
     #[test]
     fn argument() {

@@ -16,8 +16,4 @@ impl Array {
     pub fn element(&self) -> &Type {
         &self.element
     }
-
-    pub fn to_id(&self) -> String {
-        format!("[{}]", self.element.to_id())
-    }
 }
