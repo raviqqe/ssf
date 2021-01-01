@@ -44,7 +44,6 @@ impl<'c> TypeCompiler<'c> {
                 .into(),
             ssf::types::Type::Index(_) => unreachable!(),
             ssf::types::Type::Primitive(primitive) => self.compile_primitive(primitive),
-            ssf::types::Type::Void => self.context.struct_type(&[], false).into(),
         }
     }
 

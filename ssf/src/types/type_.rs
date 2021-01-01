@@ -10,7 +10,6 @@ pub enum Type {
     Function(Function),
     Index(usize),
     Primitive(Primitive),
-    Void,
 }
 
 impl Type {

@@ -29,7 +29,7 @@ impl TypeUnfolder {
                     Type::Index(*index)
                 }
             }
-            Type::Primitive(_) | Type::Void => type_.clone(),
+            Type::Primitive(_) => type_.clone(),
         }
     }
 
