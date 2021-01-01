@@ -205,19 +205,18 @@ impl<'c> TypeCompiler<'c> {
         type_: &ssf::types::Function,
     ) -> inkwell::types::FunctionType<'c> {
         self.compile(type_.last_result()).fn_type(
-            &vec![self
-                .compile_unsized_environment()
-                .ptr_type(inkwell::AddressSpace::Generic)
-                .into()]
-            .into_iter()
-            .chain(
-                type_
-                    .arguments()
-                    .into_iter()
-                    .map(|type_| self.compile(type_))
-                    .collect::<Vec<_>>(),
-            )
-            .collect::<Vec<_>>(),
+            &self
+                .compile_internal_arguments()
+                .into_iter()
+                .into_iter()
+                .chain(
+                    type_
+                        .arguments()
+                        .into_iter()
+                        .map(|type_| self.compile(type_))
+                        .collect::<Vec<_>>(),
+                )
+                .collect::<Vec<_>>(),
             false,
         )
     }
@@ -241,20 +240,25 @@ impl<'c> TypeCompiler<'c> {
         result: &ssf::types::Type,
     ) -> inkwell::types::FunctionType<'c> {
         self.compile(result).fn_type(
-            &vec![self
-                .compile_unsized_environment()
-                .ptr_type(inkwell::AddressSpace::Generic)
-                .into()]
-            .into_iter()
-            .chain(
-                arguments
-                    .into_iter()
-                    .map(|type_| self.compile(type_))
-                    .collect::<Vec<_>>(),
-            )
-            .collect::<Vec<_>>(),
+            &self
+                .compile_internal_arguments()
+                .into_iter()
+                .chain(
+                    arguments
+                        .into_iter()
+                        .map(|type_| self.compile(type_))
+                        .collect::<Vec<_>>(),
+                )
+                .collect::<Vec<_>>(),
             false,
         )
+    }
+
+    fn compile_internal_arguments(&self) -> Vec<inkwell::types::BasicTypeEnum<'c>> {
+        vec![self
+            .compile_unsized_environment()
+            .ptr_type(inkwell::AddressSpace::Generic)
+            .into()]
     }
 
     pub fn compile_foreign_function(
