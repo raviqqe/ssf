@@ -48,7 +48,7 @@ impl Expression {
             Self::ConstructorApplication(constructor_application) => {
                 constructor_application.find_variables()
             }
-            Self::CpsFunctionApplication(application) => application.find_variables().into(),
+            Self::CpsFunctionApplication(application) => application.find_variables(),
             Self::FunctionApplication(function_application) => {
                 function_application.find_variables()
             }

@@ -64,7 +64,7 @@ impl LocalContinuation {
             self.argument.clone(),
             self.body.infer_environment(
                 &variables
-                    .into_iter()
+                    .iter()
                     .map(|(name, type_)| (name.clone(), type_.clone()))
                     .chain(vec![(
                         self.argument.name().into(),
