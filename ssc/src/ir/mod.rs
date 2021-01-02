@@ -1,5 +1,6 @@
 mod alternative;
 mod argument;
+mod call;
 mod constructor;
 mod expression;
 mod function_declaration;
@@ -14,6 +15,7 @@ mod variable_definition;
 
 pub use alternative::*;
 pub use argument::*;
+pub use call::*;
 pub use constructor::*;
 pub use expression::*;
 pub use function_declaration::*;
