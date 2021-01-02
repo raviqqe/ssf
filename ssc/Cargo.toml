@@ -1,6 +1,6 @@
 [package]
 name = "ssc"
-description = "C-like IR for ssf"
+description = "C-like target language for ssf"
 version = "0.1.0"
 license = "MIT"
 authors = ["Yota Toyama <raviqqe@gmail.com>"]
