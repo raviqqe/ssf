@@ -7,9 +7,3 @@ pub enum Primitive {
     Integer64,
     Pointer,
 }
-
-impl Primitive {
-    pub fn to_id(&self) -> String {
-        format!("{:?}", self)
-    }
-}
