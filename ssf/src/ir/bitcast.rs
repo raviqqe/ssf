@@ -12,7 +12,7 @@ pub struct Bitcast {
 impl Bitcast {
     pub fn new(expression: impl Into<Expression>, type_: impl Into<Type>) -> Self {
         Self {
-            expression: Arc::new(expression.into()),
+            expression: expression.into().into(),
             type_: type_.into(),
         }
     }
