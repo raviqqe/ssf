@@ -30,6 +30,8 @@ pub fn compile(
     ir_module: &ssf::ir::Module,
     compile_configuration: Arc<CompileConfiguration>,
 ) -> Result<Vec<u8>, CompileError> {
+    ssf::analysis::check_types(ir_module)?;
+
     let context = inkwell::context::Context::create();
     let module = Arc::new(context.create_module("main"));
     let type_compiler = TypeCompiler::new(&context);
@@ -95,7 +97,7 @@ mod tests {
     #[test]
     fn compile_() {
         compile(
-            &ssf::ir::Module::new(vec![], vec![], vec![]).unwrap(),
+            &ssf::ir::Module::new(vec![], vec![], vec![]),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -122,8 +124,7 @@ mod tests {
                     ),
                     algebraic_type,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -150,8 +151,7 @@ mod tests {
                     ),
                     algebraic_type,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -182,8 +182,7 @@ mod tests {
                     ),
                     algebraic_type,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -209,8 +208,7 @@ mod tests {
                     ),
                     algebraic_type,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -242,8 +240,7 @@ mod tests {
                     ),
                     ssf::types::Primitive::Float64,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -283,8 +280,7 @@ mod tests {
                     ),
                     ssf::types::Primitive::Float64,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -324,8 +320,7 @@ mod tests {
                     ),
                     ssf::types::Primitive::Float64,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -343,8 +338,7 @@ mod tests {
                     ssf::ir::Bitcast::new(42, ssf::types::Primitive::Float64),
                     ssf::types::Primitive::Float64,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -371,8 +365,7 @@ mod tests {
                     ssf::ir::Bitcast::new(ssf::ir::Variable::new("x"), algebraic_type_2.clone()),
                     algebraic_type_2,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -398,8 +391,7 @@ mod tests {
                     ssf::ir::Bitcast::new(ssf::ir::Variable::new("x"), algebraic_type.clone()),
                     algebraic_type,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -428,8 +420,7 @@ mod tests {
                         ),
                         algebraic_type_2,
                     )],
-                )
-                .unwrap(),
+                ),
                 COMPILE_CONFIGURATION.clone(),
             ),
             Err(_)
@@ -456,8 +447,7 @@ mod tests {
                         ssf::types::Primitive::Float64,
                     ),
                 ],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -476,8 +466,7 @@ mod tests {
                         ssf::ir::PrimitiveOperation::new(*operator, 42, 42),
                         ssf::types::Primitive::Integer64,
                     )],
-                )
-                .unwrap(),
+                ),
                 COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
@@ -497,8 +486,7 @@ mod tests {
                         ssf::ir::PrimitiveOperation::new(*operator, 42.0, 42.0),
                         ssf::types::Primitive::Float64,
                     )],
-                )
-                .unwrap(),
+                ),
                 COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
@@ -518,8 +506,7 @@ mod tests {
                         ssf::ir::PrimitiveOperation::new(*operator, 42, 42),
                         ssf::types::Primitive::Integer8,
                     )],
-                )
-                .unwrap(),
+                ),
                 COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
@@ -539,8 +526,7 @@ mod tests {
                         ssf::ir::PrimitiveOperation::new(*operator, 42.0, 42.0),
                         ssf::types::Primitive::Integer8,
                     )],
-                )
-                .unwrap(),
+                ),
                 COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
@@ -570,8 +556,7 @@ mod tests {
                     ),
                     ssf::types::Primitive::Float64,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -600,8 +585,7 @@ mod tests {
                     ),
                     ssf::types::Primitive::Float64,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -619,8 +603,7 @@ mod tests {
                     42.0,
                     ssf::types::Primitive::Float64,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -646,8 +629,7 @@ mod tests {
                         ssf::types::Primitive::Float64,
                     ),
                 ],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -673,8 +655,7 @@ mod tests {
                         ssf::types::Primitive::Float64,
                     ),
                 ],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -700,8 +681,7 @@ mod tests {
                     ),
                     ssf::types::Primitive::Float64,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -727,8 +707,7 @@ mod tests {
                     ),
                     ssf::types::Primitive::Float64,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -761,8 +740,7 @@ mod tests {
                     ),
                     ssf::types::Primitive::Float64,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -802,8 +780,7 @@ mod tests {
                     ),
                     ssf::types::Primitive::Float64,
                 )],
-            )
-            .unwrap(),
+            ),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -838,8 +815,7 @@ mod tests {
                             ),
                         ),
                     ],
-                )
-                .unwrap(),
+                ),
                 COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
@@ -875,8 +851,7 @@ mod tests {
                             ),
                         ),
                     ],
-                )
-                .unwrap(),
+                ),
                 COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
@@ -915,8 +890,7 @@ mod tests {
                             ),
                         ),
                     ],
-                )
-                .unwrap(),
+                ),
                 COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
@@ -948,8 +922,7 @@ mod tests {
                         ),
                         ssf::types::Primitive::Float64,
                     )],
-                )
-                .unwrap(),
+                ),
                 COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
@@ -983,8 +956,7 @@ mod tests {
                         ),
                         ssf::types::Primitive::Float64,
                     )],
-                )
-                .unwrap(),
+                ),
                 COMPILE_CONFIGURATION.clone(),
             )
             .unwrap();
