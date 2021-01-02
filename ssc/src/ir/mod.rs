@@ -1,4 +1,6 @@
+mod alternative;
 mod argument;
+mod constructor;
 mod expression;
 mod function_declaration;
 mod function_definition;
@@ -6,10 +8,13 @@ mod if_;
 mod module;
 mod return_;
 mod statement;
+mod switch;
 mod variable_declaration;
 mod variable_definition;
 
+pub use alternative::*;
 pub use argument::*;
+pub use constructor::*;
 pub use expression::*;
 pub use function_declaration::*;
 pub use function_definition::*;
@@ -17,5 +22,6 @@ pub use if_::*;
 pub use module::*;
 pub use return_::*;
 pub use statement::*;
+pub use switch::*;
 pub use variable_declaration::*;
 pub use variable_definition::*;
