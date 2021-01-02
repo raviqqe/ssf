@@ -13,4 +13,5 @@ pub enum Expression {
     Constructor(Constructor),
     Load(Load),
     Primitive(Primitive),
+    Undefined,
 }
