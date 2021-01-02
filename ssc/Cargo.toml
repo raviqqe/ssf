@@ -1,0 +1,7 @@
+[package]
+name = "ssc"
+description = "C-like IR for ssf"
+version = "0.1.0"
+license = "MIT"
+authors = ["Yota Toyama <raviqqe@gmail.com>"]
+edition = "2018"
