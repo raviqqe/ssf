@@ -1,9 +1,12 @@
+mod address_calculation;
 mod alternative;
 mod argument;
+mod assignment;
 mod atomic_load;
 mod atomic_store;
 mod bitcast;
 mod call;
+mod compare_and_swap;
 mod constructor;
 mod expression;
 mod function_declaration;
@@ -22,12 +25,15 @@ mod variable;
 mod variable_declaration;
 mod variable_definition;
 
+pub use address_calculation::*;
 pub use alternative::*;
 pub use argument::*;
+pub use assignment::*;
 pub use atomic_load::*;
 pub use atomic_store::*;
 pub use bitcast::*;
 pub use call::*;
+pub use compare_and_swap::*;
 pub use constructor::*;
 pub use expression::*;
 pub use function_declaration::*;

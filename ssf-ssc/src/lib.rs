@@ -1,6 +1,7 @@
 mod compile_configuration;
 mod declaration;
 mod definition;
+mod entry_function;
 mod expression;
 mod foreign_declaration;
 mod type_;

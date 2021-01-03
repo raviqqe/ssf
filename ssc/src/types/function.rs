@@ -1,8 +1,6 @@
 use super::type_::Type;
 use std::sync::Arc;
 
-// This is the first-class type differently from C.
-// How it's compiled depends on backend.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Function {
     arguments: Vec<Type>,

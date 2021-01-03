@@ -15,18 +15,20 @@ pub fn compile(type_: &ssf::types::Type) -> ssc::types::Type {
             ssc::types::Pointer::new(compile_unsized_closure(function)).into()
         }
         ssf::types::Type::Index(_) => unreachable!(),
-        ssf::types::Type::Primitive(primitive) => compile_primitive(primitive).into(),
+        ssf::types::Type::Primitive(primitive) => compile_primitive(primitive),
     }
 }
 
-pub fn compile_primitive(primitive: &ssf::types::Primitive) -> ssc::types::Primitive {
+pub fn compile_primitive(primitive: &ssf::types::Primitive) -> ssc::types::Type {
     match primitive {
-        ssf::types::Primitive::Float32 => ssc::types::Primitive::Float32,
-        ssf::types::Primitive::Float64 => ssc::types::Primitive::Float64,
-        ssf::types::Primitive::Integer8 => ssc::types::Primitive::Integer8,
-        ssf::types::Primitive::Integer32 => ssc::types::Primitive::Integer32,
-        ssf::types::Primitive::Integer64 => ssc::types::Primitive::Integer64,
-        ssf::types::Primitive::Pointer => todo!(),
+        ssf::types::Primitive::Float32 => ssc::types::Primitive::Float32.into(),
+        ssf::types::Primitive::Float64 => ssc::types::Primitive::Float64.into(),
+        ssf::types::Primitive::Integer8 => ssc::types::Primitive::Integer8.into(),
+        ssf::types::Primitive::Integer32 => ssc::types::Primitive::Integer32.into(),
+        ssf::types::Primitive::Integer64 => ssc::types::Primitive::Integer64.into(),
+        ssf::types::Primitive::Pointer => {
+            ssc::types::Pointer::new(ssc::types::Primitive::Integer8).into()
+        }
     }
 }
 
@@ -42,7 +44,7 @@ pub fn compile_algebraic(
 
     if !algebraic.is_enum() {
         elements.push(if let Some(index) = index {
-            compile_constructor(&algebraic.unfold().constructors()[&index], false).into()
+            compile_constructor(&algebraic.unfold().constructors()[&index], false)
         } else {
             compile_untyped_constructor(algebraic).into()
         });
@@ -106,10 +108,7 @@ pub fn compile_curried_entry_function(
         function.clone()
     } else {
         ssc::types::Function::new(
-            function.arguments()[..arity + FUNCTION_ARGUMENT_OFFSET]
-                .iter()
-                .cloned()
-                .collect(),
+            function.arguments()[..arity + FUNCTION_ARGUMENT_OFFSET].to_vec(),
             ssc::types::Pointer::new(compile_raw_closure(
                 ssc::types::Function::new(
                     function.arguments()[..FUNCTION_ARGUMENT_OFFSET]
@@ -192,7 +191,7 @@ fn compile_untyped_constructor(algebraic_type: &ssf::types::Algebraic) -> ssc::t
         algebraic_type
             .constructors()
             .iter()
-            .map(|(_, constructor)| compile_constructor(constructor, true).into())
+            .map(|(_, constructor)| compile_constructor(constructor, true))
             .collect(),
     )
 }
