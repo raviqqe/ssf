@@ -4,7 +4,7 @@ use super::global_variable::GlobalVariable;
 use super::instruction_compiler::InstructionCompiler;
 use super::type_compiler::TypeCompiler;
 use super::utilities;
-use inkwell::types::BasicType;
+use inkwell::type_::BasicType;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -52,7 +52,7 @@ impl<'c> FunctionCompiler<'c> {
     ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
         let entry_function = self.add_function(
             &Self::generate_closure_entry_name(definition.name()),
-            types::compile_entry_function_from_definition(definition),
+            type_::compile_entry_function_from_definition(definition),
         );
 
         let builder = Arc::new(self.context.create_builder());
@@ -71,7 +71,7 @@ impl<'c> FunctionCompiler<'c> {
     ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
         let entry_function = self.add_function(
             &Self::generate_closure_entry_name(definition.name()),
-            types::compile_entry_function_from_definition(definition),
+            type_::compile_entry_function_from_definition(definition),
         );
 
         let builder = Arc::new(self.context.create_builder());
@@ -160,7 +160,7 @@ impl<'c> FunctionCompiler<'c> {
         let environment = builder
             .build_bitcast(
                 entry_function.get_params()[0],
-                types::compile_environment(definition)
+                type_::compile_environment(definition)
                     .ptr_type(inkwell::AddressSpace::Generic),
                 "",
             )
@@ -210,7 +210,7 @@ impl<'c> FunctionCompiler<'c> {
     ) -> inkwell::values::FunctionValue<'c> {
         let entry_function = self.add_function(
             &Self::generate_normal_entry_name(definition.name()),
-            types::compile_entry_function_from_definition(definition),
+            type_::compile_entry_function_from_definition(definition),
         );
 
         let builder = self.context.create_builder();
@@ -229,7 +229,7 @@ impl<'c> FunctionCompiler<'c> {
     ) -> inkwell::values::FunctionValue<'c> {
         let entry_function = self.add_function(
             &Self::generate_locked_entry_name(definition.name()),
-            types::compile_entry_function_from_definition(definition),
+            type_::compile_entry_function_from_definition(definition),
         );
 
         let builder = self.context.create_builder();
@@ -325,7 +325,7 @@ impl<'c> FunctionCompiler<'c> {
     fn add_function(
         &self,
         name: &str,
-        type_: inkwell::types::Function,
+        type_: inkwell::type_::Function,
     ) -> inkwell::values::FunctionValue<'c> {
         utilities::add_function_to_module(self.module.clone(), name, type_)
     }

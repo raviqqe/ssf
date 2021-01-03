@@ -21,7 +21,7 @@ impl<'c> MallocCompiler<'c> {
     pub fn compile_struct_malloc(
         &self,
         builder: &inkwell::builder::Builder<'c>,
-        type_: inkwell::types::Constructor,
+        type_: inkwell::type_::Constructor,
     ) -> inkwell::values::PointerValue<'c> {
         builder
             .build_bitcast(

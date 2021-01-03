@@ -3,7 +3,7 @@ use super::error::CompileError;
 use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
 use super::utilities;
-use inkwell::types::BasicType;
+use inkwell::type_::BasicType;
 use std::sync::Arc;
 
 pub struct FunctionApplicationCompiler<'c> {
@@ -77,7 +77,7 @@ impl<'c> FunctionApplicationCompiler<'c> {
                 .iter()
                 .map(|(arity, block, _, _)| {
                     (
-                        types::compile_arity()
+                        type_::compile_arity()
                             .const_int(*arity as u64, false),
                         *block,
                     )
@@ -103,13 +103,13 @@ impl<'c> FunctionApplicationCompiler<'c> {
 
     fn compile_partially_applied_function(
         &self,
-        function_type: inkwell::types::Function,
-        environment_type: inkwell::types::Constructor,
+        function_type: inkwell::type_::Function,
+        environment_type: inkwell::type_::Constructor,
     ) -> Result<inkwell::values::FunctionValue<'c>, CompileError> {
         let entry_function = utilities::add_function_to_module(
             self.module.clone(),
             "pa_entry",
-            types::compile_curried_entry_function(function_type, 1),
+            type_::compile_curried_entry_function(function_type, 1),
         );
 
         let builder = Arc::new(self.context.create_builder());
@@ -145,7 +145,7 @@ impl<'c> FunctionApplicationCompiler<'c> {
                 inkwell::IntPredicate::EQ,
                 self.closure_operation_compiler
                     .compile_load_arity(&builder, closure),
-                types::compile_arity()
+                type_::compile_arity()
                     .const_int(arguments.len() as u64, false),
                 "",
             ),
@@ -183,7 +183,7 @@ impl<'c> FunctionApplicationCompiler<'c> {
                 builder
                     .build_bitcast(
                         entry_pointer,
-                        types::compile_curried_entry_function(
+                        type_::compile_curried_entry_function(
                                 entry_pointer
                                     .get_type()
                                     .get_element_type()
@@ -234,7 +234,7 @@ impl<'c> FunctionApplicationCompiler<'c> {
                 .chain(arguments.iter().copied())
                 .collect::<Vec<_>>();
 
-            let environment_type = types::compile_raw_environment(environment_values.iter().map(|value| value.get_type()));
+            let environment_type = type_::compile_raw_environment(environment_values.iter().map(|value| value.get_type()));
             let target_function_type = entry_function_type.get_return_type().unwrap().fn_type(
                 &vec![entry_function_type.get_param_types()[0]]
                     .into_iter()
@@ -252,7 +252,7 @@ impl<'c> FunctionApplicationCompiler<'c> {
 
             let closure = self.malloc_compiler.compile_struct_malloc(
                 &builder,
-                types::compile_raw_closure(function.get_type(), environment_type),
+                type_::compile_raw_closure(function.get_type(), environment_type),
             );
 
             self.closure_operation_compiler
@@ -262,9 +262,9 @@ impl<'c> FunctionApplicationCompiler<'c> {
                 builder
                     .build_bitcast(
                         closure,
-                        types::compile_raw_closure(
+                        type_::compile_raw_closure(
                                 target_function_type,
-                                types::compile_unsized_environment(),
+                                type_::compile_unsized_environment(),
                             )
                             .ptr_type(inkwell::AddressSpace::Generic),
                         "",

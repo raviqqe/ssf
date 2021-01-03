@@ -73,11 +73,11 @@ impl<'c> ModuleCompiler<'c> {
             declaration.name().into(),
             GlobalVariable::new(
                 self.module.add_global(
-                    types::compile_unsized_closure(declaration.type_()),
+                    type_::compile_unsized_closure(declaration.type_()),
                     None,
                     declaration.name(),
                 ),
-                types::compile_unsized_closure(declaration.type_())
+                type_::compile_unsized_closure(declaration.type_())
                     .ptr_type(inkwell::AddressSpace::Generic),
             ),
         );
@@ -92,11 +92,11 @@ impl<'c> ModuleCompiler<'c> {
             definition.name().into(),
             GlobalVariable::new(
                 self.module.add_global(
-                    types::compile_sized_closure(definition),
+                    type_::compile_sized_closure(definition),
                     None,
                     definition.name(),
                 ),
-                types::compile_unsized_closure(definition.type_())
+                type_::compile_unsized_closure(definition.type_())
                     .ptr_type(inkwell::AddressSpace::Generic),
             ),
         );
@@ -123,7 +123,7 @@ impl<'c> ModuleCompiler<'c> {
                     .as_global_value()
                     .as_pointer_value()
                     .into(),
-                types::compile_arity()
+                type_::compile_arity()
                     .const_int(definition.arguments().len() as u64, false)
                     .into(),
                 closure_type.get_field_types()[2]

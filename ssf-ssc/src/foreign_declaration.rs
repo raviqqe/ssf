@@ -1,11 +1,11 @@
 use super::expression;
-use super::types::{self, FUNCTION_ARGUMENT_OFFSET};
+use super::type_::{self, FUNCTION_ARGUMENT_OFFSET};
 
 pub fn compile_foreign_declaration(
     module: &ssc::ir::Module,
     declaration: &ssf::ir::ForeignDeclaration,
 ) -> ssc::ir::Module {
-    let closure_type = types::compile_unsized_closure(declaration.type_());
+    let closure_type = type_::compile_unsized_closure(declaration.type_());
 
     let entry_function_definition = compile_entry_function(declaration);
 
@@ -17,7 +17,7 @@ pub fn compile_foreign_declaration(
             .cloned()
             .chain(vec![ssc::ir::FunctionDeclaration::new(
                 declaration.foreign_name(),
-                types::compile_foreign_function(declaration.type_()),
+                type_::compile_foreign_function(declaration.type_()),
             )])
             .collect(),
         module
@@ -62,7 +62,7 @@ fn compile_entry_function(
                 .into_iter()
                 .enumerate()
                 .map(|(index, type_)| {
-                    ssc::ir::Argument::new(format!("arg_{}", index), types::compile(type_))
+                    ssc::ir::Argument::new(format!("arg_{}", index), type_::compile(type_))
                 }),
         )
         .collect::<Vec<_>>();
@@ -79,6 +79,6 @@ fn compile_entry_function(
                 .collect(),
         ))
         .into()],
-        types::compile(declaration.type_().last_result()),
+        type_::compile(declaration.type_().last_result()),
     )
 }

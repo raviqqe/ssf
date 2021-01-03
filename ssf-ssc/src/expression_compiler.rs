@@ -4,7 +4,7 @@ use super::function_application_compiler::FunctionApplicationCompiler;
 use super::function_compiler::FunctionCompiler;
 use super::malloc_compiler::MallocCompiler;
 use super::type_compiler::TypeCompiler;
-use inkwell::types::AnyType;
+use inkwell::type_::AnyType;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -49,17 +49,17 @@ impl<'c> ExpressionCompiler<'c> {
         Ok(match expression {
             ssf::ir::Expression::Bitcast(bitcast) => {
                 let argument = self.compile(bitcast.expression(), variables)?;
-                let to_type = types::compile(bitcast.type_());
+                let to_type = type_::compile(bitcast.type_());
 
                 if self.is_bitcast_supported(argument.get_type())
                     && self.is_bitcast_supported(to_type)
                 {
                     self.builder.build_bitcast(
                         argument,
-                        types::compile(bitcast.type_()),
+                        type_::compile(bitcast.type_()),
                         "",
                     )
-                } else if types::equal_bit_sizes(argument.get_type(), to_type)
+                } else if type_::equal_bit_sizes(argument.get_type(), to_type)
                 {
                     let pointer = self.builder.build_alloca(argument.get_type(), "");
                     self.builder.build_store(pointer, argument);
@@ -89,7 +89,7 @@ impl<'c> ExpressionCompiler<'c> {
                 let constructor_type =
                     algebraic_type.unfold().constructors()[&constructor.tag()].clone();
 
-                let mut algebraic_value = types::compile_algebraic(algebraic_type, Some(constructor.tag()))
+                let mut algebraic_value = type_::compile_algebraic(algebraic_type, Some(constructor.tag()))
                     .const_zero()
                     .into();
 
@@ -98,7 +98,7 @@ impl<'c> ExpressionCompiler<'c> {
                         .builder
                         .build_insert_value(
                             algebraic_value,
-                            types::compile_tag()
+                            type_::compile_tag()
                                 .const_int(constructor.tag(), false),
                             0,
                             "",
@@ -107,7 +107,7 @@ impl<'c> ExpressionCompiler<'c> {
                 }
 
                 if !constructor_type.is_enum() {
-                    let constructor_type = types::compile_unboxed_constructor(&constructor_type);
+                    let constructor_type = type_::compile_unboxed_constructor(&constructor_type);
 
                     let mut constructor_value = constructor_type.const_zero().into();
 
@@ -148,7 +148,7 @@ impl<'c> ExpressionCompiler<'c> {
                 }
 
                 let algebraic_pointer = self.builder.build_alloca(
-                    types::compile_algebraic(algebraic_type, None),
+                    type_::compile_algebraic(algebraic_type, None),
                     "",
                 );
 
@@ -186,13 +186,13 @@ impl<'c> ExpressionCompiler<'c> {
 
                 for definition in let_recursive.definitions() {
                     let pointer =
-                        self.compile_malloc(types::compile_sized_closure(definition));
+                        self.compile_malloc(type_::compile_sized_closure(definition));
 
                     variables.insert(
                         definition.name().into(),
                         self.builder.build_bitcast(
                             pointer,
-                            types::compile_unsized_closure(definition.type_())
+                            type_::compile_unsized_closure(definition.type_())
                                 .ptr_type(inkwell::AddressSpace::Generic),
                             "",
                         ),
@@ -373,7 +373,7 @@ impl<'c> ExpressionCompiler<'c> {
                     .unwrap_or(true)
                 {
                     // Set a dummy tag value of 0.
-                    types::compile_tag().const_int(0, false)
+                    type_::compile_tag().const_int(0, false)
                 } else {
                     self.builder
                         .build_extract_value(argument, 0, "")
@@ -399,7 +399,7 @@ impl<'c> ExpressionCompiler<'c> {
                                 self.builder
                                     .build_bitcast(
                                         argument_pointer,
-                                        types::compile_algebraic(
+                                        type_::compile_algebraic(
                                                 constructor.algebraic_type(),
                                                 Some(constructor.tag()),
                                             )
@@ -445,7 +445,7 @@ impl<'c> ExpressionCompiler<'c> {
                     let expression = self.compile(alternative.expression(), &variables)?;
 
                     cases.push((
-                        types::compile_tag()
+                        type_::compile_tag()
                             .const_int(constructor.tag(), false),
                         block,
                         self.builder.get_insert_block().unwrap(),
@@ -578,7 +578,7 @@ impl<'c> ExpressionCompiler<'c> {
         self.builder.build_cast(
             inkwell::values::InstructionOpcode::ZExt,
             self.builder.build_int_compare(predicate, lhs, rhs, ""),
-            types::compile_primitive(&ssf::types::Primitive::Integer8),
+            type_::compile_primitive(&ssf::types::Primitive::Integer8),
             "",
         )
     }
@@ -592,7 +592,7 @@ impl<'c> ExpressionCompiler<'c> {
         self.builder.build_cast(
             inkwell::values::InstructionOpcode::ZExt,
             self.builder.build_float_compare(predicate, lhs, rhs, ""),
-            types::compile_primitive(&ssf::types::Primitive::Integer8),
+            type_::compile_primitive(&ssf::types::Primitive::Integer8),
             "",
         )
     }
@@ -648,13 +648,13 @@ impl<'c> ExpressionCompiler<'c> {
 
     fn compile_malloc(
         &self,
-        type_: inkwell::types::Constructor,
+        type_: inkwell::type_::Constructor,
     ) -> inkwell::values::PointerValue<'c> {
         self.malloc_compiler
             .compile_struct_malloc(&self.builder, type_)
     }
 
-    fn is_bitcast_supported(&self, type_: inkwell::types::Type) -> bool {
+    fn is_bitcast_supported(&self, type_: inkwell::type_::Type) -> bool {
         type_.is_int_type() || type_.is_float_type() || type_.is_pointer_type()
     }
 }

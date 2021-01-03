@@ -60,7 +60,7 @@ impl<'c> ClosureOperationCompiler<'c> {
                                 "",
                             )
                         },
-                        types::compile_arity()
+                        type_::compile_arity()
                             .ptr_type(inkwell::AddressSpace::Generic),
                         "",
                     )
@@ -86,7 +86,7 @@ impl<'c> ClosureOperationCompiler<'c> {
                     "",
                 )
             },
-            types::compile_unsized_environment()
+            type_::compile_unsized_environment()
                 .ptr_type(inkwell::AddressSpace::Generic),
             "",
         )
@@ -99,11 +99,11 @@ impl<'c> ClosureOperationCompiler<'c> {
         entry_function: inkwell::values::FunctionValue<'c>,
         environment_values: &[inkwell::values::BasicValueEnum<'c>],
     ) -> Result<(), CompileError> {
-        let environment_type = types::compile_raw_environment(environment_values.iter().map(|value| value.get_type()));
+        let environment_type = type_::compile_raw_environment(environment_values.iter().map(|value| value.get_type()));
 
         let closure = builder
             .build_insert_value(
-                types::compile_raw_closure(entry_function.get_type(), environment_type)
+                type_::compile_raw_closure(entry_function.get_type(), environment_type)
                     .get_undef(),
                 entry_function.as_global_value().as_pointer_value(),
                 0,
@@ -114,7 +114,7 @@ impl<'c> ClosureOperationCompiler<'c> {
         let closure = builder
             .build_insert_value(
                 closure,
-                types::compile_arity().const_int(
+                type_::compile_arity().const_int(
                     utilities::get_arity(entry_function.get_type()) as u64,
                     false,
                 ),

@@ -3,7 +3,7 @@ mod declaration;
 mod definition;
 mod expression;
 mod foreign_declaration;
-mod types;
+mod type_;
 
 use compile_configuration::CompileConfiguration;
 use declaration::compile_declaration;
@@ -19,7 +19,7 @@ pub fn compile(
         vec![],
         vec![ssc::ir::FunctionDeclaration::new(
             &compile_configuration.malloc_function_name,
-            ssc::types::Function::new(vec![], types::compile_generic_pointer()),
+            ssc::types::Function::new(vec![], type_::compile_generic_pointer()),
         )],
         vec![],
         vec![],

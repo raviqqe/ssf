@@ -1,11 +1,11 @@
 use super::expression;
-use super::types;
+use super::type_;
 
 pub fn compile_definition(
     module: &ssc::ir::Module,
     definition: &ssf::ir::Definition,
 ) -> ssc::ir::Module {
-    let closure_type = types::compile_sized_closure(definition);
+    let closure_type = type_::compile_sized_closure(definition);
     let entry_function_definition = compile_entry_function(definition);
 
     ssc::ir::Module::new(
@@ -28,7 +28,7 @@ pub fn compile_definition(
                         ssc::ir::Expression::Undefined,
                     ],
                 ),
-                types::compile_sized_closure(definition),
+                type_::compile_sized_closure(definition),
                 !definition.is_thunk(),
             )])
             .collect(),
@@ -48,10 +48,10 @@ fn compile_entry_function(definition: &ssf::ir::Definition) -> ssc::ir::Function
             .arguments()
             .iter()
             .map(|argument| {
-                ssc::ir::Argument::new(argument.name(), types::compile(argument.type_()))
+                ssc::ir::Argument::new(argument.name(), type_::compile(argument.type_()))
             })
             .collect(),
         todo!(),
-        types::compile(definition.result_type()),
+        type_::compile(definition.result_type()),
     )
 }
