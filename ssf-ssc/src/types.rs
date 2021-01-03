@@ -54,7 +54,10 @@ pub fn compile_algebraic(
 pub fn compile_sized_closure(definition: &ssf::ir::Definition) -> ssc::types::Constructor {
     compile_raw_closure(
         compile_entry_function_from_definition(definition),
-        compile_payload(definition),
+        ssc::types::Union::new(vec![
+            compile_environment(definition).into(),
+            compile(definition.result_type()),
+        ]),
     )
 }
 
@@ -73,13 +76,6 @@ pub fn compile_raw_closure(
         entry_function.into(),
         compile_arity().into(),
         environment.into(),
-    ])
-}
-
-fn compile_payload(definition: &ssf::ir::Definition) -> ssc::types::Union {
-    ssc::types::Union::new(vec![
-        compile_environment(definition).into(),
-        compile(definition.result_type()),
     ])
 }
 

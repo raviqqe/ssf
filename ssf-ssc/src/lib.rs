@@ -1,11 +1,13 @@
 mod compile_configuration;
 mod declaration;
+mod definition;
 mod expression;
 mod foreign_declaration;
 mod types;
 
 use compile_configuration::CompileConfiguration;
 use declaration::compile_declaration;
+use definition::compile_definition;
 use foreign_declaration::compile_foreign_declaration;
 use std::sync::Arc;
 
@@ -29,6 +31,10 @@ pub fn compile(
 
     for declaration in source_module.declarations() {
         module = compile_declaration(&module, declaration);
+    }
+
+    for definition in source_module.definitions() {
+        module = compile_definition(&module, definition);
     }
 
     module
