@@ -18,6 +18,7 @@ mod return_;
 mod statement;
 mod store;
 mod switch;
+mod variable;
 mod variable_declaration;
 mod variable_definition;
 
@@ -41,5 +42,6 @@ pub use return_::*;
 pub use statement::*;
 pub use store::*;
 pub use switch::*;
+pub use variable::*;
 pub use variable_declaration::*;
 pub use variable_definition::*;

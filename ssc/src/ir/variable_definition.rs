@@ -6,6 +6,7 @@ pub struct VariableDefinition {
     name: String,
     body: Expression,
     type_: Type,
+    constant: bool,
 }
 
 impl VariableDefinition {
@@ -13,11 +14,13 @@ impl VariableDefinition {
         name: impl Into<String>,
         body: impl Into<Expression>,
         type_: impl Into<Type>,
+        constant: bool,
     ) -> Self {
         Self {
             name: name.into(),
             body: body.into(),
             type_: type_.into(),
+            constant,
         }
     }
 
@@ -31,5 +34,9 @@ impl VariableDefinition {
 
     pub fn type_(&self) -> &Type {
         &self.type_
+    }
+
+    pub fn is_constant(&self) -> bool {
+        self.constant
     }
 }

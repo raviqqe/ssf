@@ -5,6 +5,7 @@ pub enum Primitive {
     Integer8(u8),
     Integer32(u32),
     Integer64(u64),
+    PointerInteger(u64),
 }
 
 impl From<f32> for Primitive {
@@ -21,6 +22,6 @@ impl From<f64> for Primitive {
 
 impl From<u64> for Primitive {
     fn from(number: u64) -> Self {
-        Self::Integer64(number)
+        Self::PointerInteger(number)
     }
 }

@@ -3,4 +3,5 @@ members = [
   "ssc",
   "ssf",
   "ssf-llvm",
+  "ssf-ssc",
 ]

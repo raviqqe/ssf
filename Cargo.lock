@@ -267,6 +267,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ssf-ssc"
+version = "0.1.0"
+dependencies = [
+ "ssc",
+ "ssf",
+]
+
+[[package]]
 name = "syn"
 version = "1.0.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"

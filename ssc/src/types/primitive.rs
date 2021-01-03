@@ -5,4 +5,5 @@ pub enum Primitive {
     Integer8,
     Integer32,
     Integer64,
+    PointerInteger,
 }

@@ -13,21 +13,29 @@ pub struct Module {
 
 impl Module {
     pub fn new(
-        function_declarations: Vec<FunctionDeclaration>,
         variable_declarations: Vec<VariableDeclaration>,
-        function_definitions: Vec<FunctionDefinition>,
+        function_declarations: Vec<FunctionDeclaration>,
         variable_definitions: Vec<VariableDefinition>,
+        function_definitions: Vec<FunctionDefinition>,
     ) -> Self {
         Self {
-            function_declarations,
             variable_declarations,
-            function_definitions,
+            function_declarations,
             variable_definitions,
+            function_definitions,
         }
+    }
+
+    pub fn variable_declarations(&self) -> &[VariableDeclaration] {
+        &self.variable_declarations
     }
 
     pub fn function_declarations(&self) -> &[FunctionDeclaration] {
         &self.function_declarations
+    }
+
+    pub fn variable_definitions(&self) -> &[VariableDefinition] {
+        &self.variable_definitions
     }
 
     pub fn function_definitions(&self) -> &[FunctionDefinition] {

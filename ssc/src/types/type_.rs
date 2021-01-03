@@ -1,14 +1,24 @@
+use super::array::Array;
 use super::constructor::Constructor;
 use super::function::Function;
 use super::pointer::Pointer;
 use super::primitive::Primitive;
+use super::union::Union;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Type {
+    Array(Array),
     Constructor(Constructor),
     Function(Function),
     Primitive(Primitive),
     Pointer(Pointer),
+    Union(Union),
+}
+
+impl From<Array> for Type {
+    fn from(array: Array) -> Self {
+        Self::Array(array)
+    }
 }
 
 impl From<Constructor> for Type {
@@ -32,5 +42,11 @@ impl From<Primitive> for Type {
 impl From<Pointer> for Type {
     fn from(pointer: Pointer) -> Self {
         Self::Pointer(pointer)
+    }
+}
+
+impl From<Union> for Type {
+    fn from(union: Union) -> Self {
+        Self::Union(union)
     }
 }

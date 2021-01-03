@@ -1,0 +1,11 @@
+[package]
+name = "ssf-ssc"
+description = "ssf to ssc compiler"
+version = "0.1.0"
+license = "MIT"
+authors = ["Yota Toyama <raviqqe@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+ssc = { path = "../ssc" }
+ssf = { path = "../ssf" }
