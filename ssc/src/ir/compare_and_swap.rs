@@ -6,6 +6,7 @@ pub struct CompareAndSwap {
     pointer: Arc<Expression>,
     old_value: Arc<Expression>,
     new_value: Arc<Expression>,
+    name: String,
 }
 
 impl CompareAndSwap {
@@ -13,11 +14,13 @@ impl CompareAndSwap {
         pointer: impl Into<Expression>,
         old_value: impl Into<Expression>,
         new_value: impl Into<Expression>,
+        name: impl Into<String>,
     ) -> Self {
         Self {
             pointer: pointer.into().into(),
             old_value: old_value.into().into(),
             new_value: new_value.into().into(),
+            name: name.into(),
         }
     }
 
@@ -31,5 +34,9 @@ impl CompareAndSwap {
 
     pub fn new_value(&self) -> &Expression {
         &self.new_value
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }

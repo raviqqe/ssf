@@ -1,5 +1,5 @@
-use super::expression;
-use super::type_;
+use super::expressions;
+use super::types;
 
 const ENVIRONMENT_NAME: &str = "_environment";
 
@@ -16,14 +16,14 @@ fn compile_non_thunk(definition: &ssf::ir::Definition) -> ssc::ir::FunctionDefin
         generate_closure_entry_name(definition.name()),
         compile_arguments(definition),
         {
-            let (statements, result) = compile_body(definition);
+            let (instructions, result) = compile_body(definition);
 
-            statements
+            instructions
                 .into_iter()
                 .chain(vec![ssc::ir::Return::new(result).into()])
                 .collect()
         },
-        type_::compile(definition.result_type()),
+        types::compile(definition.result_type()),
     )
 }
 
@@ -42,7 +42,7 @@ fn compile_thunk(definition: &ssf::ir::Definition) -> Vec<ssc::ir::FunctionDefin
             vec![
                 ssc::ir::Assignment::new(
                     ENTRY_POINTER_NAME,
-                    compile_entry_pointer(&type_::compile_entry_function_from_definition(
+                    compile_entry_pointer(&types::compile_entry_function_from_definition(
                         definition,
                     )),
                 )
@@ -54,16 +54,16 @@ fn compile_thunk(definition: &ssf::ir::Definition) -> Vec<ssc::ir::FunctionDefin
                         ssc::ir::Variable::new(locked_entry_function_definition.name()),
                     ),
                     {
-                        let (statements, result) = compile_body(definition);
+                        let (instructions, result) = compile_body(definition);
 
-                        statements
+                        instructions
                             .into_iter()
                             .chain(vec![
                                 ssc::ir::Store::new(
                                     result.clone(),
                                     ssc::ir::Bitcast::new(
                                         compile_environment_pointer(),
-                                        ssc::types::Pointer::new(type_::compile(
+                                        ssc::types::Pointer::new(types::compile(
                                             definition.result_type(),
                                         )),
                                     ),
@@ -89,15 +89,17 @@ fn compile_thunk(definition: &ssf::ir::Definition) -> Vec<ssc::ir::FunctionDefin
                 )
                 .into(),
             ],
-            type_::compile(definition.result_type()),
+            types::compile(definition.result_type()),
         ),
         normal_entry_function_definition,
         locked_entry_function_definition,
     ]
 }
 
-fn compile_body(definition: &ssf::ir::Definition) -> (Vec<ssc::ir::Statement>, ssc::ir::Variable) {
-    let (statements, variable) = expression::compile(definition.body());
+fn compile_body(
+    definition: &ssf::ir::Definition,
+) -> (Vec<ssc::ir::Instruction>, ssc::ir::Variable) {
+    let (instructions, variable) = expressions::compile(definition.body());
 
     (
         definition
@@ -110,7 +112,7 @@ fn compile_body(definition: &ssf::ir::Definition) -> (Vec<ssc::ir::Statement>, s
                     ssc::ir::Load::new(ssc::ir::AddressCalculation::new(
                         ssc::ir::Bitcast::new(
                             compile_environment_pointer(),
-                            ssc::types::Pointer::new(type_::compile_environment(definition)),
+                            ssc::types::Pointer::new(types::compile_environment(definition)),
                         ),
                         vec![
                             ssc::ir::Primitive::PointerInteger(0).into(),
@@ -120,7 +122,7 @@ fn compile_body(definition: &ssf::ir::Definition) -> (Vec<ssc::ir::Statement>, s
                 )
                 .into()
             })
-            .chain(statements)
+            .chain(instructions)
             .collect(),
         variable,
     )
@@ -131,7 +133,7 @@ fn compile_normal_entry(definition: &ssf::ir::Definition) -> ssc::ir::FunctionDe
         generate_normal_entry_name(definition.name()),
         compile_arguments(definition),
         compile_normal_body(definition),
-        type_::compile(definition.result_type()),
+        types::compile(definition.result_type()),
     )
 }
 
@@ -145,23 +147,23 @@ fn compile_locked_entry(definition: &ssf::ir::Definition) -> ssc::ir::FunctionDe
             ssc::ir::PrimitiveOperation::new(
                 ssc::ir::PrimitiveOperator::Equal,
                 ssc::ir::AtomicLoad::new(compile_entry_pointer(
-                    &type_::compile_entry_function_from_definition(definition),
+                    &types::compile_entry_function_from_definition(definition),
                 )),
                 ssc::ir::Variable::new(&entry_function_name),
             ),
-            vec![ssc::ir::Statement::Unreachable],
+            vec![ssc::ir::Instruction::Unreachable],
             compile_normal_body(definition),
         )
         .into()],
-        type_::compile(definition.result_type()),
+        types::compile(definition.result_type()),
     )
 }
 
-fn compile_normal_body(definition: &ssf::ir::Definition) -> Vec<ssc::ir::Statement> {
+fn compile_normal_body(definition: &ssf::ir::Definition) -> Vec<ssc::ir::Instruction> {
     vec![
         ssc::ir::Return::new(ssc::ir::Load::new(ssc::ir::Bitcast::new(
             compile_environment_pointer(),
-            ssc::types::Pointer::new(type_::compile(definition.result_type())),
+            ssc::types::Pointer::new(types::compile(definition.result_type())),
         )))
         .into(),
     ]
@@ -185,18 +187,18 @@ fn compile_environment_pointer() -> ssc::ir::Variable {
 fn compile_arguments(definition: &ssf::ir::Definition) -> Vec<ssc::ir::Argument> {
     vec![ssc::ir::Argument::new(
         ENVIRONMENT_NAME,
-        ssc::types::Pointer::new(type_::compile_environment(definition)),
+        ssc::types::Pointer::new(types::compile_environment(definition)),
     )]
     .into_iter()
     .chain(
         definition.arguments().iter().map(|argument| {
-            ssc::ir::Argument::new(argument.name(), type_::compile(argument.type_()))
+            ssc::ir::Argument::new(argument.name(), types::compile(argument.type_()))
         }),
     )
     .collect()
 }
 
-fn generate_closure_entry_name(name: &str) -> String {
+pub fn generate_closure_entry_name(name: &str) -> String {
     [name, "_entry"].concat()
 }
 

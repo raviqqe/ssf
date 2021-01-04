@@ -1,21 +1,21 @@
-use super::constructor::Constructor;
 use super::function::Function;
 use super::pointer::Pointer;
 use super::primitive::Primitive;
+use super::record::Record;
 use super::union::Union;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Type {
-    Constructor(Constructor),
+    Record(Record),
     Function(Function),
     Primitive(Primitive),
     Pointer(Pointer),
     Union(Union),
 }
 
-impl From<Constructor> for Type {
-    fn from(constructor: Constructor) -> Self {
-        Self::Constructor(constructor)
+impl From<Record> for Type {
+    fn from(record: Record) -> Self {
+        Self::Record(record)
     }
 }
 

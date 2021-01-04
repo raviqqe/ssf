@@ -1,11 +1,11 @@
-use super::expression;
-use super::type_::{self, FUNCTION_ARGUMENT_OFFSET};
+use super::expressions;
+use super::types::{self, FUNCTION_ARGUMENT_OFFSET};
 
 pub fn compile_foreign_declaration(
     module: &ssc::ir::Module,
     declaration: &ssf::ir::ForeignDeclaration,
 ) -> ssc::ir::Module {
-    let closure_type = type_::compile_unsized_closure(declaration.type_());
+    let closure_type = types::compile_unsized_closure(declaration.type_());
 
     let entry_function_definition = compile_entry_function(declaration);
 
@@ -17,7 +17,7 @@ pub fn compile_foreign_declaration(
             .cloned()
             .chain(vec![ssc::ir::FunctionDeclaration::new(
                 declaration.foreign_name(),
-                type_::compile_foreign_function(declaration.type_()),
+                types::compile_foreign_function(declaration.type_()),
             )])
             .collect(),
         module
@@ -26,11 +26,11 @@ pub fn compile_foreign_declaration(
             .cloned()
             .chain(vec![ssc::ir::VariableDefinition::new(
                 declaration.name(),
-                ssc::ir::Constructor::new(
+                ssc::ir::Record::new(
                     closure_type.clone(),
                     vec![
                         ssc::ir::Variable::new(entry_function_definition.name()).into(),
-                        expression::compile_arity(
+                        expressions::compile_arity(
                             declaration.type_().arguments().into_iter().count() as u64,
                         )
                         .into(),
@@ -62,7 +62,7 @@ fn compile_entry_function(
                 .into_iter()
                 .enumerate()
                 .map(|(index, type_)| {
-                    ssc::ir::Argument::new(format!("arg_{}", index), type_::compile(type_))
+                    ssc::ir::Argument::new(format!("arg_{}", index), types::compile(type_))
                 }),
         )
         .collect::<Vec<_>>();
@@ -79,6 +79,6 @@ fn compile_entry_function(
                 .collect(),
         ))
         .into()],
-        type_::compile(declaration.type_().last_result()),
+        types::compile(declaration.type_().last_result()),
     )
 }

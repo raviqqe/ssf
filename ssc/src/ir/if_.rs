@@ -1,18 +1,18 @@
 use super::expression::Expression;
-use super::statement::Statement;
+use super::instruction::Instruction;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct If {
     condition: Expression,
-    then: Vec<Statement>,
-    else_: Vec<Statement>,
+    then: Vec<Instruction>,
+    else_: Vec<Instruction>,
 }
 
 impl If {
     pub fn new(
         condition: impl Into<Expression>,
-        then: Vec<Statement>,
-        else_: Vec<Statement>,
+        then: Vec<Instruction>,
+        else_: Vec<Instruction>,
     ) -> Self {
         Self {
             condition: condition.into(),
@@ -25,11 +25,11 @@ impl If {
         &self.condition
     }
 
-    pub fn then(&self) -> &[Statement] {
+    pub fn then(&self) -> &[Instruction] {
         &self.then
     }
 
-    pub fn else_(&self) -> &[Statement] {
+    pub fn else_(&self) -> &[Instruction] {
         &self.else_
     }
 }

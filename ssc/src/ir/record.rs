@@ -2,17 +2,17 @@ use super::expression::Expression;
 use crate::types;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Constructor {
-    type_: types::Constructor,
+pub struct Record {
+    type_: types::Record,
     elements: Vec<Expression>,
 }
 
-impl Constructor {
-    pub fn new(type_: types::Constructor, elements: Vec<Expression>) -> Self {
+impl Record {
+    pub fn new(type_: types::Record, elements: Vec<Expression>) -> Self {
         Self { type_, elements }
     }
 
-    pub fn type_(&self) -> &types::Constructor {
+    pub fn type_(&self) -> &types::Record {
         &self.type_
     }
 

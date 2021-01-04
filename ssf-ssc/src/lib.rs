@@ -1,30 +1,19 @@
-mod compile_configuration;
-mod declaration;
-mod definition;
-mod entry_function;
-mod expression;
-mod foreign_declaration;
-mod type_;
+mod closures;
+mod declarations;
+mod definitions;
+mod entry_functions;
+mod expressions;
+mod foreign_declarations;
+mod function_applications;
+mod names;
+mod types;
 
-use compile_configuration::CompileConfiguration;
-use declaration::compile_declaration;
-use definition::compile_definition;
-use foreign_declaration::compile_foreign_declaration;
-use std::sync::Arc;
+use declarations::compile_declaration;
+use definitions::compile_definition;
+use foreign_declarations::compile_foreign_declaration;
 
-pub fn compile(
-    source_module: &ssf::ir::Module,
-    compile_configuration: Arc<CompileConfiguration>,
-) -> ssc::ir::Module {
-    let mut module = ssc::ir::Module::new(
-        vec![],
-        vec![ssc::ir::FunctionDeclaration::new(
-            &compile_configuration.malloc_function_name,
-            ssc::types::Function::new(vec![], type_::compile_generic_pointer()),
-        )],
-        vec![],
-        vec![],
-    );
+pub fn compile(source_module: &ssf::ir::Module) -> ssc::ir::Module {
+    let mut module = ssc::ir::Module::new(vec![], vec![], vec![], vec![]);
 
     for declaration in source_module.foreign_declarations() {
         module = compile_foreign_declaration(&module, declaration);

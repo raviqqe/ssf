@@ -1,12 +1,12 @@
 use super::argument::Argument;
-use super::statement::Statement;
+use super::instruction::Instruction;
 use crate::types::Type;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FunctionDefinition {
     name: String,
     arguments: Vec<Argument>,
-    statements: Vec<Statement>,
+    instructions: Vec<Instruction>,
     result_type: Type,
 }
 
@@ -14,13 +14,13 @@ impl FunctionDefinition {
     pub fn new(
         name: impl Into<String>,
         arguments: Vec<Argument>,
-        statements: Vec<Statement>,
+        instructions: Vec<Instruction>,
         result_type: impl Into<Type> + Clone,
     ) -> Self {
         Self {
             name: name.into(),
             arguments,
-            statements,
+            instructions,
             result_type: result_type.into(),
         }
     }
@@ -33,8 +33,8 @@ impl FunctionDefinition {
         &self.arguments
     }
 
-    pub fn statements(&self) -> &[Statement] {
-        &self.statements
+    pub fn instructions(&self) -> &[Instruction] {
+        &self.instructions
     }
 
     pub fn result_type(&self) -> &Type {

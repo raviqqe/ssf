@@ -5,13 +5,19 @@ use std::sync::Arc;
 pub struct Call {
     function: Arc<Expression>,
     arguments: Vec<Expression>,
+    name: String,
 }
 
 impl Call {
-    pub fn new(function: impl Into<Expression>, arguments: Vec<Expression>) -> Self {
+    pub fn new(
+        function: impl Into<Expression>,
+        arguments: Vec<Expression>,
+        name: impl Into<String>,
+    ) -> Self {
         Self {
             function: function.into().into(),
             arguments,
+            name: name.into(),
         }
     }
 
@@ -21,5 +27,9 @@ impl Call {
 
     pub fn arguments(&self) -> &[Expression] {
         &self.arguments
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }

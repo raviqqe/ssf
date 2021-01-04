@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Primitive {
     Float32(f32),
     Float64(f64),

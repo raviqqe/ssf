@@ -35,7 +35,7 @@ pub fn compile_primitive(primitive: &ssf::types::Primitive) -> ssc::types::Type 
 pub fn compile_algebraic(
     algebraic: &ssf::types::Algebraic,
     index: Option<u64>,
-) -> ssc::types::Constructor {
+) -> ssc::types::Record {
     let mut elements = vec![];
 
     if !algebraic.is_singleton() {
@@ -50,10 +50,20 @@ pub fn compile_algebraic(
         });
     }
 
-    ssc::types::Constructor::new(elements)
+    ssc::types::Record::new(elements)
 }
 
-pub fn compile_sized_closure(definition: &ssf::ir::Definition) -> ssc::types::Constructor {
+pub fn compile_untyped_constructor(algebraic_type: &ssf::types::Algebraic) -> ssc::types::Union {
+    ssc::types::Union::new(
+        algebraic_type
+            .constructors()
+            .iter()
+            .map(|(_, constructor)| compile_constructor(constructor, true))
+            .collect(),
+    )
+}
+
+pub fn compile_sized_closure(definition: &ssf::ir::Definition) -> ssc::types::Record {
     compile_raw_closure(
         compile_entry_function_from_definition(definition),
         ssc::types::Union::new(vec![
@@ -63,7 +73,7 @@ pub fn compile_sized_closure(definition: &ssf::ir::Definition) -> ssc::types::Co
     )
 }
 
-pub fn compile_unsized_closure(type_: &ssf::types::Function) -> ssc::types::Constructor {
+pub fn compile_unsized_closure(type_: &ssf::types::Function) -> ssc::types::Record {
     compile_raw_closure(
         compile_uncurried_entry_function(type_),
         compile_unsized_environment(),
@@ -73,15 +83,15 @@ pub fn compile_unsized_closure(type_: &ssf::types::Function) -> ssc::types::Cons
 pub fn compile_raw_closure(
     entry_function: ssc::types::Function,
     environment: impl Into<ssc::types::Type>,
-) -> ssc::types::Constructor {
-    ssc::types::Constructor::new(vec![
+) -> ssc::types::Record {
+    ssc::types::Record::new(vec![
         entry_function.into(),
         compile_arity().into(),
         environment.into(),
     ])
 }
 
-pub fn compile_environment(definition: &ssf::ir::Definition) -> ssc::types::Constructor {
+pub fn compile_environment(definition: &ssf::ir::Definition) -> ssc::types::Record {
     compile_raw_environment(
         definition
             .environment()
@@ -92,12 +102,12 @@ pub fn compile_environment(definition: &ssf::ir::Definition) -> ssc::types::Cons
 
 pub fn compile_raw_environment(
     types: impl IntoIterator<Item = ssc::types::Type>,
-) -> ssc::types::Constructor {
-    ssc::types::Constructor::new(types.into_iter().collect())
+) -> ssc::types::Record {
+    ssc::types::Record::new(types.into_iter().collect())
 }
 
-pub fn compile_unsized_environment() -> ssc::types::Constructor {
-    ssc::types::Constructor::new(vec![])
+pub fn compile_unsized_environment() -> ssc::types::Record {
+    ssc::types::Record::new(vec![])
 }
 
 pub fn compile_curried_entry_function(
@@ -180,20 +190,8 @@ fn compile_constructor(constructor: &ssf::types::Constructor, shallow: bool) -> 
     }
 }
 
-pub fn compile_unboxed_constructor(
-    constructor: &ssf::types::Constructor,
-) -> ssc::types::Constructor {
-    ssc::types::Constructor::new(constructor.elements().iter().map(compile).collect())
-}
-
-fn compile_untyped_constructor(algebraic_type: &ssf::types::Algebraic) -> ssc::types::Union {
-    ssc::types::Union::new(
-        algebraic_type
-            .constructors()
-            .iter()
-            .map(|(_, constructor)| compile_constructor(constructor, true))
-            .collect(),
-    )
+pub fn compile_unboxed_constructor(constructor: &ssf::types::Constructor) -> ssc::types::Record {
+    ssc::types::Record::new(constructor.elements().iter().map(compile).collect())
 }
 
 pub fn compile_tag() -> ssc::types::Primitive {

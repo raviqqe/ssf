@@ -5,13 +5,19 @@ use std::sync::Arc;
 pub struct AddressCalculation {
     pointer: Arc<Expression>,
     indices: Vec<Expression>,
+    name: String,
 }
 
 impl AddressCalculation {
-    pub fn new(pointer: impl Into<Expression>, indices: Vec<Expression>) -> Self {
+    pub fn new(
+        pointer: impl Into<Expression>,
+        indices: Vec<Expression>,
+        name: impl Into<String>,
+    ) -> Self {
         Self {
             pointer: pointer.into().into(),
             indices,
+            name: name.into(),
         }
     }
 
@@ -21,5 +27,9 @@ impl AddressCalculation {
 
     pub fn indices(&self) -> &[Expression] {
         &self.indices
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }

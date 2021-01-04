@@ -1,4 +1,4 @@
-use super::type_;
+use super::types;
 
 pub fn compile_declaration(
     module: &ssc::ir::Module,
@@ -11,7 +11,7 @@ pub fn compile_declaration(
             .cloned()
             .chain(vec![ssc::ir::VariableDeclaration::new(
                 declaration.name(),
-                type_::compile_unsized_closure(declaration.type_()),
+                types::compile_unsized_closure(declaration.type_()),
             )])
             .collect(),
         module.function_declarations().to_vec(),

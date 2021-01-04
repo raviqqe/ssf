@@ -6,13 +6,19 @@ use std::sync::Arc;
 pub struct Bitcast {
     expression: Arc<Expression>,
     type_: Type,
+    name: String,
 }
 
 impl Bitcast {
-    pub fn new(expression: impl Into<Expression>, type_: impl Into<Type>) -> Self {
+    pub fn new(
+        expression: impl Into<Expression>,
+        type_: impl Into<Type>,
+        name: impl Into<String>,
+    ) -> Self {
         Self {
             expression: expression.into().into(),
             type_: type_.into(),
+            name: name.into(),
         }
     }
 
@@ -22,5 +28,9 @@ impl Bitcast {
 
     pub fn type_(&self) -> &Type {
         &self.type_
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }

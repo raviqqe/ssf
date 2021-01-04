@@ -1,17 +1,17 @@
 use super::expression::Expression;
-use super::statement::Statement;
+use super::instruction::Instruction;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Alternative {
     condition: Expression,
-    statements: Vec<Statement>,
+    instructions: Vec<Instruction>,
 }
 
 impl Alternative {
-    pub fn new(condition: impl Into<Expression>, statements: Vec<Statement>) -> Self {
+    pub fn new(condition: impl Into<Expression>, instructions: Vec<Instruction>) -> Self {
         Self {
             condition: condition.into(),
-            statements,
+            instructions,
         }
     }
 
@@ -19,7 +19,7 @@ impl Alternative {
         &self.condition
     }
 
-    pub fn statements(&self) -> &[Statement] {
-        &self.statements
+    pub fn instructions(&self) -> &[Instruction] {
+        &self.instructions
     }
 }

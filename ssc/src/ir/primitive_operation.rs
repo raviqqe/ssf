@@ -7,6 +7,7 @@ pub struct PrimitiveOperation {
     operator: PrimitiveOperator,
     lhs: Arc<Expression>,
     rhs: Arc<Expression>,
+    name: String,
 }
 
 impl PrimitiveOperation {
@@ -14,11 +15,13 @@ impl PrimitiveOperation {
         operator: PrimitiveOperator,
         lhs: impl Into<Expression>,
         rhs: impl Into<Expression>,
+        name: impl Into<String>,
     ) -> Self {
         Self {
             operator,
             lhs: Arc::new(lhs.into()),
             rhs: Arc::new(rhs.into()),
+            name: name.into(),
         }
     }
 
@@ -32,5 +35,9 @@ impl PrimitiveOperation {
 
     pub fn rhs(&self) -> &Expression {
         &self.rhs
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }
