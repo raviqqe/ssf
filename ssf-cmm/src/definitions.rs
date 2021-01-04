@@ -3,28 +3,28 @@ use super::expressions;
 use super::types;
 
 pub fn compile_definition(
-    module: &ssc::ir::Module,
+    module: &cmm::ir::Module,
     definition: &ssf::ir::Definition,
-) -> ssc::ir::Module {
+) -> cmm::ir::Module {
     let closure_type = types::compile_sized_closure(definition);
     let entry_function_definitions = entry_functions::compile(definition);
 
-    ssc::ir::Module::new(
+    cmm::ir::Module::new(
         module.variable_declarations().to_vec(),
         module.function_declarations().to_vec(),
         module
             .variable_definitions()
             .iter()
             .cloned()
-            .chain(vec![ssc::ir::VariableDefinition::new(
+            .chain(vec![cmm::ir::VariableDefinition::new(
                 definition.name(),
-                ssc::ir::Record::new(
+                cmm::ir::Record::new(
                     closure_type,
                     vec![
-                        ssc::ir::Variable::new(entry_function_definitions[0].name()).into(),
+                        cmm::ir::Variable::new(entry_function_definitions[0].name()).into(),
                         expressions::compile_arity(definition.arguments().iter().count() as u64)
                             .into(),
-                        ssc::ir::Expression::Undefined,
+                        cmm::ir::Expression::Undefined,
                     ],
                 ),
                 types::compile_sized_closure(definition),

@@ -31,6 +31,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "cmm"
+version = "0.1.0"
+
+[[package]]
 name = "ctor"
 version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -247,14 +251,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ae524f056d7d770e174287294f562e95044c68e88dec909a00d2094805db9d75"
 
 [[package]]
-name = "ssc"
-version = "0.1.0"
-
-[[package]]
 name = "ssf"
 version = "0.1.0"
 dependencies = [
  "pretty_assertions",
+]
+
+[[package]]
+name = "ssf-cmm"
+version = "0.1.0"
+dependencies = [
+ "cmm",
+ "ssf",
 ]
 
 [[package]]
@@ -263,14 +271,6 @@ version = "0.1.0"
 dependencies = [
  "inkwell",
  "lazy_static",
- "ssf",
-]
-
-[[package]]
-name = "ssf-ssc"
-version = "0.1.0"
-dependencies = [
- "ssc",
  "ssf",
 ]
 

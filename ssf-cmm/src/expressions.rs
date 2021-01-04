@@ -3,20 +3,20 @@ use crate::entry_functions;
 use crate::function_applications;
 use crate::types;
 
-pub fn compile_arity(arity: u64) -> ssc::ir::Primitive {
-    ssc::ir::Primitive::PointerInteger(arity)
+pub fn compile_arity(arity: u64) -> cmm::ir::Primitive {
+    cmm::ir::Primitive::PointerInteger(arity)
 }
 
 pub fn compile(
     expression: &ssf::ir::Expression,
-) -> (Vec<ssc::ir::Instruction>, ssc::ir::Expression) {
+) -> (Vec<cmm::ir::Instruction>, cmm::ir::Expression) {
     match expression {
         ssf::ir::Expression::Bitcast(bitcast) => {
             let (instructions, expression) = compile(bitcast.expression());
 
             (
                 instructions,
-                ssc::ir::Bitcast::new(expression, types::compile(bitcast.type_())).into(),
+                cmm::ir::Bitcast::new(expression, types::compile(bitcast.type_())).into(),
             )
         }
         ssf::ir::Expression::Case(case) => compile_case(case),
@@ -40,23 +40,23 @@ pub fn compile(
                 }
 
                 let record_type = types::compile_unboxed_constructor(&constructor_type);
-                let record = ssc::ir::Record::new(record_type, arguments);
+                let record = cmm::ir::Record::new(record_type, arguments);
 
                 const POINTER_NAME: &str = "_ptr";
 
                 instructions.extend(vec![
-                    ssc::ir::Assignment::new(POINTER_NAME, ssc::ir::Malloc::new(record_type))
+                    cmm::ir::Assignment::new(POINTER_NAME, cmm::ir::Malloc::new(record_type))
                         .into(),
-                    ssc::ir::Store::new(record, ssc::ir::Variable::new(POINTER_NAME)).into(),
+                    cmm::ir::Store::new(record, cmm::ir::Variable::new(POINTER_NAME)).into(),
                 ]);
 
                 payload = Some(
-                    ssc::ir::Union::new(
+                    cmm::ir::Union::new(
                         types::compile_untyped_constructor(algebraic_type),
                         if constructor_type.is_boxed() {
-                            ssc::ir::Variable::new(POINTER_NAME).into()
+                            cmm::ir::Variable::new(POINTER_NAME).into()
                         } else {
-                            ssc::ir::Expression::from(record)
+                            cmm::ir::Expression::from(record)
                         },
                     )
                     .into(),
@@ -65,12 +65,12 @@ pub fn compile(
 
             (
                 instructions,
-                ssc::ir::Record::new(
+                cmm::ir::Record::new(
                     types::compile_algebraic(algebraic_type, Some(constructor.tag())),
                     (if algebraic_type.is_singleton() {
                         None
                     } else {
-                        Some(ssc::ir::Primitive::PointerInteger(constructor.tag()).into())
+                        Some(cmm::ir::Primitive::PointerInteger(constructor.tag()).into())
                     })
                     .into_iter()
                     .chain(payload)
@@ -109,7 +109,7 @@ pub fn compile(
             (
                 bound_expression_instructions
                     .into_iter()
-                    .chain(vec![ssc::ir::Assignment::new(
+                    .chain(vec![cmm::ir::Assignment::new(
                         let_.name(),
                         bound_expression,
                     )
@@ -124,11 +124,11 @@ pub fn compile(
 
             for definition in let_recursive.definitions() {
                 instructions.push(
-                    ssc::ir::Assignment::new(
+                    cmm::ir::Assignment::new(
                         definition.name(),
-                        ssc::ir::Bitcast::new(
-                            ssc::ir::Malloc::new(types::compile_sized_closure(definition)),
-                            ssc::types::Pointer::new(types::compile_unsized_closure(
+                        cmm::ir::Bitcast::new(
+                            cmm::ir::Malloc::new(types::compile_sized_closure(definition)),
+                            cmm::types::Pointer::new(types::compile_unsized_closure(
                                 definition.type_(),
                             )),
                         ),
@@ -139,9 +139,9 @@ pub fn compile(
 
             for definition in let_recursive.definitions() {
                 instructions.push(
-                    ssc::ir::Store::new(
+                    cmm::ir::Store::new(
                         closures::compile_closure_content(
-                            &ssc::ir::Variable::new(entry_functions::generate_closure_entry_name(
+                            &cmm::ir::Variable::new(entry_functions::generate_closure_entry_name(
                                 definition.name(),
                             ))
                             .into(),
@@ -149,13 +149,13 @@ pub fn compile(
                                 .environment()
                                 .iter()
                                 .map(|free_variable| {
-                                    ssc::ir::Variable::new(free_variable.name()).into()
+                                    cmm::ir::Variable::new(free_variable.name()).into()
                                 })
                                 .collect::<Vec<_>>(),
                         ),
-                        ssc::ir::Bitcast::new(
-                            ssc::ir::Variable::new(definition.name()),
-                            ssc::types::Pointer::new(types::compile_sized_closure(definition)),
+                        cmm::ir::Bitcast::new(
+                            cmm::ir::Variable::new(definition.name()),
+                            cmm::types::Pointer::new(types::compile_sized_closure(definition)),
                         ),
                     )
                     .into(),
@@ -180,7 +180,7 @@ pub fn compile(
     }
 }
 
-fn compile_case(case: &ssf::ir::Case) -> (Vec<ssc::ir::Instruction>, ssc::ir::Expression) {
+fn compile_case(case: &ssf::ir::Case) -> (Vec<cmm::ir::Instruction>, cmm::ir::Expression) {
     match case {
         ssf::ir::Case::Algebraic(algebraic_case) => {
             let (mut instructions, argument) = compile(algebraic_case.argument());
@@ -188,7 +188,7 @@ fn compile_case(case: &ssf::ir::Case) -> (Vec<ssc::ir::Instruction>, ssc::ir::Ex
             (
                 instructions
                     .into_iter()
-                    .chain(vec![ssc::ir::Switch::new(
+                    .chain(vec![cmm::ir::Switch::new(
                         if algebraic_case
                             .alternatives()
                             .get(0)
@@ -197,9 +197,9 @@ fn compile_case(case: &ssf::ir::Case) -> (Vec<ssc::ir::Instruction>, ssc::ir::Ex
                             })
                             .unwrap_or(true)
                         {
-                            ssc::ir::Primitive::PointerInteger(0).into()
+                            cmm::ir::Primitive::PointerInteger(0).into()
                         } else {
-                            ssc::ir::DeconstructRecord::new(argument, 0).into()
+                            cmm::ir::DeconstructRecord::new(argument, 0).into()
                         },
                         algebraic_case.alternatives().iter().map(|alternative| {
                             let block = append_basic_block("case");
@@ -219,7 +219,7 @@ fn compile_case(case: &ssf::ir::Case) -> (Vec<ssc::ir::Instruction>, ssc::ir::Ex
                                                     constructor.algebraic_type(),
                                                     Some(constructor.tag()),
                                                 )
-                                                .ptr_type(ssc::AddressSpace::Generic),
+                                                .ptr_type(cmm::AddressSpace::Generic),
                                                 "",
                                             )
                                             .into_pointer_value(),
@@ -309,10 +309,10 @@ fn compile_case(case: &ssf::ir::Case) -> (Vec<ssc::ir::Instruction>, ssc::ir::Ex
                                 &cases
                                     .iter()
                                     .map(|(_, _, end_block, value)| {
-                                        (value as &dyn ssc::ir::BasicValue, *end_block)
+                                        (value as &dyn cmm::ir::BasicValue, *end_block)
                                     })
                                     .chain(default_case.as_ref().map(|(value, block)| {
-                                        (value as &dyn ssc::ir::BasicValue, *block)
+                                        (value as &dyn cmm::ir::BasicValue, *block)
                                     }))
                                     .collect::<Vec<_>>(),
                             );
@@ -336,14 +336,14 @@ fn compile_case(case: &ssf::ir::Case) -> (Vec<ssc::ir::Instruction>, ssc::ir::Ex
                 build_conditional_branch(
                     if argument.is_int_value() {
                         build_int_compare(
-                            ssc::IntPredicate::EQ,
+                            cmm::IntPredicate::EQ,
                             argument.into_int_value(),
                             compile_primitive(alternative.primitive()).into_int_value(),
                             "",
                         )
                     } else {
                         build_float_compare(
-                            ssc::FloatPredicate::OEQ,
+                            cmm::FloatPredicate::OEQ,
                             argument.into_float_value(),
                             compile_primitive(alternative.primitive()).into_float_value(),
                             "",
@@ -375,7 +375,7 @@ fn compile_case(case: &ssf::ir::Case) -> (Vec<ssc::ir::Instruction>, ssc::ir::Ex
             phi.add_incoming(
                 &cases
                     .iter()
-                    .map(|(value, block)| (value as &dyn ssc::ir::BasicValue, *block))
+                    .map(|(value, block)| (value as &dyn cmm::ir::BasicValue, *block))
                     .collect::<Vec<_>>(),
             );
 
@@ -386,7 +386,7 @@ fn compile_case(case: &ssf::ir::Case) -> (Vec<ssc::ir::Instruction>, ssc::ir::Ex
 
 fn compile_primitive_operation(
     operation: &ssf::ir::PrimitiveOperation,
-) -> (Vec<ssc::ir::Instruction>, ssc::ir::Expression) {
+) -> (Vec<cmm::ir::Instruction>, cmm::ir::Expression) {
     let (lhs_instructions, lhs) = compile(operation.lhs());
     let (rhs_instructions, rhs) = compile(operation.rhs());
 
@@ -395,7 +395,7 @@ fn compile_primitive_operation(
             .into_iter()
             .chain(rhs_instructions)
             .collect(),
-        ssc::ir::PrimitiveOperation::new(
+        cmm::ir::PrimitiveOperation::new(
             compile_primitive_operator(operation.operator()),
             lhs,
             rhs,
@@ -404,33 +404,33 @@ fn compile_primitive_operation(
     )
 }
 
-fn compile_primitive_operator(operator: ssf::ir::PrimitiveOperator) -> ssc::ir::PrimitiveOperator {
+fn compile_primitive_operator(operator: ssf::ir::PrimitiveOperator) -> cmm::ir::PrimitiveOperator {
     match operator {
-        ssf::ir::PrimitiveOperator::Add => ssc::ir::PrimitiveOperator::Add,
-        ssf::ir::PrimitiveOperator::Subtract => ssc::ir::PrimitiveOperator::Subtract,
-        ssf::ir::PrimitiveOperator::Multiply => ssc::ir::PrimitiveOperator::Multiply,
-        ssf::ir::PrimitiveOperator::Divide => ssc::ir::PrimitiveOperator::Divide,
-        ssf::ir::PrimitiveOperator::Equal => ssc::ir::PrimitiveOperator::Equal,
-        ssf::ir::PrimitiveOperator::NotEqual => ssc::ir::PrimitiveOperator::NotEqual,
-        ssf::ir::PrimitiveOperator::LessThan => ssc::ir::PrimitiveOperator::LessThan,
-        ssf::ir::PrimitiveOperator::LessThanOrEqual => ssc::ir::PrimitiveOperator::LessThanOrEqual,
-        ssf::ir::PrimitiveOperator::GreaterThan => ssc::ir::PrimitiveOperator::GreaterThan,
+        ssf::ir::PrimitiveOperator::Add => cmm::ir::PrimitiveOperator::Add,
+        ssf::ir::PrimitiveOperator::Subtract => cmm::ir::PrimitiveOperator::Subtract,
+        ssf::ir::PrimitiveOperator::Multiply => cmm::ir::PrimitiveOperator::Multiply,
+        ssf::ir::PrimitiveOperator::Divide => cmm::ir::PrimitiveOperator::Divide,
+        ssf::ir::PrimitiveOperator::Equal => cmm::ir::PrimitiveOperator::Equal,
+        ssf::ir::PrimitiveOperator::NotEqual => cmm::ir::PrimitiveOperator::NotEqual,
+        ssf::ir::PrimitiveOperator::LessThan => cmm::ir::PrimitiveOperator::LessThan,
+        ssf::ir::PrimitiveOperator::LessThanOrEqual => cmm::ir::PrimitiveOperator::LessThanOrEqual,
+        ssf::ir::PrimitiveOperator::GreaterThan => cmm::ir::PrimitiveOperator::GreaterThan,
         ssf::ir::PrimitiveOperator::GreaterThanOrEqual => {
-            ssc::ir::PrimitiveOperator::GreaterThanOrEqual
+            cmm::ir::PrimitiveOperator::GreaterThanOrEqual
         }
     }
 }
 
-fn compile_primitive(primitive: &ssf::ir::Primitive) -> ssc::ir::Primitive {
+fn compile_primitive(primitive: &ssf::ir::Primitive) -> cmm::ir::Primitive {
     match primitive {
-        ssf::ir::Primitive::Float32(number) => ssc::ir::Primitive::Float32(*number),
-        ssf::ir::Primitive::Float64(number) => ssc::ir::Primitive::Float64(*number),
-        ssf::ir::Primitive::Integer8(number) => ssc::ir::Primitive::Integer8(*number),
-        ssf::ir::Primitive::Integer32(number) => ssc::ir::Primitive::Integer32(*number),
-        ssf::ir::Primitive::Integer64(number) => ssc::ir::Primitive::Integer64(*number),
+        ssf::ir::Primitive::Float32(number) => cmm::ir::Primitive::Float32(*number),
+        ssf::ir::Primitive::Float64(number) => cmm::ir::Primitive::Float64(*number),
+        ssf::ir::Primitive::Integer8(number) => cmm::ir::Primitive::Integer8(*number),
+        ssf::ir::Primitive::Integer32(number) => cmm::ir::Primitive::Integer32(*number),
+        ssf::ir::Primitive::Integer64(number) => cmm::ir::Primitive::Integer64(*number),
     }
 }
 
-fn compile_variable(variable: &ssf::ir::Variable) -> ssc::ir::Variable {
-    ssc::ir::Variable::new(variable.name())
+fn compile_variable(variable: &ssf::ir::Variable) -> cmm::ir::Variable {
+    cmm::ir::Variable::new(variable.name())
 }
