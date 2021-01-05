@@ -3,7 +3,6 @@ mod error;
 use crate::ir::*;
 use crate::types::{self, Type};
 pub use error::TypeCheckError;
-pub use error::*;
 use std::collections::*;
 
 pub fn check_types(module: &Module) -> Result<(), TypeCheckError> {
