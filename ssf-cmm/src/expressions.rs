@@ -1,7 +1,9 @@
 use crate::closures;
 use crate::entry_functions;
 use crate::function_applications;
+use crate::names;
 use crate::types;
+use std::collections::HashMap;
 
 pub fn compile_arity(arity: u64) -> cmm::ir::Primitive {
     cmm::ir::Primitive::PointerInteger(arity)
@@ -9,17 +11,29 @@ pub fn compile_arity(arity: u64) -> cmm::ir::Primitive {
 
 pub fn compile(
     expression: &ssf::ir::Expression,
+    variables: &HashMap<String, ssf::types::Type>,
 ) -> (Vec<cmm::ir::Instruction>, cmm::ir::Expression) {
+    let compile = |expression| compile(expression, variables);
+
     match expression {
         ssf::ir::Expression::Bitcast(bitcast) => {
             let (instructions, expression) = compile(bitcast.expression());
+            let name = names::generate_name();
 
             (
-                instructions,
-                cmm::ir::Bitcast::new(expression, types::compile(bitcast.type_())).into(),
+                instructions
+                    .into_iter()
+                    .chain(vec![cmm::ir::Bitcast::new(
+                        expression,
+                        types::compile(bitcast.type_()),
+                        name,
+                    )
+                    .into()])
+                    .collect(),
+                cmm::ir::Variable::new(name).into(),
             )
         }
-        ssf::ir::Expression::Case(case) => compile_case(case),
+        ssf::ir::Expression::Case(case) => compile_case(case, variables),
         ssf::ir::Expression::ConstructorApplication(constructor_application) => {
             let constructor = constructor_application.constructor();
             let algebraic_type = constructor.algebraic_type();
@@ -40,24 +54,25 @@ pub fn compile(
                 }
 
                 let record_type = types::compile_unboxed_constructor(&constructor_type);
-                let record = cmm::ir::Record::new(record_type, arguments);
+                let unboxed_record = cmm::ir::Record::new(record_type, arguments);
+                let record: cmm::ir::Expression = if constructor_type.is_boxed() {
+                    let name = names::generate_name();
 
-                const POINTER_NAME: &str = "_ptr";
+                    instructions.extend(vec![
+                        cmm::ir::AllocateHeap::new(record_type, name).into(),
+                        cmm::ir::Store::new(unboxed_record, cmm::ir::Variable::new(name)).into(),
+                    ]);
 
-                instructions.extend(vec![
-                    cmm::ir::Assignment::new(POINTER_NAME, cmm::ir::Malloc::new(record_type))
-                        .into(),
-                    cmm::ir::Store::new(record, cmm::ir::Variable::new(POINTER_NAME)).into(),
-                ]);
+                    cmm::ir::Variable::new(name).into()
+                } else {
+                    unboxed_record.into()
+                };
 
                 payload = Some(
                     cmm::ir::Union::new(
                         types::compile_untyped_constructor(algebraic_type),
-                        if constructor_type.is_boxed() {
-                            cmm::ir::Variable::new(POINTER_NAME).into()
-                        } else {
-                            cmm::ir::Expression::from(record)
-                        },
+                        types::get_constructor_union_index(algebraic_type, constructor.tag()),
+                        record,
                     )
                     .into(),
                 );
@@ -101,44 +116,296 @@ pub fn compile(
                 expression,
             )
         }
-        ssf::ir::Expression::Let(let_) => {
-            let (bound_expression_instructions, bound_expression) =
-                compile(let_.bound_expression());
-            let (expression_instructions, expression) = compile(let_.expression());
+        ssf::ir::Expression::Let(let_) => compile_let(let_, variables),
+        ssf::ir::Expression::LetRecursive(let_recursive) => {
+            compile_let_recursive(let_recursive, variables)
+        }
+        ssf::ir::Expression::Primitive(primitive) => (vec![], compile_primitive(primitive).into()),
+        ssf::ir::Expression::PrimitiveOperation(operation) => {
+            compile_primitive_operation(operation, variables)
+        }
+        ssf::ir::Expression::Variable(variable) => (vec![], compile_variable(variable).into()),
+    }
+}
+
+fn compile_case(
+    case: &ssf::ir::Case,
+    variables: &HashMap<String, ssf::types::Type>,
+) -> (Vec<cmm::ir::Instruction>, cmm::ir::Expression) {
+    let compile = |expression| compile(expression, variables);
+
+    match case {
+        ssf::ir::Case::Algebraic(algebraic_case) => {
+            let (instructions, argument) = compile(algebraic_case.argument());
+
+            let tag_name = names::generate_name();
+            let pointer_name = names::generate_name();
+            let result_name = names::generate_name();
 
             (
-                bound_expression_instructions
+                instructions
                     .into_iter()
-                    .chain(vec![cmm::ir::Assignment::new(
-                        let_.name(),
-                        bound_expression,
-                    )
-                    .into()])
-                    .chain(expression_instructions)
+                    .chain(vec![
+                        (if algebraic_case
+                            .alternatives()
+                            .get(0)
+                            .map(|alternative| {
+                                alternative.constructor().algebraic_type().is_singleton()
+                            })
+                            .unwrap_or(true)
+                        {
+                            cmm::ir::Assignment::new(
+                                cmm::ir::Primitive::PointerInteger(0),
+                                &tag_name,
+                            )
+                            .into()
+                        } else {
+                            cmm::ir::DeconstructRecord::new(argument, 0, &tag_name).into()
+                        }),
+                        cmm::ir::AllocateStack::new(todo!(), &pointer_name).into(),
+                        cmm::ir::Switch::new(
+                            cmm::ir::Variable::new(tag_name),
+                            algebraic_case
+                                .alternatives()
+                                .iter()
+                                .map(|alternative| {
+                                    let constructor = alternative.constructor();
+
+                                    cmm::ir::Alternative::new(
+                                        cmm::ir::Primitive::PointerInteger(constructor.tag()),
+                                        {
+                                            (if constructor.constructor_type().is_enum() {
+                                                vec![]
+                                            } else {
+                                                let constructor_name = names::generate_name();
+
+                                                vec![cmm::ir::DeconstructRecord::new(
+                                                    argument,
+                                                    if constructor.algebraic_type().is_singleton() {
+                                                        0
+                                                    } else {
+                                                        1
+                                                    },
+                                                    &constructor_name,
+                                                )
+                                                .into()]
+                                                .into_iter()
+                                                .chain(
+                                                    if constructor.constructor_type().is_boxed() {
+                                                        Some(
+                                                            cmm::ir::Load::new(
+                                                                cmm::ir::Variable::new(
+                                                                    constructor_name,
+                                                                ),
+                                                                constructor_name,
+                                                            )
+                                                            .into(),
+                                                        )
+                                                    } else {
+                                                        None
+                                                    },
+                                                )
+                                                .chain(
+                                                    alternative
+                                                        .element_names()
+                                                        .iter()
+                                                        .enumerate()
+                                                        .map(|(index, name)| {
+                                                            cmm::ir::DeconstructRecord::new(
+                                                                cmm::ir::Variable::new(
+                                                                    constructor_name,
+                                                                ),
+                                                                index,
+                                                                name,
+                                                            )
+                                                            .into()
+                                                        }),
+                                                )
+                                                .collect()
+                                            })
+                                            .into_iter()
+                                            .chain({
+                                                let (instructions, expression) =
+                                                    compile(alternative.expression());
+
+                                                instructions.into_iter().chain(vec![
+                                                    cmm::ir::Store::new(
+                                                        expression,
+                                                        cmm::ir::Variable::new(pointer_name),
+                                                    )
+                                                    .into(),
+                                                ])
+                                            })
+                                            .collect()
+                                        },
+                                    )
+                                })
+                                .collect(),
+                            {
+                                if let Some(expression) = algebraic_case.default_alternative() {
+                                    let (instructions, expression) = compile(expression);
+
+                                    instructions
+                                        .into_iter()
+                                        .chain(vec![cmm::ir::Store::new(
+                                            expression,
+                                            cmm::ir::Variable::new(pointer_name),
+                                        )
+                                        .into()])
+                                        .collect()
+                                } else {
+                                    vec![cmm::ir::Instruction::Unreachable]
+                                }
+                            },
+                        )
+                        .into(),
+                        cmm::ir::Load::new(cmm::ir::Variable::new(pointer_name), result_name)
+                            .into(),
+                    ])
                     .collect(),
-                expression,
+                cmm::ir::Variable::new(result_name).into(),
             )
         }
-        ssf::ir::Expression::LetRecursive(let_recursive) => {
-            let mut instructions = vec![];
+        ssf::ir::Case::Primitive(case) => {
+            let pointer_name = names::generate_name();
+            let result_name = names::generate_name();
+            let (instructions, argument) = compile(case.argument());
 
-            for definition in let_recursive.definitions() {
-                instructions.push(
-                    cmm::ir::Assignment::new(
+            (
+                instructions
+                    .into_iter()
+                    .chain(vec![
+                        cmm::ir::AllocateStack::new(todo!(), pointer_name).into()
+                    ])
+                    .chain(case.alternatives().iter().rev().fold(
+                        if let Some(expression) = case.default_alternative() {
+                            let (instructions, expression) = compile(expression);
+
+                            instructions
+                                .into_iter()
+                                .chain(vec![cmm::ir::Store::new(
+                                    expression,
+                                    cmm::ir::Variable::new(pointer_name),
+                                )
+                                .into()])
+                                .collect()
+                        } else {
+                            vec![cmm::ir::Instruction::Unreachable]
+                        },
+                        |instructions, alternative| {
+                            let condition_name = names::generate_name();
+
+                            vec![
+                                cmm::ir::PrimitiveOperation::new(
+                                    cmm::ir::PrimitiveOperator::Equal,
+                                    argument,
+                                    compile_primitive(alternative.primitive()),
+                                    &condition_name,
+                                )
+                                .into(),
+                                cmm::ir::If::new(
+                                    cmm::ir::Variable::new(condition_name),
+                                    {
+                                        let (instructions, expression) =
+                                            compile(alternative.expression());
+
+                                        instructions
+                                            .into_iter()
+                                            .chain(vec![cmm::ir::Store::new(
+                                                expression,
+                                                cmm::ir::Variable::new(pointer_name),
+                                            )
+                                            .into()])
+                                            .collect()
+                                    },
+                                    instructions,
+                                )
+                                .into(),
+                            ]
+                        },
+                    ))
+                    .collect(),
+                cmm::ir::Variable::new(result_name).into(),
+            )
+        }
+    }
+}
+
+fn compile_let(
+    let_: &ssf::ir::Let,
+    variables: &HashMap<String, ssf::types::Type>,
+) -> (Vec<cmm::ir::Instruction>, cmm::ir::Expression) {
+    let (bound_expression_instructions, bound_expression) =
+        compile(let_.bound_expression(), variables);
+
+    let (expression_instructions, expression) = compile(
+        let_.expression(),
+        &variables
+            .clone()
+            .drain()
+            .chain(vec![(let_.name().into(), let_.type_().clone())])
+            .collect(),
+    );
+
+    (
+        bound_expression_instructions
+            .into_iter()
+            .chain(vec![cmm::ir::Assignment::new(
+                bound_expression,
+                let_.name(),
+            )
+            .into()])
+            .chain(expression_instructions)
+            .collect(),
+        expression,
+    )
+}
+
+fn compile_let_recursive(
+    let_: &ssf::ir::LetRecursive,
+    variables: &HashMap<String, ssf::types::Type>,
+) -> (Vec<cmm::ir::Instruction>, cmm::ir::Expression) {
+    let variables = variables
+        .clone()
+        .drain()
+        .chain(
+            let_.definitions()
+                .iter()
+                .map(|definition| (definition.name().into(), definition.type_().clone().into())),
+        )
+        .collect();
+
+    let (expression_instructions, expression) = compile(let_.expression(), &variables);
+
+    (
+        let_.definitions()
+            .iter()
+            .flat_map(|definition| {
+                let name = names::generate_name();
+
+                vec![
+                    cmm::ir::AllocateHeap::new(types::compile_sized_closure(definition), name)
+                        .into(),
+                    cmm::ir::Bitcast::new(
+                        cmm::ir::Variable::new(name),
+                        cmm::types::Pointer::new(types::compile_unsized_closure(
+                            definition.type_(),
+                        )),
                         definition.name(),
-                        cmm::ir::Bitcast::new(
-                            cmm::ir::Malloc::new(types::compile_sized_closure(definition)),
-                            cmm::types::Pointer::new(types::compile_unsized_closure(
-                                definition.type_(),
-                            )),
-                        ),
                     )
                     .into(),
-                );
-            }
+                ]
+            })
+            .chain(let_.definitions().iter().flat_map(|definition| {
+                let name = names::generate_name();
 
-            for definition in let_recursive.definitions() {
-                instructions.push(
+                vec![
+                    cmm::ir::Bitcast::new(
+                        cmm::ir::Variable::new(definition.name()),
+                        cmm::types::Pointer::new(types::compile_sized_closure(definition)),
+                        name,
+                    )
+                    .into(),
                     cmm::ir::Store::new(
                         closures::compile_closure_content(
                             &cmm::ir::Variable::new(entry_functions::generate_closure_entry_name(
@@ -153,254 +420,38 @@ pub fn compile(
                                 })
                                 .collect::<Vec<_>>(),
                         ),
-                        cmm::ir::Bitcast::new(
-                            cmm::ir::Variable::new(definition.name()),
-                            cmm::types::Pointer::new(types::compile_sized_closure(definition)),
-                        ),
+                        cmm::ir::Variable::new(name),
                     )
                     .into(),
-                );
-            }
-
-            let (expression_instructions, expression) = compile(let_recursive.expression());
-
-            (
-                instructions
-                    .into_iter()
-                    .chain(expression_instructions)
-                    .collect(),
-                expression,
-            )
-        }
-        ssf::ir::Expression::Primitive(primitive) => (vec![], compile_primitive(primitive).into()),
-        ssf::ir::Expression::PrimitiveOperation(operation) => {
-            compile_primitive_operation(operation)
-        }
-        ssf::ir::Expression::Variable(variable) => (vec![], compile_variable(variable).into()),
-    }
-}
-
-fn compile_case(case: &ssf::ir::Case) -> (Vec<cmm::ir::Instruction>, cmm::ir::Expression) {
-    match case {
-        ssf::ir::Case::Algebraic(algebraic_case) => {
-            let (mut instructions, argument) = compile(algebraic_case.argument());
-
-            (
-                instructions
-                    .into_iter()
-                    .chain(vec![cmm::ir::Switch::new(
-                        if algebraic_case
-                            .alternatives()
-                            .get(0)
-                            .map(|alternative| {
-                                alternative.constructor().algebraic_type().is_singleton()
-                            })
-                            .unwrap_or(true)
-                        {
-                            cmm::ir::Primitive::PointerInteger(0).into()
-                        } else {
-                            cmm::ir::DeconstructRecord::new(argument, 0).into()
-                        },
-                        algebraic_case.alternatives().iter().map(|alternative| {
-                            let block = append_basic_block("case");
-                            position_at_end(block);
-
-                            let mut variables = variables.clone();
-                            let constructor = alternative.constructor();
-
-                            if !constructor.constructor_type().is_enum() {
-                                let argument = self
-                                    .builder
-                                    .build_load(
-                                        builder
-                                            .build_bitcast(
-                                                argument_pointer,
-                                                types::compile_algebraic(
-                                                    constructor.algebraic_type(),
-                                                    Some(constructor.tag()),
-                                                )
-                                                .ptr_type(cmm::AddressSpace::Generic),
-                                                "",
-                                            )
-                                            .into_pointer_value(),
-                                        "",
-                                    )
-                                    .into_struct_value();
-
-                                let constructor_value = self
-                                    .builder
-                                    .build_extract_value(
-                                        argument,
-                                        if constructor.algebraic_type().is_singleton() {
-                                            0
-                                        } else {
-                                            1
-                                        },
-                                        "",
-                                    )
-                                    .unwrap();
-
-                                let constructor_value = if constructor.constructor_type().is_boxed()
-                                {
-                                    builder
-                                        .build_load(constructor_value.into_pointer_value(), "")
-                                        .into_struct_value()
-                                } else {
-                                    constructor_value.into_struct_value()
-                                };
-
-                                for (index, name) in alternative.element_names().iter().enumerate()
-                                {
-                                    variables.insert(
-                                        name.into(),
-                                        builder
-                                            .build_extract_value(
-                                                constructor_value,
-                                                index as u32,
-                                                "",
-                                            )
-                                            .unwrap(),
-                                    );
-                                }
-                            }
-
-                            let expression = compile(alternative.expression());
-
-                            cases.push((
-                                types::compile_tag().const_int(constructor.tag(), false),
-                                block,
-                                get_insert_block().unwrap(),
-                                expression,
-                            ));
-
-                            build_unconditional_branch(phi_block);
-                        }),
-                        {
-                            let mut default_case = None;
-                            let default_block = append_basic_block("default");
-                            position_at_end(default_block);
-
-                            if let Some(expression) = algebraic_case.default_alternative() {
-                                default_case =
-                                    Some((compile(expression), get_insert_block().unwrap()));
-                                build_unconditional_branch(phi_block);
-                            } else {
-                                build_unreachable();
-                            }
-
-                            position_at_end(switch_block);
-                            build_switch(
-                                tag,
-                                default_block,
-                                &cases
-                                    .iter()
-                                    .map(|(tag, start_block, _, _)| (*tag, *start_block))
-                                    .collect::<Vec<_>>(),
-                            );
-
-                            let phi = build_phi(
-                                cases
-                                    .get(0)
-                                    .map(|(_, _, _, value)| value.get_type())
-                                    .unwrap_or_else(|| default_case.unwrap().0.get_type()),
-                                "",
-                            );
-                            phi.add_incoming(
-                                &cases
-                                    .iter()
-                                    .map(|(_, _, end_block, value)| {
-                                        (value as &dyn cmm::ir::BasicValue, *end_block)
-                                    })
-                                    .chain(default_case.as_ref().map(|(value, block)| {
-                                        (value as &dyn cmm::ir::BasicValue, *block)
-                                    }))
-                                    .collect::<Vec<_>>(),
-                            );
-                        },
-                    )
-                    .into()])
-                    .collect(),
-                expression,
-            );
-        }
-        ssf::ir::Case::Primitive(primitive_case) => {
-            let argument = compile(primitive_case.argument());
-
-            let phi_block = append_basic_block("phi");
-            let mut cases = vec![];
-
-            for alternative in primitive_case.alternatives() {
-                let then_block = append_basic_block("then");
-                let else_block = append_basic_block("else");
-
-                build_conditional_branch(
-                    if argument.is_int_value() {
-                        build_int_compare(
-                            cmm::IntPredicate::EQ,
-                            argument.into_int_value(),
-                            compile_primitive(alternative.primitive()).into_int_value(),
-                            "",
-                        )
-                    } else {
-                        build_float_compare(
-                            cmm::FloatPredicate::OEQ,
-                            argument.into_float_value(),
-                            compile_primitive(alternative.primitive()).into_float_value(),
-                            "",
-                        )
-                    },
-                    then_block,
-                    else_block,
-                );
-                position_at_end(then_block);
-
-                cases.push((
-                    compile(alternative.expression(), &variables),
-                    get_insert_block().unwrap(),
-                ));
-
-                build_unconditional_branch(phi_block);
-                position_at_end(else_block);
-            }
-
-            if let Some(expression) = primitive_case.default_alternative() {
-                cases.push((compile(expression, &variables), get_insert_block().unwrap()));
-                build_unconditional_branch(phi_block);
-            } else {
-                build_unreachable();
-            }
-
-            position_at_end(phi_block);
-            let phi = build_phi(cases[0].0.get_type(), "");
-            phi.add_incoming(
-                &cases
-                    .iter()
-                    .map(|(value, block)| (value as &dyn cmm::ir::BasicValue, *block))
-                    .collect::<Vec<_>>(),
-            );
-
-            phi.as_basic_value()
-        }
-    }
+                ]
+            }))
+            .chain(expression_instructions)
+            .collect(),
+        expression,
+    )
 }
 
 fn compile_primitive_operation(
     operation: &ssf::ir::PrimitiveOperation,
+    variables: &HashMap<String, ssf::types::Type>,
 ) -> (Vec<cmm::ir::Instruction>, cmm::ir::Expression) {
-    let (lhs_instructions, lhs) = compile(operation.lhs());
-    let (rhs_instructions, rhs) = compile(operation.rhs());
+    let (lhs_instructions, lhs) = compile(operation.lhs(), variables);
+    let (rhs_instructions, rhs) = compile(operation.rhs(), variables);
+    let name = names::generate_name();
 
     (
         lhs_instructions
             .into_iter()
             .chain(rhs_instructions)
+            .chain(vec![cmm::ir::PrimitiveOperation::new(
+                compile_primitive_operator(operation.operator()),
+                lhs,
+                rhs,
+                name,
+            )
+            .into()])
             .collect(),
-        cmm::ir::PrimitiveOperation::new(
-            compile_primitive_operator(operation.operator()),
-            lhs,
-            rhs,
-        )
-        .into(),
+        cmm::ir::Variable::new(name).into(),
     )
 }
 

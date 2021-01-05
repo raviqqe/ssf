@@ -1,17 +1,16 @@
 use super::type_::Type;
-use std::collections::BTreeSet;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Union {
-    members: BTreeSet<Type>,
+    members: Vec<Type>,
 }
 
 impl Union {
-    pub const fn new(members: BTreeSet<Type>) -> Self {
+    pub const fn new(members: Vec<Type>) -> Self {
         Self { members }
     }
 
-    pub fn members(&self) -> &BTreeSet<Type> {
+    pub fn members(&self) -> &[Type] {
         &self.members
     }
 }

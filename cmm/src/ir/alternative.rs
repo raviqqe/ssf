@@ -1,22 +1,22 @@
-use super::expression::Expression;
 use super::instruction::Instruction;
+use super::primitive::Primitive;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Alternative {
-    condition: Expression,
+    condition: Primitive,
     instructions: Vec<Instruction>,
 }
 
 impl Alternative {
-    pub fn new(condition: impl Into<Expression>, instructions: Vec<Instruction>) -> Self {
+    pub fn new(condition: impl Into<Primitive>, instructions: Vec<Instruction>) -> Self {
         Self {
             condition: condition.into(),
             instructions,
         }
     }
 
-    pub fn condition(&self) -> &Expression {
-        &self.condition
+    pub fn condition(&self) -> Primitive {
+        self.condition
     }
 
     pub fn instructions(&self) -> &[Instruction] {

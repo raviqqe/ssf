@@ -63,6 +63,16 @@ pub fn compile_untyped_constructor(algebraic_type: &ssf::types::Algebraic) -> cm
     )
 }
 
+pub fn get_constructor_union_index(algebraic_type: &ssf::types::Algebraic, tag: u64) -> usize {
+    algebraic_type
+        .constructors()
+        .iter()
+        .enumerate()
+        .find(|(index, (constructor_tag, _))| **constructor_tag == tag)
+        .unwrap()
+        .0
+}
+
 pub fn compile_sized_closure(definition: &ssf::ir::Definition) -> cmm::types::Record {
     compile_raw_closure(
         compile_entry_function_from_definition(definition),

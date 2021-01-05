@@ -1,16 +1,17 @@
 use super::alternative::Alternative;
+use super::expression::Expression;
 use super::instruction::Instruction;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Switch {
-    condition: String,
+    condition: Expression,
     alternatives: Vec<Alternative>,
     default_alternative: Vec<Instruction>,
 }
 
 impl Switch {
     pub fn new(
-        condition: impl Into<String>,
+        condition: impl Into<Expression>,
         alternatives: Vec<Alternative>,
         default_alternative: Vec<Instruction>,
     ) -> Self {
@@ -21,7 +22,7 @@ impl Switch {
         }
     }
 
-    pub fn condition(&self) -> &String {
+    pub fn condition(&self) -> &Expression {
         &self.condition
     }
 

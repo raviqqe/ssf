@@ -1,5 +1,6 @@
-use super::expressions;
-use super::types::{self, FUNCTION_ARGUMENT_OFFSET};
+use crate::expressions;
+use crate::names;
+use crate::types::{self, FUNCTION_ARGUMENT_OFFSET};
 
 pub fn compile_foreign_declaration(
     module: &cmm::ir::Module,
@@ -67,18 +68,24 @@ fn compile_entry_function(
         )
         .collect::<Vec<_>>();
 
+    let name = names::generate_name();
+
     cmm::ir::FunctionDefinition::new(
         format!("{}_entry", declaration.name()),
         arguments.clone(),
-        vec![cmm::ir::Return::new(cmm::ir::Call::new(
-            cmm::ir::Variable::new(declaration.foreign_name()),
-            arguments
-                .iter()
-                .skip(FUNCTION_ARGUMENT_OFFSET)
-                .map(|argument| cmm::ir::Variable::new(argument.name()).into())
-                .collect(),
-        ))
-        .into()],
+        vec![
+            cmm::ir::Call::new(
+                cmm::ir::Variable::new(declaration.foreign_name()),
+                arguments
+                    .iter()
+                    .skip(FUNCTION_ARGUMENT_OFFSET)
+                    .map(|argument| cmm::ir::Variable::new(argument.name()).into())
+                    .collect(),
+                &name,
+            )
+            .into(),
+            cmm::ir::Return::new(cmm::ir::Variable::new(name)).into(),
+        ],
         types::compile(declaration.type_().last_result()),
     )
 }
