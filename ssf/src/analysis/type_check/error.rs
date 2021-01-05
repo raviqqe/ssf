@@ -5,7 +5,6 @@ use std::fmt::Display;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TypeCheckError {
-    ArrayExpected(Type),
     FunctionExpected(Expression),
     NoAlternativeFound(Case),
     TypesNotMatched(Type, Type),
