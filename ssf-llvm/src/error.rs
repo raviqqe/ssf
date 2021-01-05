@@ -5,7 +5,7 @@ use std::fmt::Display;
 pub enum CompileError {
     InvalidBitcast(String, String),
     Llvm(String),
-    Ssf(ssf::analysis::AnalysisError),
+    Ssf(ssf::analysis::TypeCheckError),
     VariableNotFound(String),
 }
 
@@ -25,6 +25,6 @@ impl From<inkwell::support::LLVMString> for CompileError {
 
 impl From<ssf::analysis::TypeCheckError> for CompileError {
     fn from(error: ssf::analysis::TypeCheckError) -> Self {
-        Self::Ssf(error.into())
+        Self::Ssf(error)
     }
 }
