@@ -1,15 +1,15 @@
 use super::types;
 
 pub fn compile_declaration(
-    module: &cmm::ir::Module,
+    module: &fmm::ir::Module,
     declaration: &ssf::ir::Declaration,
-) -> cmm::ir::Module {
-    cmm::ir::Module::new(
+) -> fmm::ir::Module {
+    fmm::ir::Module::new(
         module
             .variable_declarations()
             .iter()
             .cloned()
-            .chain(vec![cmm::ir::VariableDeclaration::new(
+            .chain(vec![fmm::ir::VariableDeclaration::new(
                 declaration.name(),
                 types::compile_unsized_closure(declaration.type_()),
             )])

@@ -1,11 +1,11 @@
 [package]
-name = "ssf-cmm"
-description = "ssf to cmm compiler"
+name = "ssf-fmm"
+description = "ssf to fmm compiler"
 version = "0.1.0"
 license = "MIT"
 authors = ["Yota Toyama <raviqqe@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-cmm = { path = "../cmm" }
+fmm = { path = "../fmm" }
 ssf = { path = "../ssf" }

@@ -5,14 +5,14 @@ use crate::names;
 use crate::types;
 use std::collections::HashMap;
 
-pub fn compile_arity(arity: u64) -> cmm::ir::Primitive {
-    cmm::ir::Primitive::PointerInteger(arity)
+pub fn compile_arity(arity: u64) -> fmm::ir::Primitive {
+    fmm::ir::Primitive::PointerInteger(arity)
 }
 
 pub fn compile(
     expression: &ssf::ir::Expression,
     variables: &HashMap<String, ssf::types::Type>,
-) -> (Vec<cmm::ir::Instruction>, cmm::ir::Expression) {
+) -> (Vec<fmm::ir::Instruction>, fmm::ir::Expression) {
     let compile = |expression| compile(expression, variables);
 
     match expression {
@@ -23,14 +23,14 @@ pub fn compile(
             (
                 instructions
                     .into_iter()
-                    .chain(vec![cmm::ir::Bitcast::new(
+                    .chain(vec![fmm::ir::Bitcast::new(
                         expression,
                         types::compile(bitcast.type_()),
                         name,
                     )
                     .into()])
                     .collect(),
-                cmm::ir::Variable::new(name).into(),
+                fmm::ir::Variable::new(name).into(),
             )
         }
         ssf::ir::Expression::Case(case) => compile_case(case, variables),
@@ -54,22 +54,22 @@ pub fn compile(
                 }
 
                 let record_type = types::compile_unboxed_constructor(&constructor_type);
-                let unboxed_record = cmm::ir::Record::new(record_type, arguments);
-                let record: cmm::ir::Expression = if constructor_type.is_boxed() {
+                let unboxed_record = fmm::ir::Record::new(record_type, arguments);
+                let record: fmm::ir::Expression = if constructor_type.is_boxed() {
                     let name = names::generate_name();
 
                     instructions.extend(vec![
-                        cmm::ir::AllocateHeap::new(record_type, name).into(),
-                        cmm::ir::Store::new(unboxed_record, cmm::ir::Variable::new(name)).into(),
+                        fmm::ir::AllocateHeap::new(record_type, name).into(),
+                        fmm::ir::Store::new(unboxed_record, fmm::ir::Variable::new(name)).into(),
                     ]);
 
-                    cmm::ir::Variable::new(name).into()
+                    fmm::ir::Variable::new(name).into()
                 } else {
                     unboxed_record.into()
                 };
 
                 payload = Some(
-                    cmm::ir::Union::new(
+                    fmm::ir::Union::new(
                         types::compile_untyped_constructor(algebraic_type),
                         types::get_constructor_union_index(algebraic_type, constructor.tag()),
                         record,
@@ -80,12 +80,12 @@ pub fn compile(
 
             (
                 instructions,
-                cmm::ir::Record::new(
+                fmm::ir::Record::new(
                     types::compile_algebraic(algebraic_type, Some(constructor.tag())),
                     (if algebraic_type.is_singleton() {
                         None
                     } else {
-                        Some(cmm::ir::Primitive::PointerInteger(constructor.tag()).into())
+                        Some(fmm::ir::Primitive::PointerInteger(constructor.tag()).into())
                     })
                     .into_iter()
                     .chain(payload)
@@ -131,7 +131,7 @@ pub fn compile(
 fn compile_case(
     case: &ssf::ir::Case,
     variables: &HashMap<String, ssf::types::Type>,
-) -> (Vec<cmm::ir::Instruction>, cmm::ir::Expression) {
+) -> (Vec<fmm::ir::Instruction>, fmm::ir::Expression) {
     let compile = |expression| compile(expression, variables);
 
     match case {
@@ -154,32 +154,32 @@ fn compile_case(
                             })
                             .unwrap_or(true)
                         {
-                            cmm::ir::Assignment::new(
-                                cmm::ir::Primitive::PointerInteger(0),
+                            fmm::ir::Assignment::new(
+                                fmm::ir::Primitive::PointerInteger(0),
                                 &tag_name,
                             )
                             .into()
                         } else {
-                            cmm::ir::DeconstructRecord::new(argument, 0, &tag_name).into()
+                            fmm::ir::DeconstructRecord::new(argument, 0, &tag_name).into()
                         }),
-                        cmm::ir::AllocateStack::new(todo!(), &pointer_name).into(),
-                        cmm::ir::Switch::new(
-                            cmm::ir::Variable::new(tag_name),
+                        fmm::ir::AllocateStack::new(todo!(), &pointer_name).into(),
+                        fmm::ir::Switch::new(
+                            fmm::ir::Variable::new(tag_name),
                             algebraic_case
                                 .alternatives()
                                 .iter()
                                 .map(|alternative| {
                                     let constructor = alternative.constructor();
 
-                                    cmm::ir::Alternative::new(
-                                        cmm::ir::Primitive::PointerInteger(constructor.tag()),
+                                    fmm::ir::Alternative::new(
+                                        fmm::ir::Primitive::PointerInteger(constructor.tag()),
                                         {
                                             (if constructor.constructor_type().is_enum() {
                                                 vec![]
                                             } else {
                                                 let constructor_name = names::generate_name();
 
-                                                vec![cmm::ir::DeconstructRecord::new(
+                                                vec![fmm::ir::DeconstructRecord::new(
                                                     argument,
                                                     if constructor.algebraic_type().is_singleton() {
                                                         0
@@ -193,8 +193,8 @@ fn compile_case(
                                                 .chain(
                                                     if constructor.constructor_type().is_boxed() {
                                                         Some(
-                                                            cmm::ir::Load::new(
-                                                                cmm::ir::Variable::new(
+                                                            fmm::ir::Load::new(
+                                                                fmm::ir::Variable::new(
                                                                     constructor_name,
                                                                 ),
                                                                 constructor_name,
@@ -211,8 +211,8 @@ fn compile_case(
                                                         .iter()
                                                         .enumerate()
                                                         .map(|(index, name)| {
-                                                            cmm::ir::DeconstructRecord::new(
-                                                                cmm::ir::Variable::new(
+                                                            fmm::ir::DeconstructRecord::new(
+                                                                fmm::ir::Variable::new(
                                                                     constructor_name,
                                                                 ),
                                                                 index,
@@ -229,9 +229,9 @@ fn compile_case(
                                                     compile(alternative.expression());
 
                                                 instructions.into_iter().chain(vec![
-                                                    cmm::ir::Store::new(
+                                                    fmm::ir::Store::new(
                                                         expression,
-                                                        cmm::ir::Variable::new(pointer_name),
+                                                        fmm::ir::Variable::new(pointer_name),
                                                     )
                                                     .into(),
                                                 ])
@@ -247,23 +247,23 @@ fn compile_case(
 
                                     instructions
                                         .into_iter()
-                                        .chain(vec![cmm::ir::Store::new(
+                                        .chain(vec![fmm::ir::Store::new(
                                             expression,
-                                            cmm::ir::Variable::new(pointer_name),
+                                            fmm::ir::Variable::new(pointer_name),
                                         )
                                         .into()])
                                         .collect()
                                 } else {
-                                    vec![cmm::ir::Instruction::Unreachable]
+                                    vec![fmm::ir::Instruction::Unreachable]
                                 }
                             },
                         )
                         .into(),
-                        cmm::ir::Load::new(cmm::ir::Variable::new(pointer_name), result_name)
+                        fmm::ir::Load::new(fmm::ir::Variable::new(pointer_name), result_name)
                             .into(),
                     ])
                     .collect(),
-                cmm::ir::Variable::new(result_name).into(),
+                fmm::ir::Variable::new(result_name).into(),
             )
         }
         ssf::ir::Case::Primitive(case) => {
@@ -275,7 +275,7 @@ fn compile_case(
                 instructions
                     .into_iter()
                     .chain(vec![
-                        cmm::ir::AllocateStack::new(todo!(), pointer_name).into()
+                        fmm::ir::AllocateStack::new(todo!(), pointer_name).into()
                     ])
                     .chain(case.alternatives().iter().rev().fold(
                         if let Some(expression) = case.default_alternative() {
@@ -283,37 +283,37 @@ fn compile_case(
 
                             instructions
                                 .into_iter()
-                                .chain(vec![cmm::ir::Store::new(
+                                .chain(vec![fmm::ir::Store::new(
                                     expression,
-                                    cmm::ir::Variable::new(pointer_name),
+                                    fmm::ir::Variable::new(pointer_name),
                                 )
                                 .into()])
                                 .collect()
                         } else {
-                            vec![cmm::ir::Instruction::Unreachable]
+                            vec![fmm::ir::Instruction::Unreachable]
                         },
                         |instructions, alternative| {
                             let condition_name = names::generate_name();
 
                             vec![
-                                cmm::ir::PrimitiveOperation::new(
-                                    cmm::ir::PrimitiveOperator::Equal,
+                                fmm::ir::PrimitiveOperation::new(
+                                    fmm::ir::PrimitiveOperator::Equal,
                                     argument,
                                     compile_primitive(alternative.primitive()),
                                     &condition_name,
                                 )
                                 .into(),
-                                cmm::ir::If::new(
-                                    cmm::ir::Variable::new(condition_name),
+                                fmm::ir::If::new(
+                                    fmm::ir::Variable::new(condition_name),
                                     {
                                         let (instructions, expression) =
                                             compile(alternative.expression());
 
                                         instructions
                                             .into_iter()
-                                            .chain(vec![cmm::ir::Store::new(
+                                            .chain(vec![fmm::ir::Store::new(
                                                 expression,
-                                                cmm::ir::Variable::new(pointer_name),
+                                                fmm::ir::Variable::new(pointer_name),
                                             )
                                             .into()])
                                             .collect()
@@ -325,7 +325,7 @@ fn compile_case(
                         },
                     ))
                     .collect(),
-                cmm::ir::Variable::new(result_name).into(),
+                fmm::ir::Variable::new(result_name).into(),
             )
         }
     }
@@ -334,7 +334,7 @@ fn compile_case(
 fn compile_let(
     let_: &ssf::ir::Let,
     variables: &HashMap<String, ssf::types::Type>,
-) -> (Vec<cmm::ir::Instruction>, cmm::ir::Expression) {
+) -> (Vec<fmm::ir::Instruction>, fmm::ir::Expression) {
     let (bound_expression_instructions, bound_expression) =
         compile(let_.bound_expression(), variables);
 
@@ -350,7 +350,7 @@ fn compile_let(
     (
         bound_expression_instructions
             .into_iter()
-            .chain(vec![cmm::ir::Assignment::new(
+            .chain(vec![fmm::ir::Assignment::new(
                 bound_expression,
                 let_.name(),
             )
@@ -364,7 +364,7 @@ fn compile_let(
 fn compile_let_recursive(
     let_: &ssf::ir::LetRecursive,
     variables: &HashMap<String, ssf::types::Type>,
-) -> (Vec<cmm::ir::Instruction>, cmm::ir::Expression) {
+) -> (Vec<fmm::ir::Instruction>, fmm::ir::Expression) {
     let variables = variables
         .clone()
         .drain()
@@ -384,11 +384,11 @@ fn compile_let_recursive(
                 let name = names::generate_name();
 
                 vec![
-                    cmm::ir::AllocateHeap::new(types::compile_sized_closure(definition), name)
+                    fmm::ir::AllocateHeap::new(types::compile_sized_closure(definition), name)
                         .into(),
-                    cmm::ir::Bitcast::new(
-                        cmm::ir::Variable::new(name),
-                        cmm::types::Pointer::new(types::compile_unsized_closure(
+                    fmm::ir::Bitcast::new(
+                        fmm::ir::Variable::new(name),
+                        fmm::types::Pointer::new(types::compile_unsized_closure(
                             definition.type_(),
                         )),
                         definition.name(),
@@ -400,15 +400,15 @@ fn compile_let_recursive(
                 let name = names::generate_name();
 
                 vec![
-                    cmm::ir::Bitcast::new(
-                        cmm::ir::Variable::new(definition.name()),
-                        cmm::types::Pointer::new(types::compile_sized_closure(definition)),
+                    fmm::ir::Bitcast::new(
+                        fmm::ir::Variable::new(definition.name()),
+                        fmm::types::Pointer::new(types::compile_sized_closure(definition)),
                         name,
                     )
                     .into(),
-                    cmm::ir::Store::new(
+                    fmm::ir::Store::new(
                         closures::compile_closure_content(
-                            &cmm::ir::Variable::new(entry_functions::generate_closure_entry_name(
+                            &fmm::ir::Variable::new(entry_functions::generate_closure_entry_name(
                                 definition.name(),
                             ))
                             .into(),
@@ -416,11 +416,11 @@ fn compile_let_recursive(
                                 .environment()
                                 .iter()
                                 .map(|free_variable| {
-                                    cmm::ir::Variable::new(free_variable.name()).into()
+                                    fmm::ir::Variable::new(free_variable.name()).into()
                                 })
                                 .collect::<Vec<_>>(),
                         ),
-                        cmm::ir::Variable::new(name),
+                        fmm::ir::Variable::new(name),
                     )
                     .into(),
                 ]
@@ -434,7 +434,7 @@ fn compile_let_recursive(
 fn compile_primitive_operation(
     operation: &ssf::ir::PrimitiveOperation,
     variables: &HashMap<String, ssf::types::Type>,
-) -> (Vec<cmm::ir::Instruction>, cmm::ir::Expression) {
+) -> (Vec<fmm::ir::Instruction>, fmm::ir::Expression) {
     let (lhs_instructions, lhs) = compile(operation.lhs(), variables);
     let (rhs_instructions, rhs) = compile(operation.rhs(), variables);
     let name = names::generate_name();
@@ -443,7 +443,7 @@ fn compile_primitive_operation(
         lhs_instructions
             .into_iter()
             .chain(rhs_instructions)
-            .chain(vec![cmm::ir::PrimitiveOperation::new(
+            .chain(vec![fmm::ir::PrimitiveOperation::new(
                 compile_primitive_operator(operation.operator()),
                 lhs,
                 rhs,
@@ -451,37 +451,37 @@ fn compile_primitive_operation(
             )
             .into()])
             .collect(),
-        cmm::ir::Variable::new(name).into(),
+        fmm::ir::Variable::new(name).into(),
     )
 }
 
-fn compile_primitive_operator(operator: ssf::ir::PrimitiveOperator) -> cmm::ir::PrimitiveOperator {
+fn compile_primitive_operator(operator: ssf::ir::PrimitiveOperator) -> fmm::ir::PrimitiveOperator {
     match operator {
-        ssf::ir::PrimitiveOperator::Add => cmm::ir::PrimitiveOperator::Add,
-        ssf::ir::PrimitiveOperator::Subtract => cmm::ir::PrimitiveOperator::Subtract,
-        ssf::ir::PrimitiveOperator::Multiply => cmm::ir::PrimitiveOperator::Multiply,
-        ssf::ir::PrimitiveOperator::Divide => cmm::ir::PrimitiveOperator::Divide,
-        ssf::ir::PrimitiveOperator::Equal => cmm::ir::PrimitiveOperator::Equal,
-        ssf::ir::PrimitiveOperator::NotEqual => cmm::ir::PrimitiveOperator::NotEqual,
-        ssf::ir::PrimitiveOperator::LessThan => cmm::ir::PrimitiveOperator::LessThan,
-        ssf::ir::PrimitiveOperator::LessThanOrEqual => cmm::ir::PrimitiveOperator::LessThanOrEqual,
-        ssf::ir::PrimitiveOperator::GreaterThan => cmm::ir::PrimitiveOperator::GreaterThan,
+        ssf::ir::PrimitiveOperator::Add => fmm::ir::PrimitiveOperator::Add,
+        ssf::ir::PrimitiveOperator::Subtract => fmm::ir::PrimitiveOperator::Subtract,
+        ssf::ir::PrimitiveOperator::Multiply => fmm::ir::PrimitiveOperator::Multiply,
+        ssf::ir::PrimitiveOperator::Divide => fmm::ir::PrimitiveOperator::Divide,
+        ssf::ir::PrimitiveOperator::Equal => fmm::ir::PrimitiveOperator::Equal,
+        ssf::ir::PrimitiveOperator::NotEqual => fmm::ir::PrimitiveOperator::NotEqual,
+        ssf::ir::PrimitiveOperator::LessThan => fmm::ir::PrimitiveOperator::LessThan,
+        ssf::ir::PrimitiveOperator::LessThanOrEqual => fmm::ir::PrimitiveOperator::LessThanOrEqual,
+        ssf::ir::PrimitiveOperator::GreaterThan => fmm::ir::PrimitiveOperator::GreaterThan,
         ssf::ir::PrimitiveOperator::GreaterThanOrEqual => {
-            cmm::ir::PrimitiveOperator::GreaterThanOrEqual
+            fmm::ir::PrimitiveOperator::GreaterThanOrEqual
         }
     }
 }
 
-fn compile_primitive(primitive: &ssf::ir::Primitive) -> cmm::ir::Primitive {
+fn compile_primitive(primitive: &ssf::ir::Primitive) -> fmm::ir::Primitive {
     match primitive {
-        ssf::ir::Primitive::Float32(number) => cmm::ir::Primitive::Float32(*number),
-        ssf::ir::Primitive::Float64(number) => cmm::ir::Primitive::Float64(*number),
-        ssf::ir::Primitive::Integer8(number) => cmm::ir::Primitive::Integer8(*number),
-        ssf::ir::Primitive::Integer32(number) => cmm::ir::Primitive::Integer32(*number),
-        ssf::ir::Primitive::Integer64(number) => cmm::ir::Primitive::Integer64(*number),
+        ssf::ir::Primitive::Float32(number) => fmm::ir::Primitive::Float32(*number),
+        ssf::ir::Primitive::Float64(number) => fmm::ir::Primitive::Float64(*number),
+        ssf::ir::Primitive::Integer8(number) => fmm::ir::Primitive::Integer8(*number),
+        ssf::ir::Primitive::Integer32(number) => fmm::ir::Primitive::Integer32(*number),
+        ssf::ir::Primitive::Integer64(number) => fmm::ir::Primitive::Integer64(*number),
     }
 }
 
-fn compile_variable(variable: &ssf::ir::Variable) -> cmm::ir::Variable {
-    cmm::ir::Variable::new(variable.name())
+fn compile_variable(variable: &ssf::ir::Variable) -> fmm::ir::Variable {
+    fmm::ir::Variable::new(variable.name())
 }

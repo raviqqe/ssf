@@ -12,8 +12,8 @@ use declarations::compile_declaration;
 use definitions::compile_definition;
 use foreign_declarations::compile_foreign_declaration;
 
-pub fn compile(source_module: &ssf::ir::Module) -> cmm::ir::Module {
-    let mut module = cmm::ir::Module::new(vec![], vec![], vec![], vec![]);
+pub fn compile(source_module: &ssf::ir::Module) -> fmm::ir::Module {
+    let mut module = fmm::ir::Module::new(vec![], vec![], vec![], vec![]);
 
     for declaration in source_module.foreign_declarations() {
         module = compile_foreign_declaration(&module, declaration);
