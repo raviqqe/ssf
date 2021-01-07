@@ -1,6 +1,5 @@
 [workspace]
 members = [
-  "fmm",
   "ssf",
   "ssf-llvm",
   "ssf-fmm",
