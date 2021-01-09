@@ -179,7 +179,7 @@ fn compile_normal_body(definition: &ssf::ir::Definition) -> Vec<fmm::ir::Instruc
 
 fn compile_entry_pointer(
     entry_function_type: &fmm::types::Function,
-) -> fmm::build::InstructionContext {
+) -> fmm::build::ContextfulExpression {
     // TODO Calculate entry function pointer properly.
     // The offset should be calculated by creating a record of
     // { pointer, { pointer, arity, environment } }.
