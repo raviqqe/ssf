@@ -24,8 +24,8 @@ impl PrimitiveOperation {
         }
     }
 
-    pub fn operator(&self) -> &PrimitiveOperator {
-        &self.operator
+    pub fn operator(&self) -> PrimitiveOperator {
+        self.operator
     }
 
     pub fn lhs(&self) -> &Expression {
