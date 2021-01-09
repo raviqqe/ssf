@@ -7,7 +7,6 @@ pub fn compile_foreign_declaration(
     declaration: &ssf::ir::ForeignDeclaration,
 ) -> fmm::ir::Module {
     let closure_type = types::compile_unsized_closure(declaration.type_());
-
     let entry_function_definition = compile_entry_function(declaration);
 
     fmm::ir::Module::new(
@@ -35,7 +34,7 @@ pub fn compile_foreign_declaration(
                             declaration.type_().arguments().into_iter().count() as u64,
                         )
                         .into(),
-                        fmm::ir::Expression::Undefined,
+                        fmm::ir::Undefined::new(types::compile_unsized_environment()).into(),
                     ],
                 ),
                 closure_type,
@@ -69,12 +68,14 @@ fn compile_entry_function(
         .collect::<Vec<_>>();
 
     let name = names::generate_name();
+    let result_type = types::compile(declaration.type_().last_result());
 
     fmm::ir::FunctionDefinition::new(
         format!("{}_entry", declaration.name()),
         arguments.clone(),
-        vec![
-            fmm::ir::Call::new(
+        fmm::ir::Block::new(
+            vec![fmm::ir::Call::new(
+                types::compile_foreign_function(declaration.type_()),
                 fmm::ir::Variable::new(declaration.foreign_name()),
                 arguments
                     .iter()
@@ -83,9 +84,9 @@ fn compile_entry_function(
                     .collect(),
                 &name,
             )
-            .into(),
-            fmm::ir::Return::new(fmm::ir::Variable::new(name)).into(),
-        ],
-        types::compile(declaration.type_().last_result()),
+            .into()],
+            fmm::ir::Return::new(result_type.clone(), fmm::ir::Variable::new(name)),
+        ),
+        result_type,
     )
 }
