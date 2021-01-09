@@ -1,5 +1,6 @@
 use super::expressions;
 use super::types;
+use fmm::build::*;
 
 const ENVIRONMENT_NAME: &str = "_environment";
 
@@ -178,20 +179,16 @@ fn compile_normal_body(definition: &ssf::ir::Definition) -> Vec<fmm::ir::Instruc
 
 fn compile_entry_pointer(
     entry_function_type: &fmm::types::Function,
-) -> (Vec<fmm::ir::Instruction>, fmm::ir::Expression) {
+) -> fmm::build::InstructionContext {
     // TODO Calculate entry function pointer properly.
     // The offset should be calculated by creating a record of
     // { pointer, { pointer, arity, environment } }.
-    (
-        vec![fmm::ir::PointerAddress::new(
-            fmm::ir::Bitcast::new(
-                compile_environment_pointer(),
-                fmm::types::Pointer::new(fmm::types::Pointer::new(entry_function_type.clone())),
-            ),
-            vec![fmm::ir::Primitive::PointerInteger(-2i64 as u64).into()],
-        )
-        .into()],
-        variable,
+    pointer_address(
+        bitcast(
+            compile_environment_pointer(),
+            fmm::types::Pointer::new(entry_function_type.clone()),
+        ),
+        -2,
     )
 }
 

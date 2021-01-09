@@ -67,26 +67,28 @@ fn compile_entry_function(
         )
         .collect::<Vec<_>>();
 
-    let result_type = types::compile(declaration.type_().last_result());
+    let foreign_function_type = types::compile_foreign_function(declaration.type_());
 
     fmm::ir::FunctionDefinition::new(
         format!("{}_entry", declaration.name()),
         arguments.clone(),
         {
             let context = call(
-                types::compile_foreign_function(declaration.type_()),
-                fmm::ir::Variable::new(declaration.foreign_name()),
+                variable(declaration.foreign_name(), foreign_function_type),
                 arguments
                     .iter()
                     .skip(FUNCTION_ARGUMENT_OFFSET)
-                    .map(|argument| fmm::ir::Variable::new(argument.name()).into()),
+                    .map(|argument| variable(argument.name(), argument.type_().clone())),
             );
 
             fmm::ir::Block::new(
                 context.instructions().to_vec(),
-                fmm::ir::Return::new(result_type.clone(), context.expression().clone()),
+                fmm::ir::Return::new(
+                    foreign_function_type.result().clone(),
+                    context.expression().clone(),
+                ),
             )
         },
-        result_type,
+        foreign_function_type.result().clone(),
     )
 }
