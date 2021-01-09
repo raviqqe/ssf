@@ -1,6 +1,6 @@
 use crate::expressions;
-use crate::names;
 use crate::types::{self, FUNCTION_ARGUMENT_OFFSET};
+use fmm::build::*;
 
 pub fn compile_foreign_declaration(
     module: &fmm::ir::Module,
@@ -67,26 +67,26 @@ fn compile_entry_function(
         )
         .collect::<Vec<_>>();
 
-    let name = names::generate_name();
     let result_type = types::compile(declaration.type_().last_result());
 
     fmm::ir::FunctionDefinition::new(
         format!("{}_entry", declaration.name()),
         arguments.clone(),
-        fmm::ir::Block::new(
-            vec![fmm::ir::Call::new(
+        {
+            let context = call(
                 types::compile_foreign_function(declaration.type_()),
                 fmm::ir::Variable::new(declaration.foreign_name()),
                 arguments
                     .iter()
                     .skip(FUNCTION_ARGUMENT_OFFSET)
-                    .map(|argument| fmm::ir::Variable::new(argument.name()).into())
-                    .collect(),
-                &name,
+                    .map(|argument| fmm::ir::Variable::new(argument.name()).into()),
+            );
+
+            fmm::ir::Block::new(
+                context.instructions().to_vec(),
+                fmm::ir::Return::new(result_type.clone(), context.expression().clone()),
             )
-            .into()],
-            fmm::ir::Return::new(result_type.clone(), fmm::ir::Variable::new(name)),
-        ),
+        },
         result_type,
     )
 }

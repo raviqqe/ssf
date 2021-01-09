@@ -55,7 +55,7 @@ checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 [[package]]
 name = "fmm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#e65e7e27e611df1123545e82254b72d5653bd166"
+source = "git+https://github.com/raviqqe/fmm?branch=main#22eb92452dda538ab3ffe2823964240db35a0f82"
 
 [[package]]
 name = "inkwell"

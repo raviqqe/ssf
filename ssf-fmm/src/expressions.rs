@@ -12,7 +12,7 @@ pub fn compile_arity(arity: u64) -> fmm::ir::Primitive {
 pub fn compile(
     expression: &ssf::ir::Expression,
     variables: &HashMap<String, ssf::types::Type>,
-) -> (Vec<fmm::ir::Instruction>, fmm::ir::Expression) {
+) -> fmm::build::InstructionContext {
     let compile = |expression| compile(expression, variables);
 
     match expression {
