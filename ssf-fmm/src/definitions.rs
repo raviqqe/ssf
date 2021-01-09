@@ -24,7 +24,7 @@ pub fn compile_definition(
                         fmm::ir::Variable::new(entry_function_definitions[0].name()).into(),
                         expressions::compile_arity(definition.arguments().iter().count() as u64)
                             .into(),
-                        fmm::ir::Expression::Undefined,
+                        fmm::ir::Undefined::new(types::compile_unsized_environment()).into(),
                     ],
                 ),
                 types::compile_sized_closure(definition),
