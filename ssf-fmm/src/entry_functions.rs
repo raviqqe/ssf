@@ -12,18 +12,19 @@ pub fn compile(definition: &ssf::ir::Definition) -> Vec<fmm::ir::FunctionDefinit
 }
 
 fn compile_non_thunk(definition: &ssf::ir::Definition) -> fmm::ir::FunctionDefinition {
+    let result_type = types::compile(definition.result_type());
     fmm::ir::FunctionDefinition::new(
         generate_closure_entry_name(definition.name()),
         compile_arguments(definition),
         {
             let (instructions, result) = compile_body(definition);
 
-            instructions
-                .into_iter()
-                .chain(vec![fmm::ir::Return::new(result).into()])
-                .collect()
+            fmm::ir::Block::new(
+                instructions,
+                fmm::ir::Return::new(result_type.clone(), result),
+            )
         },
-        types::compile(definition.result_type()),
+        result_type,
     )
 }
 
@@ -39,56 +40,62 @@ fn compile_thunk(definition: &ssf::ir::Definition) -> Vec<fmm::ir::FunctionDefin
         fmm::ir::FunctionDefinition::new(
             &entry_function_name,
             arguments.clone(),
-            vec![
-                fmm::ir::Assignment::new(
-                    ENTRY_POINTER_NAME,
-                    compile_entry_pointer(&types::compile_entry_function_from_definition(
-                        definition,
-                    )),
-                )
-                .into(),
-                fmm::ir::If::new(
-                    fmm::ir::CompareAndSwap::new(
-                        fmm::ir::Variable::new(ENTRY_POINTER_NAME),
-                        fmm::ir::Variable::new(&entry_function_name),
-                        fmm::ir::Variable::new(locked_entry_function_definition.name()),
-                    ),
-                    {
-                        let (instructions, result) = compile_body(definition);
+            fmm::ir::Block::new(
+                vec![
+                    fmm::ir::Assignment::new(
+                        ENTRY_POINTER_NAME,
+                        compile_entry_pointer(&types::compile_entry_function_from_definition(
+                            definition,
+                        )),
+                    )
+                    .into(),
+                    fmm::ir::If::new(
+                        fmm::ir::CompareAndSwap::new(
+                            fmm::ir::Variable::new(ENTRY_POINTER_NAME),
+                            fmm::ir::Variable::new(&entry_function_name),
+                            fmm::ir::Variable::new(locked_entry_function_definition.name()),
+                        ),
+                        {
+                            let (instructions, result) = compile_body(definition);
 
-                        instructions
-                            .into_iter()
-                            .chain(vec![
-                                fmm::ir::Store::new(
-                                    result.clone(),
-                                    fmm::ir::Bitcast::new(
-                                        compile_environment_pointer(),
-                                        fmm::types::Pointer::new(types::compile(
-                                            definition.result_type(),
-                                        )),
-                                    ),
-                                )
-                                .into(),
-                                fmm::ir::AtomicStore::new(
-                                    fmm::ir::Variable::new(normal_entry_function_definition.name()),
-                                    fmm::ir::Variable::new(ENTRY_POINTER_NAME),
-                                )
-                                .into(),
-                                fmm::ir::Return::new(result).into(),
-                            ])
-                            .collect()
-                    },
-                    vec![fmm::ir::Return::new(fmm::ir::Call::new(
+                            instructions
+                                .into_iter()
+                                .chain(vec![
+                                    fmm::ir::Store::new(
+                                        result.clone(),
+                                        fmm::ir::Bitcast::new(
+                                            compile_environment_pointer(),
+                                            fmm::types::Pointer::new(types::compile(
+                                                definition.result_type(),
+                                            )),
+                                        ),
+                                    )
+                                    .into(),
+                                    fmm::ir::AtomicStore::new(
+                                        fmm::ir::Variable::new(
+                                            normal_entry_function_definition.name(),
+                                        ),
+                                        fmm::ir::Variable::new(ENTRY_POINTER_NAME),
+                                    )
+                                    .into(),
+                                    fmm::ir::Return::new(result).into(),
+                                ])
+                                .collect()
+                        },
+                    )
+                    .into(),
+                    fmm::ir::AtomicLoad::new(fmm::ir::Variable::new(ENTRY_POINTER_NAME)),
+                    fmm::ir::Call::new(
                         fmm::ir::AtomicLoad::new(fmm::ir::Variable::new(ENTRY_POINTER_NAME)),
                         arguments
                             .iter()
                             .map(|argument| fmm::ir::Variable::new(argument.name()).into())
                             .collect(),
-                    ))
-                    .into()],
-                )
-                .into(),
-            ],
+                    )
+                    .into(),
+                ],
+                fmm::ir::Return::new(),
+            ),
             types::compile(definition.result_type()),
         ),
         normal_entry_function_definition,
@@ -169,15 +176,23 @@ fn compile_normal_body(definition: &ssf::ir::Definition) -> Vec<fmm::ir::Instruc
     ]
 }
 
-fn compile_entry_pointer(entry_function_type: &fmm::types::Function) -> fmm::ir::Expression {
-    fmm::ir::AddressCalculation::new(
-        fmm::ir::Bitcast::new(
-            compile_environment_pointer(),
-            fmm::types::Pointer::new(fmm::types::Pointer::new(entry_function_type.clone())),
-        ),
-        vec![fmm::ir::Primitive::PointerInteger(-2i64 as u64).into()],
+fn compile_entry_pointer(
+    entry_function_type: &fmm::types::Function,
+) -> (Vec<fmm::ir::Instruction>, fmm::ir::Expression) {
+    // TODO Calculate entry function pointer properly.
+    // The offset should be calculated by creating a record of
+    // { pointer, { pointer, arity, environment } }.
+    (
+        vec![fmm::ir::PointerAddress::new(
+            fmm::ir::Bitcast::new(
+                compile_environment_pointer(),
+                fmm::types::Pointer::new(fmm::types::Pointer::new(entry_function_type.clone())),
+            ),
+            vec![fmm::ir::Primitive::PointerInteger(-2i64 as u64).into()],
+        )
+        .into()],
+        variable,
     )
-    .into()
 }
 
 fn compile_environment_pointer() -> fmm::ir::Variable {

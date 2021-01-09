@@ -25,6 +25,7 @@ pub fn compile(
                     .into_iter()
                     .chain(vec![fmm::ir::Bitcast::new(
                         expression,
+                        types::compile(bitcast.from()),
                         types::compile(bitcast.type_()),
                         name,
                     )
