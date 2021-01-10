@@ -1,8 +1,10 @@
+use super::utilities;
 use crate::closures;
 use crate::entry_functions;
 use crate::function_applications;
 use crate::names;
 use crate::types;
+use fmm::build::*;
 use std::collections::HashMap;
 
 pub fn compile_arity(arity: u64) -> fmm::ir::Primitive {
@@ -11,29 +13,15 @@ pub fn compile_arity(arity: u64) -> fmm::ir::Primitive {
 
 pub fn compile(
     expression: &ssf::ir::Expression,
-    variables: &HashMap<String, ssf::types::Type>,
-) -> fmm::build::ContextfulExpression {
+    variables: &HashMap<String, BuildContext>,
+) -> BuildContext {
     let compile = |expression| compile(expression, variables);
 
     match expression {
-        ssf::ir::Expression::Bitcast(bitcast) => {
-            let (instructions, expression) = compile(bitcast.expression());
-            let name = names::generate_name();
-
-            (
-                instructions
-                    .into_iter()
-                    .chain(vec![fmm::ir::Bitcast::new(
-                        expression,
-                        types::compile(bitcast.from()),
-                        types::compile(bitcast.type_()),
-                        name,
-                    )
-                    .into()])
-                    .collect(),
-                fmm::ir::Variable::new(name).into(),
-            )
-        }
+        ssf::ir::Expression::Bitcast(bitcast) => utilities::bitcast(
+            compile(bitcast.expression()),
+            types::compile(bitcast.type_()),
+        ),
         ssf::ir::Expression::Case(case) => compile_case(case, variables),
         ssf::ir::Expression::ConstructorApplication(constructor_application) => {
             let constructor = constructor_application.constructor();
@@ -132,7 +120,7 @@ pub fn compile(
 fn compile_case(
     case: &ssf::ir::Case,
     variables: &HashMap<String, ssf::types::Type>,
-) -> (Vec<fmm::ir::Instruction>, fmm::ir::Expression) {
+) -> BuildContext {
     let compile = |expression| compile(expression, variables);
 
     match case {

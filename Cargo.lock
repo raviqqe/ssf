@@ -55,12 +55,12 @@ checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 [[package]]
 name = "fmm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#3249d4d0868011eb7c53660bad58cbd739a8e08a"
+source = "git+https://github.com/raviqqe/fmm?branch=main#a53dfd980882d072ca49a662b15c20741e144da6"
 
 [[package]]
 name = "inkwell"
 version = "0.1.0"
-source = "git+https://github.com/TheDan64/inkwell#3eab4db479c2ca9d20b191f431a6d36835093108"
+source = "git+https://github.com/TheDan64/inkwell#cdc45cdb27067ef8111c0886e193d6812eeefe3f"
 dependencies = [
  "either",
  "inkwell_internals",
@@ -74,7 +74,7 @@ dependencies = [
 [[package]]
 name = "inkwell_internals"
 version = "0.2.0"
-source = "git+https://github.com/TheDan64/inkwell#3eab4db479c2ca9d20b191f431a6d36835093108"
+source = "git+https://github.com/TheDan64/inkwell#cdc45cdb27067ef8111c0886e193d6812eeefe3f"
 dependencies = [
  "proc-macro2",
  "quote",
