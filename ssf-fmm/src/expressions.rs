@@ -36,10 +36,10 @@ pub fn compile(
                 let arguments = vec![];
 
                 for argument in constructor_application.arguments() {
-                    let (argument_instructions, argument) = compile(argument);
+                    let argument_context = compile(argument);
 
-                    instructions.extend(argument_instructions);
-                    arguments.push(argument);
+                    instructions.extend(argument_context.instructions().to_vec());
+                    arguments.push(argument_context.expression().clone());
                 }
 
                 let record_type = types::compile_unboxed_constructor(&constructor_type);
@@ -67,7 +67,7 @@ pub fn compile(
                 );
             }
 
-            (
+            BuildContext::new(
                 instructions,
                 fmm::ir::Record::new(
                     types::compile_algebraic(algebraic_type, Some(constructor.tag())),
@@ -81,51 +81,44 @@ pub fn compile(
                     .collect(),
                 )
                 .into(),
+                types::compile_algebraic(algebraic_type, None),
             )
         }
         ssf::ir::Expression::FunctionApplication(function_application) => {
-            let (mut instructions, function) = compile(function_application.first_function());
+            let function_context = compile(function_application.first_function());
+
+            let mut instructions = function_context.instructions().to_vec();
             let mut arguments = vec![];
 
             for argument in function_application.arguments() {
-                let (argument_instructions, argument) = compile(argument);
+                let argument_context = compile(argument);
 
-                instructions.extend(argument_instructions);
-                arguments.push(argument);
+                instructions.extend(argument_context.instructions().iter().cloned());
+                arguments.push(argument_context.clone_expression());
             }
 
-            let (application_instructions, expression) =
-                function_applications::compile(&function, &arguments);
-
-            (
-                instructions
-                    .into_iter()
-                    .chain(application_instructions)
-                    .collect(),
-                expression,
-            )
+            function_applications::compile(&function_context.clone_expression(), &arguments)
         }
         ssf::ir::Expression::Let(let_) => compile_let(let_, variables),
         ssf::ir::Expression::LetRecursive(let_recursive) => {
             compile_let_recursive(let_recursive, variables)
         }
-        ssf::ir::Expression::Primitive(primitive) => (vec![], compile_primitive(primitive).into()),
+        ssf::ir::Expression::Primitive(primitive) => compile_primitive(primitive).into(),
         ssf::ir::Expression::PrimitiveOperation(operation) => {
             compile_primitive_operation(operation, variables)
         }
-        ssf::ir::Expression::Variable(variable) => (vec![], compile_variable(variable).into()),
+        ssf::ir::Expression::Variable(variable) => {
+            variables.get(variable.name()).unwrap().clone_expression()
+        }
     }
 }
 
-fn compile_case(
-    case: &ssf::ir::Case,
-    variables: &HashMap<String, ssf::types::Type>,
-) -> BuildContext {
+fn compile_case(case: &ssf::ir::Case, variables: &HashMap<String, BuildContext>) -> BuildContext {
     let compile = |expression| compile(expression, variables);
 
     match case {
         ssf::ir::Case::Algebraic(algebraic_case) => {
-            let (instructions, argument) = compile(algebraic_case.argument());
+            let context = compile(algebraic_case.argument());
 
             let tag_name = names::generate_name();
             let pointer_name = names::generate_name();
@@ -255,208 +248,167 @@ fn compile_case(
                 fmm::ir::Variable::new(result_name).into(),
             )
         }
-        ssf::ir::Case::Primitive(case) => {
-            let pointer_name = names::generate_name();
-            let result_name = names::generate_name();
-            let (instructions, argument) = compile(case.argument());
-
-            (
-                instructions
-                    .into_iter()
-                    .chain(vec![
-                        fmm::ir::AllocateStack::new(todo!(), pointer_name).into()
-                    ])
-                    .chain(case.alternatives().iter().rev().fold(
-                        if let Some(expression) = case.default_alternative() {
-                            let (instructions, expression) = compile(expression);
-
-                            instructions
-                                .into_iter()
-                                .chain(vec![fmm::ir::Store::new(
-                                    expression,
-                                    fmm::ir::Variable::new(pointer_name),
-                                )
-                                .into()])
-                                .collect()
-                        } else {
-                            vec![fmm::ir::Instruction::Unreachable]
-                        },
-                        |instructions, alternative| {
-                            let condition_name = names::generate_name();
-
-                            vec![
-                                fmm::ir::PrimitiveOperation::new(
-                                    fmm::ir::PrimitiveOperator::Equal,
-                                    argument,
-                                    compile_primitive(alternative.primitive()),
-                                    &condition_name,
-                                )
-                                .into(),
-                                fmm::ir::If::new(
-                                    fmm::ir::Variable::new(condition_name),
-                                    {
-                                        let (instructions, expression) =
-                                            compile(alternative.expression());
-
-                                        instructions
-                                            .into_iter()
-                                            .chain(vec![fmm::ir::Store::new(
-                                                expression,
-                                                fmm::ir::Variable::new(pointer_name),
-                                            )
-                                            .into()])
-                                            .collect()
-                                    },
-                                    instructions,
-                                )
-                                .into(),
-                            ]
-                        },
-                    ))
-                    .collect(),
-                fmm::ir::Variable::new(result_name).into(),
-            )
-        }
+        ssf::ir::Case::Primitive(case) => compile_primitive_case(case, variables),
     }
 }
 
-fn compile_let(
-    let_: &ssf::ir::Let,
-    variables: &HashMap<String, ssf::types::Type>,
-) -> (Vec<fmm::ir::Instruction>, fmm::ir::Expression) {
-    let (bound_expression_instructions, bound_expression) =
-        compile(let_.bound_expression(), variables);
+fn compile_primitive_case(
+    case: &ssf::ir::PrimitiveCase,
+    variables: &HashMap<String, BuildContext>,
+) -> BuildContext {
+    let argument_context = compile(case.argument(), variables);
+    let alternatives_context = compile_primitive_alternatives(
+        argument_context.clone_expression(),
+        case.alternatives(),
+        case.default_alternative(),
+        variables,
+    )
+    .unwrap();
 
-    let (expression_instructions, expression) = compile(
+    BuildContext::new(
+        argument_context
+            .instructions()
+            .iter()
+            .cloned()
+            .chain(alternatives_context.instructions().iter().cloned()),
+        alternatives_context.expression().clone(),
+        alternatives_context.type_().clone(),
+    )
+}
+
+fn compile_primitive_alternatives(
+    argument: BuildContext,
+    alternatives: &[ssf::ir::PrimitiveAlternative],
+    default_alternative: Option<&ssf::ir::Expression>,
+    variables: &HashMap<String, BuildContext>,
+) -> Option<BuildContext> {
+    match alternatives {
+        [] => default_alternative.map(|expression| compile(expression, variables)),
+        [alternative, ..] => Some(utilities::if_(
+            comparison_operation(
+                fmm::ir::ComparisonOperator::Equal,
+                argument.clone_expression(),
+                compile_primitive(alternative.primitive()),
+            ),
+            branch(compile(alternative.expression(), variables)),
+            compile_primitive_alternatives(
+                argument,
+                &alternatives[1..],
+                default_alternative,
+                variables,
+            )
+            .map(branch)
+            .unwrap_or_else(unreachable),
+        )),
+    }
+}
+
+fn compile_let(let_: &ssf::ir::Let, variables: &HashMap<String, BuildContext>) -> BuildContext {
+    let bound_expression_context = compile(let_.bound_expression(), variables);
+    let expression_context = compile(
         let_.expression(),
         &variables
             .clone()
             .drain()
-            .chain(vec![(let_.name().into(), let_.type_().clone())])
+            .chain(vec![(
+                let_.name().into(),
+                bound_expression_context.clone_expression(),
+            )])
             .collect(),
     );
 
-    (
-        bound_expression_instructions
-            .into_iter()
-            .chain(vec![fmm::ir::Assignment::new(
-                bound_expression,
-                let_.name(),
-            )
-            .into()])
-            .chain(expression_instructions)
-            .collect(),
-        expression,
+    BuildContext::new(
+        bound_expression_context
+            .instructions()
+            .iter()
+            .cloned()
+            .chain(expression_context.instructions().iter().cloned()),
+        expression_context.expression().clone(),
+        expression_context.type_().clone(),
     )
 }
 
 fn compile_let_recursive(
     let_: &ssf::ir::LetRecursive,
-    variables: &HashMap<String, ssf::types::Type>,
-) -> (Vec<fmm::ir::Instruction>, fmm::ir::Expression) {
-    let variables = variables
-        .clone()
-        .drain()
-        .chain(
-            let_.definitions()
-                .iter()
-                .map(|definition| (definition.name().into(), definition.type_().clone().into())),
-        )
-        .collect();
+    variables: &HashMap<String, BuildContext>,
+) -> BuildContext {
+    let mut instructions = vec![];
+    let mut variables = variables.clone();
 
-    let (expression_instructions, expression) = compile(let_.expression(), &variables);
+    for definition in let_.definitions() {
+        let context = allocate_heap(types::compile_sized_closure(definition));
 
-    (
-        let_.definitions()
+        instructions.extend(context.instructions().iter().cloned());
+        variables.insert(definition.name().into(), context.clone_expression());
+    }
+
+    for definition in let_.definitions() {
+        instructions.extend(store(
+            closures::compile_closure_content(
+                &variable(
+                    entry_functions::generate_closure_entry_name(definition.name()),
+                    types::compile_entry_function_from_definition(definition),
+                )
+                .into(),
+                &definition
+                    .environment()
+                    .iter()
+                    .map(|free_variable| variables[free_variable.name()].clone_expression())
+                    .collect::<Vec<_>>(),
+            ),
+            variables[definition.name()].clone_expression(),
+        ));
+    }
+
+    let expression_context = compile(let_.expression(), &variables);
+
+    BuildContext::new(
+        instructions
             .iter()
-            .flat_map(|definition| {
-                let name = names::generate_name();
-
-                vec![
-                    fmm::ir::AllocateHeap::new(types::compile_sized_closure(definition), name)
-                        .into(),
-                    fmm::ir::Bitcast::new(
-                        fmm::ir::Variable::new(name),
-                        fmm::types::Pointer::new(types::compile_unsized_closure(
-                            definition.type_(),
-                        )),
-                        definition.name(),
-                    )
-                    .into(),
-                ]
-            })
-            .chain(let_.definitions().iter().flat_map(|definition| {
-                let name = names::generate_name();
-
-                vec![
-                    fmm::ir::Bitcast::new(
-                        fmm::ir::Variable::new(definition.name()),
-                        fmm::types::Pointer::new(types::compile_sized_closure(definition)),
-                        name,
-                    )
-                    .into(),
-                    fmm::ir::Store::new(
-                        closures::compile_closure_content(
-                            &fmm::ir::Variable::new(entry_functions::generate_closure_entry_name(
-                                definition.name(),
-                            ))
-                            .into(),
-                            &definition
-                                .environment()
-                                .iter()
-                                .map(|free_variable| {
-                                    fmm::ir::Variable::new(free_variable.name()).into()
-                                })
-                                .collect::<Vec<_>>(),
-                        ),
-                        fmm::ir::Variable::new(name),
-                    )
-                    .into(),
-                ]
-            }))
-            .chain(expression_instructions)
-            .collect(),
-        expression,
+            .cloned()
+            .chain(expression_context.instructions().iter().cloned()),
+        expression_context.expression().clone(),
+        expression_context.type_().clone(),
     )
 }
 
 fn compile_primitive_operation(
     operation: &ssf::ir::PrimitiveOperation,
-    variables: &HashMap<String, ssf::types::Type>,
-) -> (Vec<fmm::ir::Instruction>, fmm::ir::Expression) {
-    let (lhs_instructions, lhs) = compile(operation.lhs(), variables);
-    let (rhs_instructions, rhs) = compile(operation.rhs(), variables);
-    let name = names::generate_name();
+    variables: &HashMap<String, BuildContext>,
+) -> BuildContext {
+    let lhs = compile(operation.lhs(), variables);
+    let rhs = compile(operation.rhs(), variables);
 
-    (
-        lhs_instructions
-            .into_iter()
-            .chain(rhs_instructions)
-            .chain(vec![fmm::ir::PrimitiveOperation::new(
-                compile_primitive_operator(operation.operator()),
-                lhs,
-                rhs,
-                name,
-            )
-            .into()])
-            .collect(),
-        fmm::ir::Variable::new(name).into(),
-    )
-}
-
-fn compile_primitive_operator(operator: ssf::ir::PrimitiveOperator) -> fmm::ir::PrimitiveOperator {
-    match operator {
-        ssf::ir::PrimitiveOperator::Add => fmm::ir::PrimitiveOperator::Add,
-        ssf::ir::PrimitiveOperator::Subtract => fmm::ir::PrimitiveOperator::Subtract,
-        ssf::ir::PrimitiveOperator::Multiply => fmm::ir::PrimitiveOperator::Multiply,
-        ssf::ir::PrimitiveOperator::Divide => fmm::ir::PrimitiveOperator::Divide,
-        ssf::ir::PrimitiveOperator::Equal => fmm::ir::PrimitiveOperator::Equal,
-        ssf::ir::PrimitiveOperator::NotEqual => fmm::ir::PrimitiveOperator::NotEqual,
-        ssf::ir::PrimitiveOperator::LessThan => fmm::ir::PrimitiveOperator::LessThan,
-        ssf::ir::PrimitiveOperator::LessThanOrEqual => fmm::ir::PrimitiveOperator::LessThanOrEqual,
-        ssf::ir::PrimitiveOperator::GreaterThan => fmm::ir::PrimitiveOperator::GreaterThan,
+    match operation.operator() {
+        ssf::ir::PrimitiveOperator::Add => {
+            arithmetic_operation(fmm::ir::ArithmeticOperator::Add, lhs, rhs)
+        }
+        ssf::ir::PrimitiveOperator::Subtract => {
+            arithmetic_operation(fmm::ir::ArithmeticOperator::Subtract, lhs, rhs)
+        }
+        ssf::ir::PrimitiveOperator::Multiply => {
+            arithmetic_operation(fmm::ir::ArithmeticOperator::Multiply, lhs, rhs)
+        }
+        ssf::ir::PrimitiveOperator::Divide => {
+            arithmetic_operation(fmm::ir::ArithmeticOperator::Divide, lhs, rhs)
+        }
+        ssf::ir::PrimitiveOperator::Equal => {
+            comparison_operation(fmm::ir::ComparisonOperator::Equal, lhs, rhs)
+        }
+        ssf::ir::PrimitiveOperator::NotEqual => {
+            comparison_operation(fmm::ir::ComparisonOperator::NotEqual, lhs, rhs)
+        }
+        ssf::ir::PrimitiveOperator::LessThan => {
+            comparison_operation(fmm::ir::ComparisonOperator::LessThan, lhs, rhs)
+        }
+        ssf::ir::PrimitiveOperator::LessThanOrEqual => {
+            comparison_operation(fmm::ir::ComparisonOperator::LessThanOrEqual, lhs, rhs)
+        }
+        ssf::ir::PrimitiveOperator::GreaterThan => {
+            comparison_operation(fmm::ir::ComparisonOperator::GreaterThan, lhs, rhs)
+        }
         ssf::ir::PrimitiveOperator::GreaterThanOrEqual => {
-            fmm::ir::PrimitiveOperator::GreaterThanOrEqual
+            comparison_operation(fmm::ir::ComparisonOperator::GreaterThanOrEqual, lhs, rhs)
         }
     }
 }
@@ -469,8 +421,4 @@ fn compile_primitive(primitive: &ssf::ir::Primitive) -> fmm::ir::Primitive {
         ssf::ir::Primitive::Integer32(number) => fmm::ir::Primitive::Integer32(*number),
         ssf::ir::Primitive::Integer64(number) => fmm::ir::Primitive::Integer64(*number),
     }
-}
-
-fn compile_variable(variable: &ssf::ir::Variable) -> fmm::ir::Variable {
-    fmm::ir::Variable::new(variable.name())
 }

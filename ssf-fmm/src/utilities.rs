@@ -64,10 +64,7 @@ pub fn side_effect<T: IntoIterator<Item = fmm::ir::Instruction>>(
             .instructions()
             .iter()
             .cloned()
-            .chain(instructions(BuildContext::from_expression(
-                context.expression().clone(),
-                context.type_().clone(),
-            ))),
+            .chain(instructions(context.clone_expression())),
         context.expression().clone(),
         context.type_().clone(),
     )

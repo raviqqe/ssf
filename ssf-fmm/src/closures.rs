@@ -1,6 +1,8 @@
+use fmm::build::*;
+
 pub fn compile_closure_content(
-    function: &fmm::ir::Expression,
-    free_variables: &[fmm::ir::Expression],
-) -> fmm::ir::Expression {
+    function: &BuildContext,
+    free_variables: &[BuildContext],
+) -> BuildContext {
     todo!()
 }

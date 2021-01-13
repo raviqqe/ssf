@@ -1,6 +1,5 @@
-pub fn compile(
-    function: &fmm::ir::Expression,
-    arguments: &[fmm::ir::Expression],
-) -> (Vec<fmm::ir::Instruction>, fmm::ir::Expression) {
+use fmm::build::*;
+
+pub fn compile(function: &BuildContext, arguments: &[BuildContext]) -> BuildContext {
     todo!()
 }
