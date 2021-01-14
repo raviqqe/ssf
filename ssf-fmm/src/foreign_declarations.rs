@@ -38,7 +38,7 @@ pub fn compile_foreign_declaration(
                     ],
                 ),
                 closure_type,
-                true,
+                false,
             )])
             .collect(),
         module
