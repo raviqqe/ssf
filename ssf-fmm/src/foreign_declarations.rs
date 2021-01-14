@@ -53,19 +53,22 @@ pub fn compile_foreign_declaration(
 fn compile_entry_function(
     declaration: &ssf::ir::ForeignDeclaration,
 ) -> fmm::ir::FunctionDefinition {
-    let arguments = vec![]
-        .into_iter()
-        .chain(
-            declaration
-                .type_()
-                .arguments()
-                .into_iter()
-                .enumerate()
-                .map(|(index, type_)| {
-                    fmm::ir::Argument::new(format!("arg_{}", index), types::compile(type_))
-                }),
-        )
-        .collect::<Vec<_>>();
+    let arguments = vec![fmm::ir::Argument::new(
+        "_env",
+        fmm::types::Pointer::new(types::compile_unsized_environment()),
+    )]
+    .into_iter()
+    .chain(
+        declaration
+            .type_()
+            .arguments()
+            .into_iter()
+            .enumerate()
+            .map(|(index, type_)| {
+                fmm::ir::Argument::new(format!("arg_{}", index), types::compile(type_))
+            }),
+    )
+    .collect::<Vec<_>>();
 
     let foreign_function_type = types::compile_foreign_function(declaration.type_());
 
@@ -84,7 +87,7 @@ fn compile_entry_function(
                         .map(|argument| {
                             utilities::variable(argument.name(), argument.type_().clone())
                         })
-                        .collect::<Vec<_>>(),
+                        .collect(),
                 ),
             )
         },

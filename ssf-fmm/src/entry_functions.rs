@@ -105,14 +105,19 @@ fn compile_first_thunk_entry(definition: &ssf::ir::Definition) -> fmm::ir::Funct
                 {
                     let state = fmm::build::BlockState::new();
 
-                    state.return_(state.call(
-                        state.atomic_load(compile_entry_function_pointer_pointer(
-                            &state, definition,
-                        )),
-                        arguments.iter().map(|argument| {
-                            utilities::variable(argument.name(), argument.type_().clone())
-                        }),
-                    ))
+                    state.return_(
+                        state.call(
+                            state.atomic_load(compile_entry_function_pointer_pointer(
+                                &state, definition,
+                            )),
+                            arguments
+                                .iter()
+                                .map(|argument| {
+                                    utilities::variable(argument.name(), argument.type_().clone())
+                                })
+                                .collect(),
+                        ),
+                    )
                 },
             );
 
