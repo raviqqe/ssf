@@ -3,19 +3,19 @@ use fmm::types::{self, Type};
 pub fn bitcast(
     state: &fmm::build::BlockState,
     argument: impl Into<fmm::build::TypedExpression>,
-    to: impl Into<Type>,
+    to_type: impl Into<Type>,
 ) -> fmm::build::TypedExpression {
     let argument = argument.into();
-    let from = argument.type_();
+    let from_type = argument.type_();
 
     state.deconstruct_union(
         fmm::build::TypedExpression::new(
             fmm::ir::Union::new(
-                types::Union::new(vec![from.clone(), to.into()]),
+                types::Union::new(vec![from_type.clone(), to_type.into()]),
                 0,
                 argument.expression().clone(),
             ),
-            from.clone(),
+            from_type.clone(),
         ),
         1,
     )
