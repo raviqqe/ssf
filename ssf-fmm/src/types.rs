@@ -68,7 +68,7 @@ pub fn get_constructor_union_index(algebraic_type: &ssf::types::Algebraic, tag: 
         .constructors()
         .iter()
         .enumerate()
-        .find(|(index, (constructor_tag, _))| **constructor_tag == tag)
+        .find(|(_index, (constructor_tag, _))| **constructor_tag == tag)
         .unwrap()
         .0
 }

@@ -95,7 +95,7 @@ fn compile_first_thunk_entry(definition: &ssf::ir::Definition) -> fmm::ir::Funct
                     state.atomic_store(
                         utilities::variable(
                             generate_normal_entry_name(definition.name()),
-                            entry_function_type.clone(),
+                            entry_function_type,
                         ),
                         compile_entry_function_pointer_pointer(&state, definition),
                     );

@@ -113,7 +113,7 @@ fn compile_case(
                 {
                     fmm::ir::Primitive::PointerInteger(0).into()
                 } else {
-                    state.deconstruct_record(argument.clone(), 0).into()
+                    state.deconstruct_record(argument.clone(), 0)
                 },
                 argument,
                 case.alternatives(),
@@ -212,7 +212,7 @@ fn compile_primitive_case(
 
     compile_primitive_alternatives(
         state,
-        argument.clone(),
+        argument,
         case.alternatives(),
         case.default_alternative(),
         variables,
@@ -272,7 +272,7 @@ fn compile_let(
             .drain()
             .chain(vec![(
                 let_.name().into(),
-                compile(state, let_.bound_expression(), variables).clone(),
+                compile(state, let_.bound_expression(), variables),
             )])
             .collect(),
     )
@@ -298,8 +298,7 @@ fn compile_let_recursive(
                 &utilities::variable(
                     entry_functions::generate_closure_entry_name(definition.name()),
                     types::compile_entry_function_from_definition(definition),
-                )
-                .into(),
+                ),
                 &definition
                     .environment()
                     .iter()
