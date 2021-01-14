@@ -83,9 +83,9 @@ pub fn compile_sized_closure(definition: &ssf::ir::Definition) -> fmm::types::Re
     )
 }
 
-pub fn compile_unsized_closure(type_: &ssf::types::Function) -> fmm::types::Record {
+pub fn compile_unsized_closure(function: &ssf::types::Function) -> fmm::types::Record {
     compile_raw_closure(
-        compile_uncurried_entry_function(type_),
+        compile_entry_function(function.arguments(), function.last_result()),
         compile_unsized_environment(),
     )
 }
@@ -142,16 +142,6 @@ pub fn compile_curried_entry_function(
             )),
         )
     }
-}
-
-fn compile_uncurried_entry_function(function: &ssf::types::Function) -> fmm::types::Function {
-    fmm::types::Function::new(
-        vec![fmm::types::Pointer::new(compile_unsized_environment()).into()]
-            .into_iter()
-            .chain(function.arguments().into_iter().map(compile))
-            .collect(),
-        compile(function.last_result()),
-    )
 }
 
 pub fn compile_entry_function_from_definition(
