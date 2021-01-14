@@ -77,7 +77,7 @@ pub fn compile(
                     .arguments()
                     .into_iter()
                     .map(|argument| compile(state, argument, variables))
-                    .collect::<Vec<_>>(),
+                    .collect(),
             )
         }
         ssf::ir::Expression::Let(let_) => compile_let(state, let_, variables),
