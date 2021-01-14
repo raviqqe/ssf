@@ -28,7 +28,7 @@ pub fn compile(
                 algebraic_type.unfold().constructors()[&constructor.tag()].clone();
 
             fmm::ir::Record::new(
-                types::compile_algebraic(algebraic_type, Some(constructor.tag())),
+                types::compile_algebraic(algebraic_type),
                 if algebraic_type.is_singleton() {
                     None
                 } else {
@@ -52,7 +52,7 @@ pub fn compile(
 
                     Some(
                         fmm::ir::Union::new(
-                            types::compile_untyped_constructor(algebraic_type),
+                            types::compile_constructor_union(algebraic_type),
                             types::get_constructor_union_index(algebraic_type, constructor.tag()),
                             if constructor_type.is_boxed() {
                                 let pointer = state.allocate_heap(record_type);

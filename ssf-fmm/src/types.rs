@@ -10,7 +10,7 @@ pub fn get_arity(type_: &fmm::types::Function) -> usize {
 
 pub fn compile(type_: &ssf::types::Type) -> fmm::types::Type {
     match type_ {
-        ssf::types::Type::Algebraic(algebraic) => compile_algebraic(algebraic, None).into(),
+        ssf::types::Type::Algebraic(algebraic) => compile_algebraic(algebraic).into(),
         ssf::types::Type::Function(function) => {
             fmm::types::Pointer::new(compile_unsized_closure(function)).into()
         }
@@ -26,16 +26,11 @@ pub fn compile_primitive(primitive: &ssf::types::Primitive) -> fmm::types::Type 
         ssf::types::Primitive::Integer8 => fmm::types::Primitive::Integer8.into(),
         ssf::types::Primitive::Integer32 => fmm::types::Primitive::Integer32.into(),
         ssf::types::Primitive::Integer64 => fmm::types::Primitive::Integer64.into(),
-        ssf::types::Primitive::Pointer => {
-            fmm::types::Pointer::new(fmm::types::Primitive::Integer8).into()
-        }
+        ssf::types::Primitive::Pointer => compile_generic_pointer().into(),
     }
 }
 
-pub fn compile_algebraic(
-    algebraic: &ssf::types::Algebraic,
-    index: Option<u64>,
-) -> fmm::types::Record {
+pub fn compile_algebraic(algebraic: &ssf::types::Algebraic) -> fmm::types::Record {
     let mut elements = vec![];
 
     if !algebraic.is_singleton() {
@@ -43,24 +38,32 @@ pub fn compile_algebraic(
     }
 
     if !algebraic.is_enum() {
-        elements.push(if let Some(index) = index {
-            compile_constructor(&algebraic.unfold().constructors()[&index], false)
-        } else {
-            compile_untyped_constructor(algebraic).into()
-        });
+        elements.push(compile_constructor_union(algebraic).into());
     }
 
     fmm::types::Record::new(elements)
 }
 
-pub fn compile_untyped_constructor(algebraic_type: &ssf::types::Algebraic) -> fmm::types::Union {
+pub fn compile_constructor_union(algebraic_type: &ssf::types::Algebraic) -> fmm::types::Union {
     fmm::types::Union::new(
         algebraic_type
             .constructors()
             .iter()
-            .map(|(_, constructor)| compile_constructor(constructor, true))
+            .map(|(_, constructor)| compile_constructor(constructor))
             .collect(),
     )
+}
+
+fn compile_constructor(constructor: &ssf::types::Constructor) -> fmm::types::Type {
+    if constructor.is_boxed() {
+        fmm::types::Pointer::new(fmm::types::Record::new(vec![])).into()
+    } else {
+        compile_unboxed_constructor(constructor).into()
+    }
+}
+
+pub fn compile_unboxed_constructor(constructor: &ssf::types::Constructor) -> fmm::types::Record {
+    fmm::types::Record::new(constructor.elements().iter().map(compile).collect())
 }
 
 pub fn get_constructor_union_index(algebraic_type: &ssf::types::Algebraic, tag: u64) -> usize {
@@ -68,7 +71,7 @@ pub fn get_constructor_union_index(algebraic_type: &ssf::types::Algebraic, tag: 
         .constructors()
         .iter()
         .enumerate()
-        .find(|(_index, (constructor_tag, _))| **constructor_tag == tag)
+        .find(|(_, (constructor_tag, _))| **constructor_tag == tag)
         .unwrap()
         .0
 }
@@ -76,10 +79,16 @@ pub fn get_constructor_union_index(algebraic_type: &ssf::types::Algebraic, tag: 
 pub fn compile_sized_closure(definition: &ssf::ir::Definition) -> fmm::types::Record {
     compile_raw_closure(
         compile_entry_function_from_definition(definition),
-        fmm::types::Union::new(vec![
-            compile_environment(definition).into(),
-            compile(definition.result_type()),
-        ]),
+        fmm::types::Union::new(
+            vec![compile_environment(definition).into()]
+                .into_iter()
+                .chain(if definition.is_thunk() {
+                    Some(compile(definition.result_type()))
+                } else {
+                    None
+                })
+                .collect(),
+        ),
     )
 }
 
@@ -174,24 +183,6 @@ pub fn compile_foreign_function(function: &ssf::types::Function) -> fmm::types::
         function.arguments().into_iter().map(compile).collect(),
         compile(function.last_result()),
     )
-}
-
-fn compile_constructor(constructor: &ssf::types::Constructor, shallow: bool) -> fmm::types::Type {
-    let type_ = compile_unboxed_constructor(&if shallow && constructor.is_boxed() {
-        ssf::types::Constructor::boxed(vec![])
-    } else {
-        constructor.clone()
-    });
-
-    if constructor.is_boxed() {
-        fmm::types::Pointer::new(type_).into()
-    } else {
-        type_.into()
-    }
-}
-
-pub fn compile_unboxed_constructor(constructor: &ssf::types::Constructor) -> fmm::types::Record {
-    fmm::types::Record::new(constructor.elements().iter().map(compile).collect())
 }
 
 pub fn compile_tag() -> fmm::types::Primitive {
