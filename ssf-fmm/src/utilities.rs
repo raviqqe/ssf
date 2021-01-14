@@ -1,18 +1,19 @@
-use super::names;
-use fmm::build::*;
 use fmm::types::{self, Type};
 
-pub fn bitcast(context: impl Into<BuildContext>, to: impl Into<Type>) -> BuildContext {
-    let context = context.into();
-    let from = context.type_();
+pub fn bitcast(
+    state: &fmm::build::BlockState,
+    argument: impl Into<fmm::build::TypedExpression>,
+    to: impl Into<Type>,
+) -> fmm::build::TypedExpression {
+    let argument = argument.into();
+    let from = argument.type_();
 
-    deconstruct_union(
-        BuildContext::new(
-            context.instructions().to_vec(),
+    state.deconstruct_union(
+        fmm::build::TypedExpression::new(
             fmm::ir::Union::new(
                 types::Union::new(vec![from.clone(), to.into()]),
                 0,
-                context.expression().clone(),
+                argument.expression().clone(),
             ),
             from.clone(),
         ),
@@ -20,52 +21,9 @@ pub fn bitcast(context: impl Into<BuildContext>, to: impl Into<Type>) -> BuildCo
     )
 }
 
-pub fn if_(
-    condition: impl Into<BuildContext>,
-    then: fmm::ir::Block,
-    else_: fmm::ir::Block,
-) -> BuildContext {
-    let condition = condition.into();
-    let name = names::generate_name();
-    let type_ = if let Some(branch) = then.terminal_instruction().to_branch() {
-        branch.type_().clone()
-    } else if let Some(branch) = else_.terminal_instruction().to_branch() {
-        branch.type_().clone()
-    } else {
-        fmm::types::Record::new(vec![]).into()
-    };
-
-    BuildContext::new(
-        condition
-            .instructions()
-            .iter()
-            .cloned()
-            .chain(vec![fmm::ir::If::new(
-                type_.clone(),
-                condition.expression().clone(),
-                then,
-                else_,
-                names::generate_name(),
-            )
-            .into()]),
-        fmm::ir::Variable::new(name),
-        type_,
-    )
-}
-
-pub fn side_effect<T: IntoIterator<Item = fmm::ir::Instruction>>(
-    context: impl Into<BuildContext>,
-    instructions: impl Fn(BuildContext) -> T,
-) -> BuildContext {
-    let context = context.into();
-
-    BuildContext::new(
-        context
-            .instructions()
-            .iter()
-            .cloned()
-            .chain(instructions(context.clone_expression())),
-        context.expression().clone(),
-        context.type_().clone(),
-    )
+pub fn variable(
+    name: impl Into<String>,
+    type_: impl Into<fmm::types::Type>,
+) -> fmm::build::TypedExpression {
+    fmm::build::TypedExpression::new(fmm::ir::Variable::new(name), type_)
 }

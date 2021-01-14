@@ -1,6 +1,6 @@
+use super::utilities;
 use crate::expressions;
 use crate::types::{self, FUNCTION_ARGUMENT_OFFSET};
-use fmm::build::*;
 
 pub fn compile_foreign_declaration(
     module: &fmm::ir::Module,
@@ -73,19 +73,18 @@ fn compile_entry_function(
         format!("{}_entry", declaration.name()),
         arguments.clone(),
         {
-            let context = call(
-                variable(declaration.foreign_name(), foreign_function_type),
-                arguments
-                    .iter()
-                    .skip(FUNCTION_ARGUMENT_OFFSET)
-                    .map(|argument| variable(argument.name(), argument.type_().clone())),
-            );
+            let state = fmm::build::BlockState::new();
 
-            fmm::ir::Block::new(
-                context.instructions().to_vec(),
-                fmm::ir::Return::new(
-                    foreign_function_type.result().clone(),
-                    context.expression().clone(),
+            state.return_(
+                state.call(
+                    utilities::variable(declaration.foreign_name(), foreign_function_type.clone()),
+                    arguments
+                        .iter()
+                        .skip(FUNCTION_ARGUMENT_OFFSET)
+                        .map(|argument| {
+                            utilities::variable(argument.name(), argument.type_().clone())
+                        })
+                        .collect::<Vec<_>>(),
                 ),
             )
         },

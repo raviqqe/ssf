@@ -5,7 +5,6 @@ mod entry_functions;
 mod expressions;
 mod foreign_declarations;
 mod function_applications;
-mod names;
 mod types;
 mod utilities;
 
