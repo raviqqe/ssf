@@ -26,17 +26,17 @@ pub fn compile_foreign_declaration(
             .cloned()
             .chain(vec![fmm::ir::VariableDefinition::new(
                 declaration.name(),
-                fmm::ir::Record::new(
-                    closure_type.clone(),
-                    vec![
-                        fmm::ir::Variable::new(entry_function_definition.name()).into(),
-                        expressions::compile_arity(
-                            declaration.type_().arguments().into_iter().count() as u64,
-                        )
-                        .into(),
-                        fmm::ir::Undefined::new(types::compile_unsized_environment()).into(),
-                    ],
-                ),
+                utilities::record(vec![
+                    utilities::variable(
+                        entry_function_definition.name(),
+                        entry_function_definition.type_().clone(),
+                    ),
+                    expressions::compile_arity(
+                        declaration.type_().arguments().into_iter().count() as u64
+                    )
+                    .into(),
+                    fmm::ir::Undefined::new(types::compile_unsized_environment()).into(),
+                ]),
                 closure_type,
                 false,
             )])

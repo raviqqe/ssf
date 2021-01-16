@@ -27,3 +27,18 @@ pub fn variable(
 ) -> fmm::build::TypedExpression {
     fmm::build::TypedExpression::new(fmm::ir::Variable::new(name), type_)
 }
+
+pub fn record(elements: Vec<fmm::build::TypedExpression>) -> fmm::ir::Record {
+    fmm::ir::Record::new(
+        fmm::types::Record::new(
+            elements
+                .iter()
+                .map(|element| element.type_().clone())
+                .collect(),
+        ),
+        elements
+            .iter()
+            .map(|element| element.expression().clone())
+            .collect(),
+    )
+}

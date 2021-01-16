@@ -1,12 +1,12 @@
 use super::entry_functions;
 use super::expressions;
 use super::types;
+use super::utilities;
 
 pub fn compile_definition(
     module: &fmm::ir::Module,
     definition: &ssf::ir::Definition,
 ) -> fmm::ir::Module {
-    let closure_type = types::compile_sized_closure(definition);
     let entry_function_definitions = entry_functions::compile(definition);
 
     fmm::ir::Module::new(
@@ -18,15 +18,14 @@ pub fn compile_definition(
             .cloned()
             .chain(vec![fmm::ir::VariableDefinition::new(
                 definition.name(),
-                fmm::ir::Record::new(
-                    closure_type,
-                    vec![
-                        fmm::ir::Variable::new(entry_function_definitions[0].name()).into(),
-                        expressions::compile_arity(definition.arguments().iter().count() as u64)
-                            .into(),
-                        fmm::ir::Undefined::new(types::compile_unsized_environment()).into(),
-                    ],
-                ),
+                utilities::record(vec![
+                    utilities::variable(
+                        entry_function_definitions[0].name(),
+                        entry_function_definitions[0].type_().clone(),
+                    ),
+                    expressions::compile_arity(definition.arguments().iter().count() as u64).into(),
+                    fmm::ir::Undefined::new(types::compile_unsized_environment()).into(),
+                ]),
                 types::compile_sized_closure(definition),
                 !definition.is_thunk(),
             )])

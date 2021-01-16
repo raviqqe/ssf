@@ -27,8 +27,7 @@ pub fn compile(
             let constructor_type =
                 algebraic_type.unfold().constructors()[&constructor.tag()].clone();
 
-            fmm::ir::Record::new(
-                types::compile_algebraic(algebraic_type),
+            utilities::record(
                 if algebraic_type.is_singleton() {
                     None
                 } else {
@@ -295,11 +294,11 @@ fn compile_let_recursive(
     for definition in let_.definitions() {
         state.store(
             closures::compile_closure_content(
-                &utilities::variable(
+                utilities::variable(
                     entry_functions::generate_closure_entry_name(definition.name()),
                     types::compile_entry_function_from_definition(definition),
                 ),
-                &definition
+                definition
                     .environment()
                     .iter()
                     .map(|free_variable| variables[free_variable.name()].clone())
