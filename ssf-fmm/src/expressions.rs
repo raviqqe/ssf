@@ -144,9 +144,7 @@ fn compile_algebraic_alternatives(
                     tag.clone(),
                     fmm::ir::Primitive::PointerInteger(constructor.tag()),
                 ),
-                {
-                    let state = fmm::build::BlockState::new();
-
+                |state| {
                     state.branch(compile(
                         &state,
                         alternative.expression(),
@@ -181,13 +179,11 @@ fn compile_algebraic_alternatives(
                         },
                     ))
                 },
-                {
-                    let state = fmm::build::BlockState::new();
-
+                |state| {
                     if let Some(expression) = compile_algebraic_alternatives(
                         &state,
-                        tag,
-                        argument,
+                        tag.clone(),
+                        argument.clone(),
                         &alternatives[1..],
                         default_alternative,
                         variables,
@@ -234,17 +230,11 @@ fn compile_primitive_alternatives(
                 argument.clone(),
                 compile_primitive(alternative.primitive()),
             ),
-            {
-                let state = fmm::build::BlockState::new();
-
-                state.branch(compile(&state, alternative.expression(), variables))
-            },
-            {
-                let state = fmm::build::BlockState::new();
-
+            |state| state.branch(compile(&state, alternative.expression(), variables)),
+            |state| {
                 if let Some(expression) = compile_primitive_alternatives(
                     &state,
-                    argument,
+                    argument.clone(),
                     &alternatives[1..],
                     default_alternative,
                     variables,

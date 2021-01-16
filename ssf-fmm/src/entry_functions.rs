@@ -79,9 +79,7 @@ fn compile_first_thunk_entry(definition: &ssf::ir::Definition) -> fmm::ir::Funct
                         entry_function_type.clone(),
                     ),
                 ),
-                {
-                    let state = fmm::build::BlockState::new();
-
+                |state| {
                     let value = compile_body(&state, definition);
 
                     state.store(
@@ -95,16 +93,14 @@ fn compile_first_thunk_entry(definition: &ssf::ir::Definition) -> fmm::ir::Funct
                     state.atomic_store(
                         utilities::variable(
                             generate_normal_entry_name(definition.name()),
-                            entry_function_type,
+                            entry_function_type.clone(),
                         ),
                         compile_entry_function_pointer_pointer(&state, definition),
                     );
 
                     state.return_(value)
                 },
-                {
-                    let state = fmm::build::BlockState::new();
-
+                |state| {
                     state.return_(
                         state.call(
                             state.atomic_load(compile_entry_function_pointer_pointer(
@@ -131,7 +127,7 @@ fn compile_normal_thunk_entry(definition: &ssf::ir::Definition) -> fmm::ir::Func
     fmm::ir::FunctionDefinition::new(
         generate_normal_entry_name(definition.name()),
         compile_arguments(definition),
-        compile_normal_body(definition),
+        compile_normal_body(&fmm::build::BlockState::new(), definition),
         types::compile(definition.result_type()),
     )
 }
@@ -165,8 +161,8 @@ fn compile_locked_thunk_entry(definition: &ssf::ir::Definition) -> fmm::ir::Func
                     ),
                 ),
                 // TODO Return to handle thunk locks asynchronously.
-                fmm::ir::Block::new(vec![], fmm::ir::TerminalInstruction::Unreachable),
-                compile_normal_body(definition),
+                |state| state.unreachable(),
+                |state| compile_normal_body(&state, definition),
             );
 
             state.unreachable()
@@ -175,9 +171,10 @@ fn compile_locked_thunk_entry(definition: &ssf::ir::Definition) -> fmm::ir::Func
     )
 }
 
-fn compile_normal_body(definition: &ssf::ir::Definition) -> fmm::ir::Block {
-    let state = fmm::build::BlockState::new();
-
+fn compile_normal_body(
+    state: &fmm::build::BlockState,
+    definition: &ssf::ir::Definition,
+) -> fmm::ir::Block {
     state.return_(state.load(utilities::bitcast(
         &state,
         compile_environment_pointer(),
