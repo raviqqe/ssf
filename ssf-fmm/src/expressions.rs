@@ -72,11 +72,11 @@ pub fn compile(
             function_applications::compile(
                 builder,
                 compile(builder, function_application.first_function(), variables),
-                function_application
+                &function_application
                     .arguments()
                     .into_iter()
                     .map(|argument| compile(builder, argument, variables))
-                    .collect(),
+                    .collect::<Vec<_>>(),
             )
         }
         ssf::ir::Expression::Let(let_) => compile_let(builder, let_, variables),
