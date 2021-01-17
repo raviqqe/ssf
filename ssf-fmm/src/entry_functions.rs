@@ -4,39 +4,46 @@ use super::utilities;
 
 const ENVIRONMENT_NAME: &str = "_environment";
 
-pub fn compile(definition: &ssf::ir::Definition) -> Vec<fmm::ir::FunctionDefinition> {
+pub fn compile(
+    module_builder: &fmm::build::ModuleBuilder,
+    definition: &ssf::ir::Definition,
+) -> fmm::build::TypedExpression {
     if definition.is_thunk() {
-        compile_thunk(definition)
+        compile_thunk(module_builder, definition)
     } else {
-        vec![compile_non_thunk(definition)]
+        compile_non_thunk(module_builder, definition)
     }
 }
 
-fn compile_non_thunk(definition: &ssf::ir::Definition) -> fmm::ir::FunctionDefinition {
-    let state = fmm::build::BlockState::new();
-
-    fmm::ir::FunctionDefinition::new(
-        generate_closure_entry_name(definition.name()),
+fn compile_non_thunk(
+    module_builder: &fmm::build::ModuleBuilder,
+    definition: &ssf::ir::Definition,
+) -> fmm::build::TypedExpression {
+    module_builder.define_anonymous_function(
         compile_arguments(definition),
-        state.return_(compile_body(&state, definition)),
+        |builder| builder.return_(compile_body(&builder, definition)),
         types::compile(definition.result_type()),
     )
 }
 
-fn compile_thunk(definition: &ssf::ir::Definition) -> Vec<fmm::ir::FunctionDefinition> {
-    vec![
-        compile_first_thunk_entry(definition),
-        compile_normal_thunk_entry(definition),
-        compile_locked_thunk_entry(definition),
-    ]
+fn compile_thunk(
+    module_builder: &fmm::build::ModuleBuilder,
+    definition: &ssf::ir::Definition,
+) -> fmm::build::TypedExpression {
+    compile_first_thunk_entry(
+        module_builder,
+        definition,
+        compile_normal_thunk_entry(module_builder, definition),
+        compile_locked_thunk_entry(module_builder, definition),
+    )
 }
 
 fn compile_body(
-    state: &fmm::build::BlockState,
+    builder: &fmm::build::BlockBuilder,
     definition: &ssf::ir::Definition,
 ) -> fmm::build::TypedExpression {
     expressions::compile(
-        state,
+        builder,
         definition.body(),
         &definition
             .environment()
@@ -45,9 +52,9 @@ fn compile_body(
             .map(|(index, free_variable)| {
                 (
                     free_variable.name().into(),
-                    state.load(state.record_address(
+                    builder.load(builder.record_address(
                         utilities::bitcast(
-                            state,
+                            builder,
                             compile_environment_pointer(),
                             fmm::types::Pointer::new(types::compile_environment(definition)),
                         ),
@@ -59,52 +66,49 @@ fn compile_body(
     )
 }
 
-fn compile_first_thunk_entry(definition: &ssf::ir::Definition) -> fmm::ir::FunctionDefinition {
-    let entry_function_name = generate_closure_entry_name(definition.name());
+fn compile_first_thunk_entry(
+    module_builder: &fmm::build::ModuleBuilder,
+    definition: &ssf::ir::Definition,
+    normal_entry_function: fmm::build::TypedExpression,
+    lock_entry_function: fmm::build::TypedExpression,
+) -> fmm::build::TypedExpression {
+    let entry_function_name = module_builder.generate_name();
     let entry_function_type = types::compile_entry_function_from_definition(definition);
     let arguments = compile_arguments(definition);
 
-    fmm::ir::FunctionDefinition::new(
+    module_builder.define_function(
         &entry_function_name,
         arguments.clone(),
-        {
-            let state = fmm::build::BlockState::new();
-
-            state.if_(
-                state.compare_and_swap(
-                    compile_entry_function_pointer_pointer(&state, definition),
+        |builder| {
+            builder.if_(
+                builder.compare_and_swap(
+                    compile_entry_function_pointer_pointer(&builder, definition),
                     utilities::variable(&entry_function_name, entry_function_type.clone()),
-                    utilities::variable(
-                        generate_locked_entry_name(definition.name()),
-                        entry_function_type.clone(),
-                    ),
+                    lock_entry_function.clone(),
                 ),
-                |state| {
-                    let value = compile_body(&state, definition);
+                |builder| {
+                    let value = compile_body(&builder, definition);
 
-                    state.store(
+                    builder.store(
                         value.clone(),
                         utilities::bitcast(
-                            &state,
+                            &builder,
                             compile_environment_pointer(),
                             fmm::types::Pointer::new(types::compile(definition.result_type())),
                         ),
                     );
-                    state.atomic_store(
-                        utilities::variable(
-                            generate_normal_entry_name(definition.name()),
-                            entry_function_type.clone(),
-                        ),
-                        compile_entry_function_pointer_pointer(&state, definition),
+                    builder.atomic_store(
+                        normal_entry_function.clone(),
+                        compile_entry_function_pointer_pointer(&builder, definition),
                     );
 
-                    state.return_(value)
+                    builder.return_(value)
                 },
-                |state| {
-                    state.return_(
-                        state.call(
-                            state.atomic_load(compile_entry_function_pointer_pointer(
-                                &state, definition,
+                |builder| {
+                    builder.return_(
+                        builder.call(
+                            builder.atomic_load(compile_entry_function_pointer_pointer(
+                                &builder, definition,
                             )),
                             arguments
                                 .iter()
@@ -117,42 +121,46 @@ fn compile_first_thunk_entry(definition: &ssf::ir::Definition) -> fmm::ir::Funct
                 },
             );
 
-            state.unreachable()
+            builder.unreachable()
         },
         types::compile(definition.result_type()),
+        false,
     )
 }
 
-fn compile_normal_thunk_entry(definition: &ssf::ir::Definition) -> fmm::ir::FunctionDefinition {
-    fmm::ir::FunctionDefinition::new(
-        generate_normal_entry_name(definition.name()),
+fn compile_normal_thunk_entry(
+    module_builder: &fmm::build::ModuleBuilder,
+    definition: &ssf::ir::Definition,
+) -> fmm::build::TypedExpression {
+    module_builder.define_anonymous_function(
         compile_arguments(definition),
-        compile_normal_body(&fmm::build::BlockState::new(), definition),
+        |builder| compile_normal_body(&builder, definition),
         types::compile(definition.result_type()),
     )
 }
 
-fn compile_locked_thunk_entry(definition: &ssf::ir::Definition) -> fmm::ir::FunctionDefinition {
-    let entry_function_name = generate_locked_entry_name(definition.name());
+fn compile_locked_thunk_entry(
+    module_builder: &fmm::build::ModuleBuilder,
+    definition: &ssf::ir::Definition,
+) -> fmm::build::TypedExpression {
+    let entry_function_name = module_builder.generate_name();
 
-    fmm::ir::FunctionDefinition::new(
+    module_builder.define_function(
         &entry_function_name,
         compile_arguments(definition),
-        {
-            let state = fmm::build::BlockState::new();
-
-            state.if_(
-                state.comparison_operation(
+        |builder| {
+            builder.if_(
+                builder.comparison_operation(
                     fmm::ir::ComparisonOperator::Equal,
                     utilities::bitcast(
-                        &state,
-                        state.atomic_load(compile_entry_function_pointer_pointer(
-                            &state, definition,
+                        &builder,
+                        builder.atomic_load(compile_entry_function_pointer_pointer(
+                            &builder, definition,
                         )),
                         fmm::types::Primitive::PointerInteger,
                     ),
                     utilities::bitcast(
-                        &state,
+                        &builder,
                         utilities::variable(
                             &entry_function_name,
                             types::compile_entry_function_from_definition(definition),
@@ -161,37 +169,38 @@ fn compile_locked_thunk_entry(definition: &ssf::ir::Definition) -> fmm::ir::Func
                     ),
                 ),
                 // TODO Return to handle thunk locks asynchronously.
-                |state| state.unreachable(),
-                |state| compile_normal_body(&state, definition),
+                |builder| builder.unreachable(),
+                |builder| compile_normal_body(&builder, definition),
             );
 
-            state.unreachable()
+            builder.unreachable()
         },
         types::compile(definition.result_type()),
+        false,
     )
 }
 
 fn compile_normal_body(
-    state: &fmm::build::BlockState,
+    builder: &fmm::build::BlockBuilder,
     definition: &ssf::ir::Definition,
 ) -> fmm::ir::Block {
-    state.return_(state.load(utilities::bitcast(
-        &state,
+    builder.return_(builder.load(utilities::bitcast(
+        &builder,
         compile_environment_pointer(),
         fmm::types::Pointer::new(types::compile(definition.result_type())),
     )))
 }
 
 fn compile_entry_function_pointer_pointer(
-    state: &fmm::build::BlockState,
+    builder: &fmm::build::BlockBuilder,
     definition: &ssf::ir::Definition,
 ) -> fmm::build::TypedExpression {
     // TODO Calculate entry function pointer properly.
     // The offset should be calculated by allocating a record of
     // { pointer, { pointer, arity, environment } }.
-    state.pointer_address(
+    builder.pointer_address(
         utilities::bitcast(
-            state,
+            builder,
             compile_environment_pointer(),
             fmm::types::Pointer::new(types::compile_entry_function_from_definition(definition)),
         ),
@@ -218,16 +227,4 @@ fn compile_environment_pointer() -> fmm::build::TypedExpression {
         fmm::ir::Variable::new(ENVIRONMENT_NAME),
         types::compile_unsized_environment(),
     )
-}
-
-pub fn generate_closure_entry_name(name: &str) -> String {
-    [name, "_entry"].concat()
-}
-
-fn generate_normal_entry_name(name: &str) -> String {
-    [name, "_entry_normal"].concat()
-}
-
-fn generate_locked_entry_name(name: &str) -> String {
-    [name, "_entry_locked"].concat()
 }

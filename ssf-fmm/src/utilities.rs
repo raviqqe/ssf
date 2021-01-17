@@ -1,14 +1,14 @@
 use fmm::types::{self, Type};
 
 pub fn bitcast(
-    state: &fmm::build::BlockState,
+    builder: &fmm::build::BlockBuilder,
     argument: impl Into<fmm::build::TypedExpression>,
     to_type: impl Into<Type>,
 ) -> fmm::build::TypedExpression {
     let argument = argument.into();
     let from_type = argument.type_();
 
-    state.deconstruct_union(
+    builder.deconstruct_union(
         fmm::build::TypedExpression::new(
             fmm::ir::Union::new(
                 types::Union::new(vec![from_type.clone(), to_type.into()]),

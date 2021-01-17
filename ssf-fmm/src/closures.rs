@@ -2,28 +2,28 @@ use super::types;
 use super::utilities;
 
 pub fn compile_load_entry_pointer(
-    state: &fmm::build::BlockState,
+    builder: &fmm::build::BlockBuilder,
     closure_pointer: impl Into<fmm::build::TypedExpression>,
 ) -> fmm::build::TypedExpression {
     // Entry functions of thunks need to be loaded atomically
     // to make thunk update thread-safe.
-    state.atomic_load(state.record_address(closure_pointer, 0))
+    builder.atomic_load(builder.record_address(closure_pointer, 0))
 }
 
 pub fn compile_load_arity(
-    state: &fmm::build::BlockState,
+    builder: &fmm::build::BlockBuilder,
     closure_pointer: impl Into<fmm::build::TypedExpression>,
 ) -> fmm::build::TypedExpression {
-    state.load(state.record_address(closure_pointer, 1))
+    builder.load(builder.record_address(closure_pointer, 1))
 }
 
 pub fn compile_environment_pointer(
-    state: &fmm::build::BlockState,
+    builder: &fmm::build::BlockBuilder,
     closure_pointer: impl Into<fmm::build::TypedExpression>,
 ) -> fmm::build::TypedExpression {
     utilities::bitcast(
-        state,
-        state.record_address(closure_pointer, 2),
+        builder,
+        builder.record_address(closure_pointer, 2),
         fmm::types::Pointer::new(types::compile_unsized_environment()),
     )
 }

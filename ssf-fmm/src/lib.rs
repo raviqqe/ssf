@@ -13,19 +13,19 @@ use definitions::compile_definition;
 use foreign_declarations::compile_foreign_declaration;
 
 pub fn compile(source_module: &ssf::ir::Module) -> fmm::ir::Module {
-    let mut module = fmm::ir::Module::new(vec![], vec![], vec![], vec![]);
+    let module_builder = fmm::build::ModuleBuilder::new();
 
     for declaration in source_module.foreign_declarations() {
-        module = compile_foreign_declaration(&module, declaration);
+        compile_foreign_declaration(&module_builder, declaration);
     }
 
     for declaration in source_module.declarations() {
-        module = compile_declaration(&module, declaration);
+        compile_declaration(&module_builder, declaration);
     }
 
     for definition in source_module.definitions() {
-        module = compile_definition(&module, definition);
+        compile_definition(&module_builder, definition);
     }
 
-    module
+    module_builder.as_module()
 }

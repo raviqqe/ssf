@@ -3,56 +3,26 @@ use crate::expressions;
 use crate::types::{self, FUNCTION_ARGUMENT_OFFSET};
 
 pub fn compile_foreign_declaration(
-    module: &fmm::ir::Module,
+    module_builder: &fmm::build::ModuleBuilder,
     declaration: &ssf::ir::ForeignDeclaration,
-) -> fmm::ir::Module {
-    let closure_type = types::compile_unsized_closure(declaration.type_());
-    let entry_function_definition = compile_entry_function(declaration);
-
-    fmm::ir::Module::new(
-        module.variable_declarations().to_vec(),
-        module
-            .function_declarations()
-            .iter()
-            .cloned()
-            .chain(vec![fmm::ir::FunctionDeclaration::new(
-                declaration.foreign_name(),
-                types::compile_foreign_function(declaration.type_()),
-            )])
-            .collect(),
-        module
-            .variable_definitions()
-            .iter()
-            .cloned()
-            .chain(vec![fmm::ir::VariableDefinition::new(
-                declaration.name(),
-                utilities::record(vec![
-                    utilities::variable(
-                        entry_function_definition.name(),
-                        entry_function_definition.type_().clone(),
-                    ),
-                    expressions::compile_arity(
-                        declaration.type_().arguments().into_iter().count() as u64
-                    )
-                    .into(),
-                    fmm::ir::Undefined::new(types::compile_unsized_environment()).into(),
-                ]),
-                closure_type,
-                false,
-            )])
-            .collect(),
-        module
-            .function_definitions()
-            .iter()
-            .cloned()
-            .chain(vec![entry_function_definition])
-            .collect(),
-    )
+) {
+    module_builder.define_variable(
+        declaration.name(),
+        utilities::record(vec![
+            compile_entry_function(module_builder, declaration),
+            expressions::compile_arity(declaration.type_().arguments().into_iter().count() as u64)
+                .into(),
+            fmm::ir::Undefined::new(types::compile_unsized_environment()).into(),
+        ]),
+        false,
+        false,
+    );
 }
 
 fn compile_entry_function(
+    module_builder: &fmm::build::ModuleBuilder,
     declaration: &ssf::ir::ForeignDeclaration,
-) -> fmm::ir::FunctionDefinition {
+) -> fmm::build::TypedExpression {
     let arguments = vec![fmm::ir::Argument::new(
         "_env",
         fmm::types::Pointer::new(types::compile_unsized_environment()),
@@ -72,15 +42,15 @@ fn compile_entry_function(
 
     let foreign_function_type = types::compile_foreign_function(declaration.type_());
 
-    fmm::ir::FunctionDefinition::new(
-        format!("{}_entry", declaration.name()),
+    module_builder.define_anonymous_function(
         arguments.clone(),
-        {
-            let state = fmm::build::BlockState::new();
-
-            state.return_(
-                state.call(
-                    utilities::variable(declaration.foreign_name(), foreign_function_type.clone()),
+        |builder| {
+            builder.return_(
+                builder.call(
+                    module_builder.declare_function(
+                        declaration.foreign_name(),
+                        types::compile_foreign_function(declaration.type_()),
+                    ),
                     arguments
                         .iter()
                         .skip(FUNCTION_ARGUMENT_OFFSET)
