@@ -19,6 +19,8 @@
     "llvm",
     "malloc",
     "reloc",
+    "tempdir",
+    "tempfile",
     "uncurried"
   ]
 }
