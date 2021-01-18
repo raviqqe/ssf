@@ -6,19 +6,20 @@ pub fn bitcast(
     to_type: impl Into<Type>,
 ) -> fmm::build::TypedExpression {
     let argument = argument.into();
-    let from_type = argument.type_();
+    let to_type = to_type.into();
 
-    builder.deconstruct_union(
-        fmm::build::TypedExpression::new(
+    if argument.type_() == &to_type {
+        argument
+    } else {
+        builder.deconstruct_union(
             fmm::ir::Union::new(
-                types::Union::new(vec![from_type.clone(), to_type.into()]),
+                types::Union::new(vec![argument.type_().clone(), to_type]),
                 0,
                 argument.expression().clone(),
             ),
-            from_type.clone(),
-        ),
-        1,
-    )
+            1,
+        )
+    }
 }
 
 pub fn variable(

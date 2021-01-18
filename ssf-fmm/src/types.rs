@@ -79,16 +79,16 @@ pub fn get_constructor_union_index(algebraic_type: &ssf::types::Algebraic, tag: 
 pub fn compile_sized_closure(definition: &ssf::ir::Definition) -> fmm::types::Record {
     compile_raw_closure(
         compile_entry_function_from_definition(definition),
-        fmm::types::Union::new(
-            vec![compile_environment(definition).into()]
-                .into_iter()
-                .chain(if definition.is_thunk() {
-                    Some(compile(definition.result_type()))
-                } else {
-                    None
-                })
-                .collect(),
-        ),
+        if definition.is_thunk() {
+            fmm::types::Type::Union(fmm::types::Union::new(
+                vec![compile_environment(definition).into()]
+                    .into_iter()
+                    .chain(vec![compile(definition.result_type())])
+                    .collect(),
+            ))
+        } else {
+            compile_environment(definition).into()
+        },
     )
 }
 

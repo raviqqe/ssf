@@ -229,8 +229,8 @@ fn compile_arguments(definition: &ssf::ir::Definition) -> Vec<fmm::ir::Argument>
 }
 
 fn compile_environment_pointer() -> fmm::build::TypedExpression {
-    fmm::build::TypedExpression::new(
-        fmm::ir::Variable::new(ENVIRONMENT_NAME),
-        types::compile_unsized_environment(),
+    utilities::variable(
+        ENVIRONMENT_NAME,
+        fmm::types::Pointer::new(types::compile_unsized_environment()),
     )
 }

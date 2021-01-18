@@ -10,3 +10,4 @@ edition = "2018"
 fmm = { git = "https://github.com/raviqqe/fmm", branch = "main" }
 fmm-c = { git = "https://github.com/raviqqe/fmm", branch = "main" }
 ssf = { path = "../ssf" }
+tempfile = "3"

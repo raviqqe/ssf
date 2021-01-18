@@ -34,13 +34,32 @@ pub fn compile(module: &ssf::ir::Module) -> fmm::ir::Module {
 mod tests {
     use super::*;
 
-    fn test_compile(module: &ssf::ir::Module) {
-        println!("{}", fmm_c::compile(&compile(module)));
+    fn compile_module(module: &ssf::ir::Module) {
+        let directory = tempfile::tempdir().unwrap();
+        let file_path = directory.path().join("foo.c");
+        let source = fmm_c::compile(&compile(module));
+
+        println!("{}", source);
+
+        std::fs::write(&file_path, source).unwrap();
+        let output = std::process::Command::new("clang")
+            .arg("-Werror") // cspell:disable-line
+            .arg("-Wno-incompatible-pointer-types-discards-qualifiers") // cspell:disable-line
+            .arg("-o")
+            .arg(directory.path().join("foo.o"))
+            .arg("-c")
+            .arg(&file_path)
+            .output()
+            .unwrap();
+
+        assert_eq!(String::from_utf8_lossy(&output.stdout), "");
+        assert_eq!(String::from_utf8_lossy(&output.stderr), "");
+        assert!(output.status.success());
     }
 
     #[test]
     fn compile_empty_module() {
-        test_compile(&ssf::ir::Module::new(vec![], vec![], vec![]));
+        compile_module(&ssf::ir::Module::new(vec![], vec![], vec![]));
     }
 
     mod foreign_declarations {
@@ -48,7 +67,7 @@ mod tests {
 
         #[test]
         fn compile() {
-            test_compile(&ssf::ir::Module::new(
+            compile_module(&ssf::ir::Module::new(
                 vec![ssf::ir::ForeignDeclaration::new(
                     "f",
                     "g",
@@ -64,7 +83,7 @@ mod tests {
 
         #[test]
         fn compile_with_multiple_arguments() {
-            test_compile(&ssf::ir::Module::new(
+            compile_module(&ssf::ir::Module::new(
                 vec![ssf::ir::ForeignDeclaration::new(
                     "f",
                     "g",
@@ -87,7 +106,7 @@ mod tests {
 
         #[test]
         fn compile() {
-            test_compile(&ssf::ir::Module::new(
+            compile_module(&ssf::ir::Module::new(
                 vec![],
                 vec![ssf::ir::Declaration::new(
                     "f",
@@ -102,7 +121,7 @@ mod tests {
 
         #[test]
         fn compile_with_multiple_arguments() {
-            test_compile(&ssf::ir::Module::new(
+            compile_module(&ssf::ir::Module::new(
                 vec![],
                 vec![ssf::ir::Declaration::new(
                     "f",
@@ -124,7 +143,7 @@ mod tests {
 
         #[test]
         fn compile() {
-            test_compile(&ssf::ir::Module::new(
+            compile_module(&ssf::ir::Module::new(
                 vec![],
                 vec![],
                 vec![ssf::ir::Definition::new(
@@ -138,7 +157,7 @@ mod tests {
 
         #[test]
         fn compile_with_multiple_arguments() {
-            test_compile(&ssf::ir::Module::new(
+            compile_module(&ssf::ir::Module::new(
                 vec![],
                 vec![],
                 vec![ssf::ir::Definition::new(
@@ -151,6 +170,58 @@ mod tests {
                         ssf::ir::PrimitiveOperator::Add,
                         ssf::ir::Variable::new("x"),
                         ssf::ir::Variable::new("y"),
+                    ),
+                    ssf::types::Primitive::Float64,
+                )],
+            ));
+        }
+    }
+
+    mod expressions {
+        use super::*;
+
+        #[test]
+        fn compile_let() {
+            compile_module(&ssf::ir::Module::new(
+                vec![],
+                vec![],
+                vec![ssf::ir::Definition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                    ssf::ir::Let::new(
+                        "y",
+                        ssf::types::Primitive::Float64,
+                        ssf::ir::Variable::new("x"),
+                        ssf::ir::Variable::new("y"),
+                    ),
+                    ssf::types::Primitive::Float64,
+                )],
+            ));
+        }
+
+        #[test]
+        fn compile_let_recursive() {
+            compile_module(&ssf::ir::Module::new(
+                vec![],
+                vec![],
+                vec![ssf::ir::Definition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                    ssf::ir::LetRecursive::new(
+                        vec![ssf::ir::Definition::new(
+                            "g",
+                            vec![ssf::ir::Argument::new("y", ssf::types::Primitive::Float64)],
+                            ssf::ir::PrimitiveOperation::new(
+                                ssf::ir::PrimitiveOperator::Add,
+                                ssf::ir::Variable::new("x"),
+                                ssf::ir::Variable::new("y"),
+                            ),
+                            ssf::types::Primitive::Float64,
+                        )],
+                        ssf::ir::FunctionApplication::new(
+                            ssf::ir::Variable::new("g"),
+                            ssf::ir::Primitive::Float64(42.0),
+                        ),
                     ),
                     ssf::types::Primitive::Float64,
                 )],

@@ -10,6 +10,8 @@ pub fn compile(
 ) -> fmm::build::TypedExpression {
     if arguments.is_empty() {
         closure_pointer
+    } else if arguments.len() == 1 {
+        compile_single_argument_application(&builder, closure_pointer.clone(), arguments[0].clone())
     } else {
         builder.if_(
             builder.comparison_operation(
@@ -44,38 +46,50 @@ fn compile_single_argument_application(
     closure_pointer: fmm::build::TypedExpression,
     argument: fmm::build::TypedExpression,
 ) -> fmm::build::TypedExpression {
-    builder.if_(
-        builder.comparison_operation(
-            fmm::ir::ComparisonOperator::Equal,
-            closures::compile_load_arity(builder, closure_pointer.clone()),
-            fmm::ir::Primitive::PointerInteger(1),
-        ),
-        |builder| {
-            let entry_pointer =
-                closures::compile_load_entry_pointer(&builder, closure_pointer.clone());
-
-            builder.branch(builder.call(
-                utilities::bitcast(
+    if types::get_arity(get_entry_function_type(&closure_pointer)) == 1 {
+        compile_single_argument_direct_call(&builder, closure_pointer, argument)
+    } else {
+        builder.if_(
+            builder.comparison_operation(
+                fmm::ir::ComparisonOperator::Equal,
+                closures::compile_load_arity(builder, closure_pointer.clone()),
+                fmm::ir::Primitive::PointerInteger(1),
+            ),
+            |builder| {
+                builder.branch(compile_single_argument_direct_call(
                     &builder,
-                    entry_pointer.clone(),
-                    types::compile_curried_entry_function(
-                        entry_pointer.type_().to_function().unwrap(),
-                        1,
-                    ),
-                ),
-                vec![
-                    closures::compile_environment_pointer(&builder, closure_pointer.clone()),
+                    closure_pointer.clone(),
                     argument.clone(),
-                ],
-            ))
-        },
-        |builder| {
-            builder.branch(compile_create_closure(
-                &builder,
-                closure_pointer.clone(),
-                &[argument.clone()],
-            ))
-        },
+                ))
+            },
+            |builder| {
+                builder.branch(compile_create_closure(
+                    &builder,
+                    closure_pointer.clone(),
+                    &[argument.clone()],
+                ))
+            },
+        )
+    }
+}
+
+fn compile_single_argument_direct_call(
+    builder: &fmm::build::BlockBuilder,
+    closure_pointer: fmm::build::TypedExpression,
+    argument: fmm::build::TypedExpression,
+) -> fmm::build::TypedExpression {
+    let entry_pointer = closures::compile_load_entry_pointer(&builder, closure_pointer.clone());
+
+    builder.call(
+        utilities::bitcast(
+            &builder,
+            entry_pointer.clone(),
+            types::compile_curried_entry_function(entry_pointer.type_().to_function().unwrap(), 1),
+        ),
+        vec![
+            closures::compile_environment_pointer(&builder, closure_pointer.clone()),
+            argument.clone(),
+        ],
     )
 }
 
@@ -84,16 +98,7 @@ fn compile_create_closure(
     closure_pointer: fmm::build::TypedExpression,
     arguments: &[fmm::build::TypedExpression],
 ) -> fmm::build::TypedExpression {
-    let entry_function_type = closure_pointer
-        .type_()
-        .to_pointer()
-        .unwrap()
-        .element()
-        .to_record()
-        .unwrap()
-        .elements()[0]
-        .to_function()
-        .unwrap();
+    let entry_function_type = get_entry_function_type(&closure_pointer);
 
     let target_entry_function_type = fmm::types::Function::new(
         entry_function_type.arguments()[..types::FUNCTION_ARGUMENT_OFFSET]
@@ -182,4 +187,17 @@ fn compile_partially_applied_entry_function(
         },
         curried_entry_function_type.result().clone(),
     )
+}
+
+fn get_entry_function_type(closure_pointer: &fmm::build::TypedExpression) -> &fmm::types::Function {
+    closure_pointer
+        .type_()
+        .to_pointer()
+        .unwrap()
+        .element()
+        .to_record()
+        .unwrap()
+        .elements()[0]
+        .to_function()
+        .unwrap()
 }
