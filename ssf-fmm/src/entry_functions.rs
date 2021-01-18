@@ -2,7 +2,7 @@ use super::expressions;
 use super::types;
 use super::utilities;
 
-const ENVIRONMENT_NAME: &str = "_environment";
+const ENVIRONMENT_NAME: &str = "_env";
 
 pub fn compile(
     module_builder: &fmm::build::ModuleBuilder,
@@ -62,6 +62,12 @@ fn compile_body(
                     )),
                 )
             })
+            .chain(definition.arguments().iter().map(|argument| {
+                (
+                    argument.name().into(),
+                    utilities::variable(argument.name(), types::compile(argument.type_())),
+                )
+            }))
             .collect(),
     )
 }
@@ -211,7 +217,7 @@ fn compile_entry_function_pointer_pointer(
 fn compile_arguments(definition: &ssf::ir::Definition) -> Vec<fmm::ir::Argument> {
     vec![fmm::ir::Argument::new(
         ENVIRONMENT_NAME,
-        types::compile_unsized_environment(),
+        fmm::types::Pointer::new(types::compile_unsized_environment()),
     )]
     .into_iter()
     .chain(

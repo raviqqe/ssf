@@ -8,4 +8,5 @@ edition = "2018"
 
 [dependencies]
 fmm = { git = "https://github.com/raviqqe/fmm", branch = "main" }
+fmm-c = { git = "https://github.com/raviqqe/fmm", branch = "main" }
 ssf = { path = "../ssf" }
