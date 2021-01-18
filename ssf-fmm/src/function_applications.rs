@@ -11,7 +11,7 @@ pub fn compile(
     if arguments.is_empty() {
         closure_pointer
     } else if arguments.len() == 1 {
-        compile_single_argument_application(&builder, closure_pointer.clone(), arguments[0].clone())
+        compile_single_argument_application(&builder, closure_pointer, arguments[0].clone())
     } else {
         builder.if_(
             builder.comparison_operation(
@@ -87,8 +87,8 @@ fn compile_single_argument_direct_call(
             types::compile_curried_entry_function(entry_pointer.type_().to_function().unwrap(), 1),
         ),
         vec![
-            closures::compile_environment_pointer(&builder, closure_pointer.clone()),
-            argument.clone(),
+            closures::compile_environment_pointer(&builder, closure_pointer),
+            argument,
         ],
     )
 }
