@@ -1,6 +1,4 @@
 FROM archlinux/base
 
-RUN pacman -Syu --noconfirm base-devel clang git llvm npm rustup
-RUN rustup default stable
-RUN cargo install cargo-audit cargo-release
+RUN pacman -Syu --noconfirm base-devel clang git llvm npm
 RUN npm install -g cspell
