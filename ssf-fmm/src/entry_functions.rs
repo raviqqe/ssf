@@ -1,27 +1,30 @@
 use super::expressions;
 use super::types;
 use super::utilities;
+use std::collections::HashMap;
 
 const ENVIRONMENT_NAME: &str = "_env";
 
 pub fn compile(
     module_builder: &fmm::build::ModuleBuilder,
     definition: &ssf::ir::Definition,
+    variables: &HashMap<String, fmm::build::TypedExpression>,
 ) -> fmm::build::TypedExpression {
     if definition.is_thunk() {
-        compile_thunk(module_builder, definition)
+        compile_thunk(module_builder, definition, variables)
     } else {
-        compile_non_thunk(module_builder, definition)
+        compile_non_thunk(module_builder, definition, variables)
     }
 }
 
 fn compile_non_thunk(
     module_builder: &fmm::build::ModuleBuilder,
     definition: &ssf::ir::Definition,
+    variables: &HashMap<String, fmm::build::TypedExpression>,
 ) -> fmm::build::TypedExpression {
     module_builder.define_anonymous_function(
         compile_arguments(definition),
-        |builder| builder.return_(compile_body(&builder, definition)),
+        |builder| builder.return_(compile_body(&builder, definition, variables)),
         types::compile(definition.result_type()),
     )
 }
@@ -29,39 +32,49 @@ fn compile_non_thunk(
 fn compile_thunk(
     module_builder: &fmm::build::ModuleBuilder,
     definition: &ssf::ir::Definition,
+    variables: &HashMap<String, fmm::build::TypedExpression>,
 ) -> fmm::build::TypedExpression {
     compile_first_thunk_entry(
         module_builder,
         definition,
         compile_normal_thunk_entry(module_builder, definition),
         compile_locked_thunk_entry(module_builder, definition),
+        variables,
     )
 }
 
 fn compile_body(
     builder: &fmm::build::BlockBuilder,
     definition: &ssf::ir::Definition,
+    variables: &HashMap<String, fmm::build::TypedExpression>,
 ) -> fmm::build::TypedExpression {
     expressions::compile(
         builder,
         definition.body(),
-        &definition
-            .environment()
-            .iter()
-            .enumerate()
-            .map(|(index, free_variable)| {
-                (
-                    free_variable.name().into(),
-                    builder.load(builder.record_address(
-                        utilities::bitcast(
-                            builder,
-                            compile_environment_pointer(),
-                            fmm::types::Pointer::new(types::compile_environment(definition)),
-                        ),
-                        index,
-                    )),
-                )
-            })
+        &variables
+            .clone()
+            .into_iter()
+            .chain(
+                definition
+                    .environment()
+                    .iter()
+                    .enumerate()
+                    .map(|(index, free_variable)| {
+                        (
+                            free_variable.name().into(),
+                            builder.load(builder.record_address(
+                                utilities::bitcast(
+                                    builder,
+                                    compile_environment_pointer(),
+                                    fmm::types::Pointer::new(types::compile_environment(
+                                        definition,
+                                    )),
+                                ),
+                                index,
+                            )),
+                        )
+                    }),
+            )
             .chain(definition.arguments().iter().map(|argument| {
                 (
                     argument.name().into(),
@@ -77,6 +90,7 @@ fn compile_first_thunk_entry(
     definition: &ssf::ir::Definition,
     normal_entry_function: fmm::build::TypedExpression,
     lock_entry_function: fmm::build::TypedExpression,
+    variables: &HashMap<String, fmm::build::TypedExpression>,
 ) -> fmm::build::TypedExpression {
     let entry_function_name = module_builder.generate_name();
     let entry_function_type = types::compile_entry_function_from_definition(definition);
@@ -93,7 +107,7 @@ fn compile_first_thunk_entry(
                     lock_entry_function.clone(),
                 ),
                 |builder| {
-                    let value = compile_body(&builder, definition);
+                    let value = compile_body(&builder, definition, variables);
 
                     builder.store(
                         value.clone(),

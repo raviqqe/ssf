@@ -284,7 +284,7 @@ fn compile_let_recursive(
     for definition in let_.definitions() {
         builder.store(
             closures::compile_closure_content(
-                entry_functions::compile(builder.module_builder(), definition),
+                entry_functions::compile(builder.module_builder(), definition, &variables),
                 definition
                     .environment()
                     .iter()
