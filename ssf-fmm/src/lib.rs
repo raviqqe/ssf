@@ -418,6 +418,64 @@ mod tests {
             }
         }
 
+        mod primitive_cases {
+            use super::*;
+
+            #[test]
+            fn compile() {
+                compile_module(&ssf::ir::Module::new(
+                    vec![],
+                    vec![],
+                    vec![ssf::ir::Definition::new(
+                        "f",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        ssf::ir::PrimitiveCase::new(
+                            ssf::ir::Variable::new("x"),
+                            vec![
+                                ssf::ir::PrimitiveAlternative::new(
+                                    ssf::ir::Primitive::Float64(0.0),
+                                    ssf::ir::Primitive::Float64(1.0),
+                                ),
+                                ssf::ir::PrimitiveAlternative::new(
+                                    ssf::ir::Primitive::Float64(2.0),
+                                    ssf::ir::Primitive::Float64(3.0),
+                                ),
+                            ],
+                            None,
+                        ),
+                        ssf::types::Primitive::Float64,
+                    )],
+                ));
+            }
+
+            #[test]
+            fn compile_with_default_alternative() {
+                compile_module(&ssf::ir::Module::new(
+                    vec![],
+                    vec![],
+                    vec![ssf::ir::Definition::new(
+                        "f",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        ssf::ir::PrimitiveCase::new(
+                            ssf::ir::Variable::new("x"),
+                            vec![
+                                ssf::ir::PrimitiveAlternative::new(
+                                    ssf::ir::Primitive::Float64(0.0),
+                                    ssf::ir::Primitive::Float64(1.0),
+                                ),
+                                ssf::ir::PrimitiveAlternative::new(
+                                    ssf::ir::Primitive::Float64(2.0),
+                                    ssf::ir::Primitive::Float64(3.0),
+                                ),
+                            ],
+                            Some(ssf::ir::Primitive::Float64(4.0).into()),
+                        ),
+                        ssf::types::Primitive::Float64,
+                    )],
+                ));
+            }
+        }
+
         mod function_applications {
             use super::*;
 
