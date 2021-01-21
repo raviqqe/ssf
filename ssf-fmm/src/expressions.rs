@@ -167,7 +167,13 @@ fn compile_algebraic_alternatives(
                             );
 
                             if constructor.constructor_type().is_boxed() {
-                                payload = builder.load(payload);
+                                payload = builder.load(utilities::bitcast(
+                                    &builder,
+                                    payload,
+                                    types::compile_boxed_constructor(
+                                        constructor.constructor_type(),
+                                    ),
+                                ));
                             }
 
                             variables

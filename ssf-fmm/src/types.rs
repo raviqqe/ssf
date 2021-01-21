@@ -49,17 +49,21 @@ pub fn compile_constructor_union(algebraic_type: &ssf::types::Algebraic) -> fmm:
         algebraic_type
             .constructors()
             .iter()
-            .map(|(_, constructor)| compile_constructor(constructor))
+            .map(|(_, constructor)| compile_shallow_constructor(constructor))
             .collect(),
     )
 }
 
-fn compile_constructor(constructor: &ssf::types::Constructor) -> fmm::types::Type {
+fn compile_shallow_constructor(constructor: &ssf::types::Constructor) -> fmm::types::Type {
     if constructor.is_boxed() {
         fmm::types::Pointer::new(fmm::types::Record::new(vec![])).into()
     } else {
         compile_unboxed_constructor(constructor).into()
     }
+}
+
+pub fn compile_boxed_constructor(constructor: &ssf::types::Constructor) -> fmm::types::Pointer {
+    fmm::types::Pointer::new(compile_unboxed_constructor(constructor))
 }
 
 pub fn compile_unboxed_constructor(constructor: &ssf::types::Constructor) -> fmm::types::Record {
