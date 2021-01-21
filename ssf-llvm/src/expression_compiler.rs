@@ -585,13 +585,9 @@ impl<'c> ExpressionCompiler<'c> {
         lhs: inkwell::values::IntValue<'c>,
         rhs: inkwell::values::IntValue<'c>,
     ) -> inkwell::values::BasicValueEnum<'c> {
-        self.builder.build_cast(
-            inkwell::values::InstructionOpcode::ZExt,
-            self.builder.build_int_compare(predicate, lhs, rhs, ""),
-            self.type_compiler
-                .compile_primitive(&ssf::types::Primitive::Integer8),
-            "",
-        )
+        self.builder
+            .build_int_compare(predicate, lhs, rhs, "")
+            .into()
     }
 
     fn compile_float_comparison_operations(
@@ -600,13 +596,9 @@ impl<'c> ExpressionCompiler<'c> {
         lhs: inkwell::values::FloatValue<'c>,
         rhs: inkwell::values::FloatValue<'c>,
     ) -> inkwell::values::BasicValueEnum<'c> {
-        self.builder.build_cast(
-            inkwell::values::InstructionOpcode::ZExt,
-            self.builder.build_float_compare(predicate, lhs, rhs, ""),
-            self.type_compiler
-                .compile_primitive(&ssf::types::Primitive::Integer8),
-            "",
-        )
+        self.builder
+            .build_float_compare(predicate, lhs, rhs, "")
+            .into()
     }
 
     fn compile_primitive(
