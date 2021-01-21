@@ -9,8 +9,8 @@ pub enum Primitive {
 }
 
 impl From<bool> for Primitive {
-    fn from(bool: bool) -> Self {
-        Self::Boolean(bool)
+    fn from(boolean: bool) -> Self {
+        Self::Boolean(boolean)
     }
 }
 
