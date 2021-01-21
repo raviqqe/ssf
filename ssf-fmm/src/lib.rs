@@ -284,7 +284,7 @@ mod tests {
                         ssf::ir::AlgebraicCase::new(
                             ssf::ir::Variable::new("x"),
                             vec![ssf::ir::AlgebraicAlternative::new(
-                                ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                                ssf::ir::Constructor::new(algebraic_type, 0),
                                 vec![],
                                 ssf::ir::Primitive::Float64(42.0),
                             )],
@@ -310,7 +310,7 @@ mod tests {
                         ssf::ir::AlgebraicCase::new(
                             ssf::ir::Variable::new("x"),
                             vec![ssf::ir::AlgebraicAlternative::new(
-                                ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                                ssf::ir::Constructor::new(algebraic_type, 0),
                                 vec!["y".into()],
                                 ssf::ir::Variable::new("y"),
                             )],
@@ -336,7 +336,7 @@ mod tests {
                         ssf::ir::AlgebraicCase::new(
                             ssf::ir::Variable::new("x"),
                             vec![ssf::ir::AlgebraicAlternative::new(
-                                ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                                ssf::ir::Constructor::new(algebraic_type, 0),
                                 vec!["y".into()],
                                 ssf::ir::Variable::new("y"),
                             )],
@@ -363,7 +363,7 @@ mod tests {
                         ssf::ir::AlgebraicCase::new(
                             ssf::ir::Variable::new("x"),
                             vec![ssf::ir::AlgebraicAlternative::new(
-                                ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                                ssf::ir::Constructor::new(algebraic_type, 0),
                                 vec!["y".into()],
                                 ssf::ir::Variable::new("y"),
                             )],
@@ -405,7 +405,7 @@ mod tests {
                                     ssf::ir::Variable::new("y"),
                                 ),
                                 ssf::ir::AlgebraicAlternative::new(
-                                    ssf::ir::Constructor::new(algebraic_type.clone(), 2045),
+                                    ssf::ir::Constructor::new(algebraic_type, 2045),
                                     vec![],
                                     ssf::ir::Primitive::Float64(42.0),
                                 ),
