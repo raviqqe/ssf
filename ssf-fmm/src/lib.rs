@@ -476,6 +476,98 @@ mod tests {
             }
         }
 
+        mod constructor_applications {
+            use super::*;
+
+            #[test]
+            fn compile_singleton_enum() {
+                let algebraic_type =
+                    ssf::types::Algebraic::new(vec![ssf::types::Constructor::unboxed(vec![])]);
+
+                compile_module(&ssf::ir::Module::new(
+                    vec![],
+                    vec![],
+                    vec![ssf::ir::Definition::new(
+                        "f",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        ssf::ir::ConstructorApplication::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                            vec![],
+                        ),
+                        algebraic_type,
+                    )],
+                ));
+            }
+
+            #[test]
+            fn compile_singleton_with_1_element() {
+                let algebraic_type = ssf::types::Algebraic::new(vec![
+                    ssf::types::Constructor::unboxed(vec![ssf::types::Primitive::Float64.into()]),
+                ]);
+
+                compile_module(&ssf::ir::Module::new(
+                    vec![],
+                    vec![],
+                    vec![ssf::ir::Definition::new(
+                        "f",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        ssf::ir::ConstructorApplication::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                            vec![ssf::ir::Primitive::Float64(42.0).into()],
+                        ),
+                        algebraic_type,
+                    )],
+                ));
+            }
+
+            #[test]
+            fn compile_singleton_with_2_elements() {
+                let algebraic_type =
+                    ssf::types::Algebraic::new(vec![ssf::types::Constructor::unboxed(vec![
+                        ssf::types::Primitive::Float64.into(),
+                        ssf::types::Primitive::Integer64.into(),
+                    ])]);
+
+                compile_module(&ssf::ir::Module::new(
+                    vec![],
+                    vec![],
+                    vec![ssf::ir::Definition::new(
+                        "f",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        ssf::ir::ConstructorApplication::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                            vec![
+                                ssf::ir::Primitive::Float64(42.0).into(),
+                                ssf::ir::Primitive::Integer64(42).into(),
+                            ],
+                        ),
+                        algebraic_type,
+                    )],
+                ));
+            }
+
+            #[test]
+            fn compile_boxed_singleton() {
+                let algebraic_type = ssf::types::Algebraic::new(vec![
+                    ssf::types::Constructor::boxed(vec![ssf::types::Primitive::Float64.into()]),
+                ]);
+
+                compile_module(&ssf::ir::Module::new(
+                    vec![],
+                    vec![],
+                    vec![ssf::ir::Definition::new(
+                        "f",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        ssf::ir::ConstructorApplication::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                            vec![ssf::ir::Primitive::Float64(42.0).into()],
+                        ),
+                        algebraic_type,
+                    )],
+                ));
+            }
+        }
+
         mod function_applications {
             use super::*;
 

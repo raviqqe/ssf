@@ -37,26 +37,32 @@ pub fn compile(
                 .chain(if constructor_type.is_enum() {
                     None
                 } else {
-                    let record_type = types::compile_unboxed_constructor(&constructor_type);
-                    let payload = fmm::ir::Record::new(
-                        record_type.clone(),
+                    let payload = utilities::record(
                         constructor_application
                             .arguments()
                             .iter()
-                            .map(|argument| {
-                                compile(builder, argument, variables).expression().clone()
-                            })
+                            .map(|argument| compile(builder, argument, variables))
                             .collect(),
                     );
+                    let union_type = types::compile_constructor_union(algebraic_type);
+                    let member_index =
+                        types::get_constructor_union_index(algebraic_type, constructor.tag());
 
                     Some(
                         fmm::ir::Union::new(
-                            types::compile_constructor_union(algebraic_type),
-                            types::get_constructor_union_index(algebraic_type, constructor.tag()),
+                            union_type.clone(),
+                            member_index,
                             if constructor_type.is_boxed() {
-                                let pointer = builder.allocate_heap(record_type);
+                                let pointer = builder.allocate_heap(payload.type_().clone());
                                 builder.store(payload, pointer.clone());
-                                pointer.expression().clone()
+
+                                utilities::bitcast(
+                                    &builder,
+                                    pointer,
+                                    union_type.members()[member_index].clone(),
+                                )
+                                .expression()
+                                .clone()
                             } else {
                                 payload.into()
                             },
