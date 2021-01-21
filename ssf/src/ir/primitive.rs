@@ -1,6 +1,6 @@
 #[derive(Clone, Debug, PartialEq)]
 pub enum Primitive {
-    Bool(bool),
+    Boolean(bool),
     Float32(f32),
     Float64(f64),
     Integer8(u8),
@@ -10,7 +10,7 @@ pub enum Primitive {
 
 impl From<bool> for Primitive {
     fn from(bool: bool) -> Self {
-        Self::Bool(bool)
+        Self::Boolean(bool)
     }
 }
 
