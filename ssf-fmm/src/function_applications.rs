@@ -7,114 +7,45 @@ pub fn compile(
     closure_pointer: fmm::build::TypedExpression,
     arguments: &[fmm::build::TypedExpression],
 ) -> fmm::build::TypedExpression {
-    if arguments.is_empty() {
-        closure_pointer
-    } else if types::get_arity(get_entry_function_type(&closure_pointer)) == arguments.len() {
-        compile_full_application(builder, closure_pointer, arguments)
-    } else {
-        compile_partial_application(builder, closure_pointer, arguments)
-    }
+    compile_with_min_arity(builder, closure_pointer, arguments, 1)
 }
 
-fn compile_full_application(
+fn compile_with_min_arity(
     builder: &fmm::build::BlockBuilder,
     closure_pointer: fmm::build::TypedExpression,
     arguments: &[fmm::build::TypedExpression],
+    min_arity: usize,
 ) -> fmm::build::TypedExpression {
-    assert!(!arguments.is_empty());
-
-    if arguments.len() == 1 {
+    if arguments.len() == 0 {
+        closure_pointer
+    } else if arguments.len() < min_arity {
+        compile_create_closure(builder, closure_pointer, arguments)
+    } else if types::get_arity(get_entry_function_type(&closure_pointer)) == min_arity {
         compile_direct_call(builder, closure_pointer, arguments)
     } else {
         builder.if_(
             builder.comparison_operation(
                 fmm::ir::ComparisonOperator::Equal,
-                fmm::ir::Primitive::PointerInteger(arguments.len() as u64),
                 closures::compile_load_arity(builder, closure_pointer.clone()),
+                fmm::ir::Primitive::PointerInteger(min_arity as u64),
             ),
             |builder| {
-                builder.branch(compile_direct_call(
+                builder.branch(compile(
                     &builder,
-                    closure_pointer.clone(),
-                    arguments,
+                    compile_direct_call(&builder, closure_pointer.clone(), &arguments[..min_arity]),
+                    &arguments[min_arity..],
                 ))
             },
             |builder| {
-                builder.branch(compile_direct_call(
+                builder.branch(compile_with_min_arity(
                     &builder,
-                    compile_full_application(
-                        &builder,
-                        closure_pointer.clone(),
-                        &arguments[..arguments.len() - 1],
-                    ),
-                    &arguments[arguments.len() - 1..],
+                    closure_pointer.clone(),
+                    arguments,
+                    min_arity + 1,
                 ))
             },
         )
     }
-}
-
-fn compile_partial_application(
-    builder: &fmm::build::BlockBuilder,
-    closure_pointer: fmm::build::TypedExpression,
-    arguments: &[fmm::build::TypedExpression],
-) -> fmm::build::TypedExpression {
-    assert!(!arguments.is_empty());
-
-    // TODO
-    builder.if_(
-        builder.comparison_operation(
-            fmm::ir::ComparisonOperator::Equal,
-            fmm::ir::Primitive::PointerInteger(arguments.len() as u64),
-            closures::compile_load_arity(builder, closure_pointer.clone()),
-        ),
-        |builder| {
-            builder.branch(compile_direct_call(
-                &builder,
-                closure_pointer.clone(),
-                arguments,
-            ))
-        },
-        |builder| {
-            if types::get_arity(get_entry_function_type(&closure_pointer)) == arguments.len() {
-                builder.branch(compile_direct_call(
-                    &builder,
-                    compile(
-                        &builder,
-                        closure_pointer.clone(),
-                        &arguments[..arguments.len() - 1],
-                    ),
-                    &arguments[arguments.len() - 1..],
-                ))
-            } else {
-                builder.branch(builder.if_(
-                    builder.comparison_operation(
-                        fmm::ir::ComparisonOperator::LessThan,
-                        fmm::ir::Primitive::PointerInteger(arguments.len() as u64),
-                        closures::compile_load_arity(&builder, closure_pointer.clone()),
-                    ),
-                    |builder| {
-                        builder.branch(compile_create_closure(
-                            &builder,
-                            closure_pointer.clone(),
-                            arguments,
-                        ))
-                    },
-                    |builder| {
-                        builder.branch(compile(
-                            &builder,
-                            compile(
-                                &builder,
-                                closure_pointer.clone(),
-                                &arguments[..arguments.len() - 1],
-                            ),
-                            &arguments[arguments.len() - 1..],
-                        ))
-                    },
-                ))
-            }
-        },
-    )
 }
 
 fn compile_direct_call(

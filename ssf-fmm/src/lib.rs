@@ -349,13 +349,114 @@ mod tests {
                                 ssf::ir::FunctionApplication::new(
                                     ssf::ir::FunctionApplication::new(
                                         ssf::ir::Variable::new("f"),
-                                        ssf::ir::Primitive::Float64(42.0),
+                                        ssf::ir::Primitive::Float64(111.0),
                                     ),
-                                    ssf::ir::Primitive::Integer32(42),
+                                    ssf::ir::Primitive::Integer32(222),
                                 ),
-                                ssf::ir::Primitive::Integer64(42),
+                                ssf::ir::Primitive::Integer64(333),
                             ),
                             ssf::types::Primitive::Float64,
+                        ),
+                    ],
+                ));
+            }
+
+            #[test]
+            fn compile_one_argument_with_arity_of_2() {
+                compile_module(&ssf::ir::Module::new(
+                    vec![],
+                    vec![],
+                    vec![
+                        ssf::ir::Definition::new(
+                            "f",
+                            vec![
+                                ssf::ir::Argument::new("x", ssf::types::Primitive::Float64),
+                                ssf::ir::Argument::new("y", ssf::types::Primitive::Integer32),
+                            ],
+                            ssf::ir::Variable::new("x"),
+                            ssf::types::Primitive::Float64,
+                        ),
+                        ssf::ir::Definition::new(
+                            "g",
+                            vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                            ssf::ir::FunctionApplication::new(
+                                ssf::ir::Variable::new("f"),
+                                ssf::ir::Primitive::Float64(42.0),
+                            ),
+                            ssf::types::Function::new(
+                                ssf::types::Primitive::Integer32,
+                                ssf::types::Primitive::Float64,
+                            ),
+                        ),
+                    ],
+                ));
+            }
+
+            #[test]
+            fn compile_one_arguments_with_arity_of_3() {
+                compile_module(&ssf::ir::Module::new(
+                    vec![],
+                    vec![],
+                    vec![
+                        ssf::ir::Definition::new(
+                            "f",
+                            vec![
+                                ssf::ir::Argument::new("x", ssf::types::Primitive::Float64),
+                                ssf::ir::Argument::new("y", ssf::types::Primitive::Integer32),
+                                ssf::ir::Argument::new("z", ssf::types::Primitive::Integer64),
+                            ],
+                            ssf::ir::Variable::new("x"),
+                            ssf::types::Primitive::Float64,
+                        ),
+                        ssf::ir::Definition::new(
+                            "g",
+                            vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                            ssf::ir::FunctionApplication::new(
+                                ssf::ir::Variable::new("f"),
+                                ssf::ir::Primitive::Float64(42.0),
+                            ),
+                            ssf::types::Function::new(
+                                ssf::types::Primitive::Integer32,
+                                ssf::types::Function::new(
+                                    ssf::types::Primitive::Integer64,
+                                    ssf::types::Primitive::Float64,
+                                ),
+                            ),
+                        ),
+                    ],
+                ));
+            }
+
+            #[test]
+            fn compile_two_arguments_with_arity_of_3() {
+                compile_module(&ssf::ir::Module::new(
+                    vec![],
+                    vec![],
+                    vec![
+                        ssf::ir::Definition::new(
+                            "f",
+                            vec![
+                                ssf::ir::Argument::new("x", ssf::types::Primitive::Float64),
+                                ssf::ir::Argument::new("y", ssf::types::Primitive::Integer32),
+                                ssf::ir::Argument::new("z", ssf::types::Primitive::Integer64),
+                            ],
+                            ssf::ir::Variable::new("x"),
+                            ssf::types::Primitive::Float64,
+                        ),
+                        ssf::ir::Definition::new(
+                            "g",
+                            vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                            ssf::ir::FunctionApplication::new(
+                                ssf::ir::FunctionApplication::new(
+                                    ssf::ir::Variable::new("f"),
+                                    ssf::ir::Primitive::Float64(111.0),
+                                ),
+                                ssf::ir::Primitive::Integer32(222),
+                            ),
+                            ssf::types::Function::new(
+                                ssf::types::Primitive::Integer64,
+                                ssf::types::Primitive::Float64,
+                            ),
                         ),
                     ],
                 ));
