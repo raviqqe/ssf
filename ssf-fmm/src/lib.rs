@@ -566,6 +566,28 @@ mod tests {
                     )],
                 ));
             }
+
+            #[test]
+            fn compile_multiple_members() {
+                let algebraic_type = ssf::types::Algebraic::new(vec![
+                    ssf::types::Constructor::unboxed(vec![ssf::types::Primitive::Float64.into()]),
+                    ssf::types::Constructor::unboxed(vec![ssf::types::Primitive::Integer64.into()]),
+                ]);
+
+                compile_module(&ssf::ir::Module::new(
+                    vec![],
+                    vec![],
+                    vec![ssf::ir::Definition::new(
+                        "f",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        ssf::ir::ConstructorApplication::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                            vec![ssf::ir::Primitive::Float64(42.0).into()],
+                        ),
+                        algebraic_type,
+                    )],
+                ));
+            }
         }
 
         mod function_applications {
