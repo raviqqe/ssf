@@ -271,7 +271,7 @@ mod tests {
             use super::*;
 
             #[test]
-            fn compile_one_argument() {
+            fn compile_1_argument() {
                 compile_module(&ssf::ir::Module::new(
                     vec![],
                     vec![],
@@ -296,7 +296,7 @@ mod tests {
             }
 
             #[test]
-            fn compile_two_arguments() {
+            fn compile_2_arguments() {
                 compile_module(&ssf::ir::Module::new(
                     vec![],
                     vec![],
@@ -327,7 +327,7 @@ mod tests {
             }
 
             #[test]
-            fn compile_three_arguments() {
+            fn compile_3_arguments() {
                 compile_module(&ssf::ir::Module::new(
                     vec![],
                     vec![],
@@ -362,7 +362,7 @@ mod tests {
             }
 
             #[test]
-            fn compile_one_argument_with_arity_of_2() {
+            fn compile_1_argument_with_arity_of_2() {
                 compile_module(&ssf::ir::Module::new(
                     vec![],
                     vec![],
@@ -393,7 +393,7 @@ mod tests {
             }
 
             #[test]
-            fn compile_one_arguments_with_arity_of_3() {
+            fn compile_1_argument_with_arity_of_3() {
                 compile_module(&ssf::ir::Module::new(
                     vec![],
                     vec![],
@@ -428,7 +428,7 @@ mod tests {
             }
 
             #[test]
-            fn compile_two_arguments_with_arity_of_3() {
+            fn compile_2_arguments_with_arity_of_3() {
                 compile_module(&ssf::ir::Module::new(
                     vec![],
                     vec![],
