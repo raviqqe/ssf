@@ -16,7 +16,7 @@ fn compile_with_min_arity(
     arguments: &[fmm::build::TypedExpression],
     min_arity: usize,
 ) -> fmm::build::TypedExpression {
-    if arguments.len() == 0 {
+    if arguments.is_empty() {
         closure_pointer
     } else if arguments.len() < min_arity {
         compile_create_closure(builder, closure_pointer, arguments)
@@ -160,7 +160,7 @@ fn compile_partially_applied_entry_function(
 
             builder.return_(
                 if types::get_arity(get_entry_function_type(&closure_pointer)) == arguments.len() {
-                    compile_direct_call(&builder, closure_pointer.clone(), &arguments)
+                    compile_direct_call(&builder, closure_pointer, &arguments)
                 } else {
                     builder.if_(
                         builder.comparison_operation(
