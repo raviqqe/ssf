@@ -614,6 +614,11 @@ impl<'c> ExpressionCompiler<'c> {
         primitive: &ssf::ir::Primitive,
     ) -> inkwell::values::BasicValueEnum<'c> {
         match primitive {
+            ssf::ir::Primitive::Bool(bool) => self
+                .context
+                .custom_width_int_type(1)
+                .const_int(*bool as u64, false)
+                .into(),
             ssf::ir::Primitive::Float32(number) => {
                 self.context.f32_type().const_float(*number as f64).into()
             }
