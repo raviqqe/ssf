@@ -360,6 +360,7 @@ fn compile_primitive_operation(
 
 fn compile_primitive(primitive: &ssf::ir::Primitive) -> fmm::ir::Primitive {
     match primitive {
+        ssf::ir::Primitive::Boolean(boolean) => fmm::ir::Primitive::Boolean(*boolean),
         ssf::ir::Primitive::Float32(number) => fmm::ir::Primitive::Float32(*number),
         ssf::ir::Primitive::Float64(number) => fmm::ir::Primitive::Float64(*number),
         ssf::ir::Primitive::Integer8(number) => fmm::ir::Primitive::Integer8(*number),

@@ -133,7 +133,7 @@ fn check_expression(
                 | PrimitiveOperator::GreaterThan
                 | PrimitiveOperator::GreaterThanOrEqual
                 | PrimitiveOperator::LessThan
-                | PrimitiveOperator::LessThanOrEqual => types::Primitive::Integer8.into(),
+                | PrimitiveOperator::LessThanOrEqual => types::Primitive::Boolean.into(),
                 PrimitiveOperator::Add
                 | PrimitiveOperator::Subtract
                 | PrimitiveOperator::Multiply
@@ -225,6 +225,7 @@ fn check_case(case: &Case, variables: &HashMap<&str, Type>) -> Result<Type, Type
 
 fn check_primitive(primitive: &Primitive) -> types::Primitive {
     match primitive {
+        Primitive::Boolean(_) => types::Primitive::Boolean,
         Primitive::Float32(_) => types::Primitive::Float32,
         Primitive::Float64(_) => types::Primitive::Float64,
         Primitive::Integer8(_) => types::Primitive::Integer8,
@@ -966,7 +967,7 @@ mod tests {
                 vec![],
                 vec![Argument::new("x", types::Primitive::Float64)],
                 PrimitiveOperation::new(PrimitiveOperator::Equal, 42.0, 42.0),
-                types::Primitive::Integer8,
+                types::Primitive::Boolean,
             )],
         );
         assert_eq!(check_types(&module), Ok(()));

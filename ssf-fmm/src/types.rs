@@ -21,6 +21,7 @@ pub fn compile(type_: &ssf::types::Type) -> fmm::types::Type {
 
 pub fn compile_primitive(primitive: &ssf::types::Primitive) -> fmm::types::Type {
     match primitive {
+        ssf::types::Primitive::Boolean => fmm::types::Primitive::Boolean.into(),
         ssf::types::Primitive::Float32 => fmm::types::Primitive::Float32.into(),
         ssf::types::Primitive::Float64 => fmm::types::Primitive::Float64.into(),
         ssf::types::Primitive::Integer8 => fmm::types::Primitive::Integer8.into(),
