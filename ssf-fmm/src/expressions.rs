@@ -151,13 +151,19 @@ fn compile_algebraic_alternatives(
                         &if constructor.constructor_type().is_enum() {
                             variables.clone()
                         } else {
-                            let mut payload = builder.deconstruct_record(
-                                argument.clone(),
-                                if constructor.algebraic_type().is_singleton() {
-                                    0
-                                } else {
-                                    1
-                                },
+                            let mut payload = builder.deconstruct_union(
+                                builder.deconstruct_record(
+                                    argument.clone(),
+                                    if constructor.algebraic_type().is_singleton() {
+                                        0
+                                    } else {
+                                        1
+                                    },
+                                ),
+                                types::get_constructor_union_index(
+                                    constructor.algebraic_type(),
+                                    constructor.tag(),
+                                ),
                             );
 
                             if constructor.constructor_type().is_boxed() {

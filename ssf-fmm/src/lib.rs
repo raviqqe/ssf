@@ -267,6 +267,127 @@ mod tests {
             ));
         }
 
+        #[test]
+        fn compile_algebraic_case_with_singleton_enum() {
+            let algebraic_type =
+                ssf::types::Algebraic::new(vec![ssf::types::Constructor::unboxed(vec![])]);
+
+            compile_module(&ssf::ir::Module::new(
+                vec![],
+                vec![],
+                vec![ssf::ir::Definition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", algebraic_type.clone())],
+                    ssf::ir::AlgebraicCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::AlgebraicAlternative::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                            vec![],
+                            ssf::ir::Primitive::Float64(42.0),
+                        )],
+                        None,
+                    ),
+                    ssf::types::Primitive::Float64,
+                )],
+            ));
+        }
+
+        #[test]
+        fn compile_algebraic_case_with_one_element_singleton() {
+            let algebraic_type = ssf::types::Algebraic::new(vec![
+                ssf::types::Constructor::unboxed(vec![ssf::types::Primitive::Float64.into()]),
+            ]);
+
+            compile_module(&ssf::ir::Module::new(
+                vec![],
+                vec![],
+                vec![ssf::ir::Definition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", algebraic_type.clone())],
+                    ssf::ir::AlgebraicCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::AlgebraicAlternative::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                            vec!["y".into()],
+                            ssf::ir::Variable::new("y"),
+                        )],
+                        None,
+                    ),
+                    ssf::types::Primitive::Float64,
+                )],
+            ));
+        }
+
+        #[test]
+        fn compile_algebraic_case_with_2_members_and_1_element() {
+            let algebraic_type = ssf::types::Algebraic::new(vec![
+                ssf::types::Constructor::unboxed(vec![ssf::types::Primitive::Float64.into()]),
+                ssf::types::Constructor::unboxed(vec![]),
+            ]);
+
+            compile_module(&ssf::ir::Module::new(
+                vec![],
+                vec![],
+                vec![ssf::ir::Definition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", algebraic_type.clone())],
+                    ssf::ir::AlgebraicCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![ssf::ir::AlgebraicAlternative::new(
+                            ssf::ir::Constructor::new(algebraic_type.clone(), 0),
+                            vec!["y".into()],
+                            ssf::ir::Variable::new("y"),
+                        )],
+                        Some(ssf::ir::Primitive::Float64(42.0).into()),
+                    ),
+                    ssf::types::Primitive::Float64,
+                )],
+            ));
+        }
+
+        #[test]
+        fn compile_algebraic_case_with_custom_tags() {
+            let algebraic_type = ssf::types::Algebraic::with_tags(
+                vec![
+                    (
+                        42,
+                        ssf::types::Constructor::unboxed(vec![
+                            ssf::types::Primitive::Float64.into()
+                        ]),
+                    ),
+                    (2045, ssf::types::Constructor::unboxed(vec![])),
+                ]
+                .into_iter()
+                .collect(),
+            );
+
+            compile_module(&ssf::ir::Module::new(
+                vec![],
+                vec![],
+                vec![ssf::ir::Definition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", algebraic_type.clone())],
+                    ssf::ir::AlgebraicCase::new(
+                        ssf::ir::Variable::new("x"),
+                        vec![
+                            ssf::ir::AlgebraicAlternative::new(
+                                ssf::ir::Constructor::new(algebraic_type.clone(), 42),
+                                vec!["y".into()],
+                                ssf::ir::Variable::new("y"),
+                            ),
+                            ssf::ir::AlgebraicAlternative::new(
+                                ssf::ir::Constructor::new(algebraic_type.clone(), 2045),
+                                vec![],
+                                ssf::ir::Primitive::Float64(42.0),
+                            ),
+                        ],
+                        None,
+                    ),
+                    ssf::types::Primitive::Float64,
+                )],
+            ));
+        }
+
         mod function_applications {
             use super::*;
 
