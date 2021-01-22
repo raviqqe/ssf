@@ -76,7 +76,7 @@ mod tests {
     fn compile_module(module: &ssf::ir::Module) {
         let directory = tempfile::tempdir().unwrap();
         let file_path = directory.path().join("foo.c");
-        let source = fmm_c::compile(&compile(module));
+        let source = fmm_c::compile(&compile(module), None);
 
         println!("{}", source);
 
