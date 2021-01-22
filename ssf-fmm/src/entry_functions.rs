@@ -58,7 +58,7 @@ fn compile_body(
                 (
                     name,
                     match typed_expression.type_() {
-                        // TODO Fix this type conversion hack.
+                        // TODO Fix this type conversion hack of closure pointers.
                         fmm::types::Type::Pointer(closure_pointer) => utilities::bitcast(
                             builder,
                             typed_expression.clone(),
