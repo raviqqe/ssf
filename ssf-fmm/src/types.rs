@@ -104,6 +104,18 @@ pub fn compile_unsized_closure(function: &ssf::types::Function) -> fmm::types::R
     )
 }
 
+pub fn compile_unsized_closure_pointer_from_sized(
+    closure_pointer: &fmm::types::Pointer,
+) -> fmm::types::Pointer {
+    fmm::types::Pointer::new(compile_raw_closure(
+        closure_pointer.element().to_record().unwrap().elements()[0]
+            .to_function()
+            .unwrap()
+            .clone(),
+        compile_unsized_environment(),
+    ))
+}
+
 pub fn compile_raw_closure(
     entry_function: fmm::types::Function,
     environment: impl Into<fmm::types::Type>,

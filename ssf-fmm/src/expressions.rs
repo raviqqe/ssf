@@ -291,12 +291,20 @@ fn compile_let_recursive(
     variables: &HashMap<String, fmm::build::TypedExpression>,
 ) -> fmm::build::TypedExpression {
     let mut variables = variables.clone();
+    let mut closure_pointers = HashMap::new();
 
     for definition in let_.definitions() {
+        let closure_pointer = builder.allocate_heap(types::compile_sized_closure(definition));
+
         variables.insert(
             definition.name().into(),
-            builder.allocate_heap(types::compile_sized_closure(definition)),
+            utilities::bitcast(
+                builder,
+                closure_pointer.clone(),
+                fmm::types::Pointer::new(types::compile_unsized_closure(definition.type_())),
+            ),
         );
+        closure_pointers.insert(definition.name(), closure_pointer);
     }
 
     for definition in let_.definitions() {
@@ -309,7 +317,7 @@ fn compile_let_recursive(
                     .map(|free_variable| variables[free_variable.name()].clone())
                     .collect::<Vec<_>>(),
             ),
-            variables[definition.name()].clone(),
+            closure_pointers[definition.name()].clone(),
         );
     }
 

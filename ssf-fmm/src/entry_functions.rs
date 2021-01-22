@@ -54,6 +54,19 @@ fn compile_body(
         &variables
             .clone()
             .into_iter()
+            .map(|(name, typed_expression)| {
+                (
+                    name,
+                    match typed_expression.type_() {
+                        fmm::types::Type::Pointer(closure_pointer) => utilities::bitcast(
+                            builder,
+                            typed_expression.clone(),
+                            types::compile_unsized_closure_pointer_from_sized(&closure_pointer),
+                        ),
+                        _ => typed_expression,
+                    },
+                )
+            })
             .chain(
                 definition
                     .environment()
