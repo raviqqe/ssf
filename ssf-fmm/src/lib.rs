@@ -214,6 +214,31 @@ mod tests {
                 )],
             ));
         }
+
+        #[test]
+        fn compile_thunk() {
+            compile_module(&ssf::ir::Module::new(
+                vec![],
+                vec![],
+                vec![
+                    ssf::ir::Definition::thunk(
+                        "f",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        ssf::ir::Variable::new("x"),
+                        ssf::types::Primitive::Float64,
+                    ),
+                    ssf::ir::Definition::new(
+                        "g",
+                        vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                        ssf::ir::FunctionApplication::new(
+                            ssf::ir::Variable::new("f"),
+                            ssf::ir::Variable::new("x"),
+                        ),
+                        ssf::types::Primitive::Float64,
+                    ),
+                ],
+            ));
+        }
     }
 
     mod expressions {

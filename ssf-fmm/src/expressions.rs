@@ -5,8 +5,8 @@ use crate::function_applications;
 use crate::types;
 use std::collections::HashMap;
 
-pub fn compile_arity(arity: u64) -> fmm::ir::Primitive {
-    fmm::ir::Primitive::PointerInteger(arity)
+pub fn compile_arity(arity: usize) -> fmm::ir::Primitive {
+    fmm::ir::Primitive::PointerInteger(arity as i64)
 }
 
 pub fn compile(
@@ -31,7 +31,7 @@ pub fn compile(
                 if algebraic_type.is_singleton() {
                     None
                 } else {
-                    Some(fmm::ir::Primitive::PointerInteger(constructor.tag()).into())
+                    Some(fmm::ir::Primitive::PointerInteger(constructor.tag() as i64).into())
                 }
                 .into_iter()
                 .chain(if constructor_type.is_enum() {
@@ -148,7 +148,7 @@ fn compile_algebraic_alternatives(
                 builder.comparison_operation(
                     fmm::ir::ComparisonOperator::Equal,
                     tag.clone(),
-                    fmm::ir::Primitive::PointerInteger(constructor.tag()),
+                    fmm::ir::Primitive::PointerInteger(constructor.tag() as i64),
                 ),
                 |builder| {
                     builder.branch(compile(
@@ -291,12 +291,20 @@ fn compile_let_recursive(
     variables: &HashMap<String, fmm::build::TypedExpression>,
 ) -> fmm::build::TypedExpression {
     let mut variables = variables.clone();
+    let mut closure_pointers = HashMap::new();
 
     for definition in let_.definitions() {
+        let closure_pointer = builder.allocate_heap(types::compile_sized_closure(definition));
+
         variables.insert(
             definition.name().into(),
-            builder.allocate_heap(types::compile_sized_closure(definition)),
+            utilities::bitcast(
+                builder,
+                closure_pointer.clone(),
+                fmm::types::Pointer::new(types::compile_unsized_closure(definition.type_())),
+            ),
         );
+        closure_pointers.insert(definition.name(), closure_pointer);
     }
 
     for definition in let_.definitions() {
@@ -309,7 +317,7 @@ fn compile_let_recursive(
                     .map(|free_variable| variables[free_variable.name()].clone())
                     .collect::<Vec<_>>(),
             ),
-            variables[definition.name()].clone(),
+            closure_pointers[definition.name()].clone(),
         );
     }
 

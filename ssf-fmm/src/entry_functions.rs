@@ -54,6 +54,20 @@ fn compile_body(
         &variables
             .clone()
             .into_iter()
+            .map(|(name, typed_expression)| {
+                (
+                    name,
+                    match typed_expression.type_() {
+                        // TODO Fix this type conversion hack of closure pointers.
+                        fmm::types::Type::Pointer(closure_pointer) => utilities::bitcast(
+                            builder,
+                            typed_expression.clone(),
+                            types::compile_unsized_closure_pointer_from_sized(&closure_pointer),
+                        ),
+                        _ => typed_expression,
+                    },
+                )
+            })
             .chain(
                 definition
                     .environment()
@@ -224,7 +238,7 @@ fn compile_entry_function_pointer_pointer(
             compile_environment_pointer(),
             fmm::types::Pointer::new(types::compile_entry_function_from_definition(definition)),
         ),
-        fmm::ir::Primitive::PointerInteger(-2i64 as u64),
+        fmm::ir::Primitive::PointerInteger(-2),
     )
 }
 
