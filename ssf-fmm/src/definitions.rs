@@ -16,7 +16,7 @@ pub fn compile_definition(
             expressions::compile_arity(definition.arguments().iter().count() as u64).into(),
             fmm::ir::Undefined::new(types::compile_unsized_environment()).into(),
         ]),
-        !definition.is_thunk(),
+        definition.is_thunk(),
         true,
     );
 }
