@@ -1,3 +1,4 @@
+use super::expressions;
 use super::types;
 use super::utilities;
 
@@ -36,9 +37,9 @@ pub fn compile_closure_content(
 
     utilities::record(vec![
         entry_function.clone(),
-        fmm::ir::Primitive::PointerInteger(types::get_arity(
+        expressions::compile_arity(types::get_arity(
             entry_function.type_().to_function().unwrap(),
-        ) as u64)
+        ))
         .into(),
         utilities::record(free_variables).into(),
     ])

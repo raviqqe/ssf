@@ -10,8 +10,7 @@ pub fn compile_foreign_declaration(
         declaration.name(),
         utilities::record(vec![
             compile_entry_function(module_builder, declaration),
-            expressions::compile_arity(declaration.type_().arguments().into_iter().count() as u64)
-                .into(),
+            expressions::compile_arity(declaration.type_().arguments().into_iter().count()).into(),
             fmm::ir::Undefined::new(types::compile_unsized_environment()).into(),
         ]),
         false,

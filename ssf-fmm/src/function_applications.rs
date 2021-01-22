@@ -1,4 +1,5 @@
 use super::closures;
+use super::expressions;
 use super::types;
 use super::utilities;
 
@@ -27,7 +28,7 @@ fn compile_with_min_arity(
             builder.comparison_operation(
                 fmm::ir::ComparisonOperator::Equal,
                 closures::compile_load_arity(builder, closure_pointer.clone()),
-                fmm::ir::Primitive::PointerInteger(min_arity as u64),
+                expressions::compile_arity(min_arity),
             ),
             |builder| {
                 builder.branch(compile(
@@ -165,8 +166,8 @@ fn compile_partially_applied_entry_function(
                     builder.if_(
                         builder.comparison_operation(
                             fmm::ir::ComparisonOperator::Equal,
-                            fmm::ir::Primitive::PointerInteger(arguments.len() as u64),
                             closures::compile_load_arity(&builder, closure_pointer.clone()),
+                            expressions::compile_arity(arguments.len()),
                         ),
                         |builder| {
                             builder.branch(compile_direct_call(

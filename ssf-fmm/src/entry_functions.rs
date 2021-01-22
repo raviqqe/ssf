@@ -238,7 +238,7 @@ fn compile_entry_function_pointer_pointer(
             compile_environment_pointer(),
             fmm::types::Pointer::new(types::compile_entry_function_from_definition(definition)),
         ),
-        fmm::ir::Primitive::PointerInteger(-2i64 as u64),
+        fmm::ir::Primitive::PointerInteger(-2),
     )
 }
 
