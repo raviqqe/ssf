@@ -73,7 +73,7 @@ checksum = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
 [[package]]
 name = "fmm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#57bd7347f10eae0b4dfb7e95137e33065ccc7c37"
+source = "git+https://github.com/raviqqe/fmm?branch=main#db645622f1da9339b3771c1bca1a429ffddf3cd7"
 dependencies = [
  "petgraph",
 ]
@@ -81,7 +81,7 @@ dependencies = [
 [[package]]
 name = "fmm-c"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#57bd7347f10eae0b4dfb7e95137e33065ccc7c37"
+source = "git+https://github.com/raviqqe/fmm?branch=main#db645622f1da9339b3771c1bca1a429ffddf3cd7"
 dependencies = [
  "fmm",
  "tempfile",
@@ -410,9 +410,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.58"
+version = "1.0.59"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc60a3d73ea6594cd712d830cc1f0390fd71542d8c8cd24e70cc54cdfd5e05d5"
+checksum = "07cb8b1b4ebf86a89ee88cbd201b022b94138c623644d035185c84d3f41b7e66"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -435,11 +435,11 @@ dependencies = [
 
 [[package]]
 name = "thread_local"
-version = "1.1.0"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb9bc092d0d51e76b2b19d9d85534ffc9ec2db959a2523cdae0697e2972cd447"
+checksum = "301bdd13d23c49672926be451130892d274d3ba0b410c18e00daa7990ff38d99"
 dependencies = [
- "lazy_static",
+ "once_cell",
 ]
 
 [[package]]
