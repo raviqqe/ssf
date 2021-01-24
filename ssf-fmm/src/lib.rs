@@ -5,15 +5,15 @@ mod entry_functions;
 mod expressions;
 mod foreign_declarations;
 mod function_applications;
-mod typed_variable;
 mod types;
 mod utilities;
+mod variable_builder;
 
 use declarations::compile_declaration;
 use definitions::compile_definition;
 use foreign_declarations::compile_foreign_declaration;
 use std::collections::HashMap;
-use typed_variable::TypedVariable;
+use variable_builder::VariableBuilder;
 
 pub fn compile(module: &ssf::ir::Module) -> fmm::ir::Module {
     let module_builder = fmm::build::ModuleBuilder::new();
@@ -35,7 +35,7 @@ pub fn compile(module: &ssf::ir::Module) -> fmm::ir::Module {
     module_builder.as_module()
 }
 
-fn compile_global_variables(module: &ssf::ir::Module) -> HashMap<String, TypedVariable> {
+fn compile_global_variables(module: &ssf::ir::Module) -> HashMap<String, VariableBuilder> {
     module
         .foreign_declarations()
         .iter()
@@ -62,7 +62,7 @@ fn compile_global_variables(module: &ssf::ir::Module) -> HashMap<String, TypedVa
         .chain(module.definitions().iter().map(|definition| {
             (
                 definition.name().into(),
-                TypedVariable::with_type(
+                VariableBuilder::with_type(
                     utilities::variable(
                         definition.name(),
                         fmm::types::Pointer::new(types::compile_sized_closure(definition)),

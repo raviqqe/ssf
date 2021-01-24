@@ -1,9 +1,9 @@
 use crate::closures;
 use crate::entry_functions;
 use crate::function_applications;
-use crate::typed_variable::TypedVariable;
 use crate::types;
 use crate::utilities;
+use crate::variable_builder::VariableBuilder;
 use std::collections::HashMap;
 
 pub fn compile_arity(arity: usize) -> fmm::ir::Primitive {
@@ -13,7 +13,7 @@ pub fn compile_arity(arity: usize) -> fmm::ir::Primitive {
 pub fn compile(
     builder: &fmm::build::BlockBuilder,
     expression: &ssf::ir::Expression,
-    variables: &HashMap<String, TypedVariable>,
+    variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
     match expression {
         ssf::ir::Expression::Bitcast(bitcast) => utilities::bitcast(
@@ -103,7 +103,7 @@ pub fn compile(
 fn compile_case(
     builder: &fmm::build::BlockBuilder,
     case: &ssf::ir::Case,
-    variables: &HashMap<String, TypedVariable>,
+    variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
     let compile = |expression| compile(builder, expression, variables);
 
@@ -140,7 +140,7 @@ fn compile_algebraic_alternatives(
     argument: fmm::build::TypedExpression,
     alternatives: &[ssf::ir::AlgebraicAlternative],
     default_alternative: Option<&ssf::ir::Expression>,
-    variables: &HashMap<String, TypedVariable>,
+    variables: &HashMap<String, VariableBuilder>,
 ) -> Option<fmm::build::TypedExpression> {
     Some(match alternatives {
         [] => compile(builder, default_alternative?, variables),
@@ -224,7 +224,7 @@ fn compile_algebraic_alternatives(
 fn compile_primitive_case(
     builder: &fmm::build::BlockBuilder,
     case: &ssf::ir::PrimitiveCase,
-    variables: &HashMap<String, TypedVariable>,
+    variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
     let argument = compile(builder, case.argument(), variables);
 
@@ -243,7 +243,7 @@ fn compile_primitive_alternatives(
     argument: fmm::build::TypedExpression,
     alternatives: &[ssf::ir::PrimitiveAlternative],
     default_alternative: Option<&ssf::ir::Expression>,
-    variables: &HashMap<String, TypedVariable>,
+    variables: &HashMap<String, VariableBuilder>,
 ) -> Option<fmm::build::TypedExpression> {
     match alternatives {
         [] => default_alternative.map(|expression| compile(builder, expression, variables)),
@@ -274,7 +274,7 @@ fn compile_primitive_alternatives(
 fn compile_let(
     builder: &fmm::build::BlockBuilder,
     let_: &ssf::ir::Let,
-    variables: &HashMap<String, TypedVariable>,
+    variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
     compile(
         builder,
@@ -293,7 +293,7 @@ fn compile_let(
 fn compile_let_recursive(
     builder: &fmm::build::BlockBuilder,
     let_: &ssf::ir::LetRecursive,
-    variables: &HashMap<String, TypedVariable>,
+    variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
     let mut variables = variables.clone();
     let mut closure_pointers = HashMap::new();
@@ -333,7 +333,7 @@ fn compile_let_recursive(
 fn compile_primitive_operation(
     builder: &fmm::build::BlockBuilder,
     operation: &ssf::ir::PrimitiveOperation,
-    variables: &HashMap<String, TypedVariable>,
+    variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
     let lhs = compile(builder, operation.lhs(), variables);
     let rhs = compile(builder, operation.rhs(), variables);

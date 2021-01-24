@@ -1,7 +1,7 @@
 use crate::expressions;
-use crate::typed_variable::TypedVariable;
 use crate::types;
 use crate::utilities;
+use crate::variable_builder::VariableBuilder;
 use std::collections::HashMap;
 
 const ENVIRONMENT_NAME: &str = "_env";
@@ -9,7 +9,7 @@ const ENVIRONMENT_NAME: &str = "_env";
 pub fn compile(
     module_builder: &fmm::build::ModuleBuilder,
     definition: &ssf::ir::Definition,
-    variables: &HashMap<String, TypedVariable>,
+    variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
     if definition.is_thunk() {
         compile_thunk(module_builder, definition, variables)
@@ -21,7 +21,7 @@ pub fn compile(
 fn compile_non_thunk(
     module_builder: &fmm::build::ModuleBuilder,
     definition: &ssf::ir::Definition,
-    variables: &HashMap<String, TypedVariable>,
+    variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
     module_builder.define_anonymous_function(
         compile_arguments(definition),
@@ -33,7 +33,7 @@ fn compile_non_thunk(
 fn compile_thunk(
     module_builder: &fmm::build::ModuleBuilder,
     definition: &ssf::ir::Definition,
-    variables: &HashMap<String, TypedVariable>,
+    variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
     compile_first_thunk_entry(
         module_builder,
@@ -47,7 +47,7 @@ fn compile_thunk(
 fn compile_body(
     builder: &fmm::build::BlockBuilder,
     definition: &ssf::ir::Definition,
-    variables: &HashMap<String, TypedVariable>,
+    variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
     expressions::compile(
         builder,
@@ -55,21 +55,6 @@ fn compile_body(
         &variables
             .clone()
             .into_iter()
-            .map(|(name, typed_variable)| {
-                (
-                    name,
-                    match typed_variable.type_() {
-                        // TODO Fix this type conversion hack of closure pointers.
-                        fmm::types::Type::Pointer(closure_pointer) => utilities::bitcast(
-                            builder,
-                            typed_variable.build(builder),
-                            types::compile_unsized_closure_pointer_from_sized(&closure_pointer),
-                        )
-                        .into(),
-                        _ => typed_variable.clone(),
-                    },
-                )
-            })
             .chain(
                 definition
                     .environment()
@@ -108,7 +93,7 @@ fn compile_first_thunk_entry(
     definition: &ssf::ir::Definition,
     normal_entry_function: fmm::build::TypedExpression,
     lock_entry_function: fmm::build::TypedExpression,
-    variables: &HashMap<String, TypedVariable>,
+    variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
     let entry_function_name = module_builder.generate_name();
     let entry_function_type = types::compile_entry_function_from_definition(definition);
