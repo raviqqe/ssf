@@ -5,6 +5,7 @@ mod entry_functions;
 mod expressions;
 mod foreign_declarations;
 mod function_applications;
+mod typed_variable;
 mod types;
 mod utilities;
 
@@ -12,6 +13,7 @@ use declarations::compile_declaration;
 use definitions::compile_definition;
 use foreign_declarations::compile_foreign_declaration;
 use std::collections::HashMap;
+use typed_variable::TypedVariable;
 
 pub fn compile(module: &ssf::ir::Module) -> fmm::ir::Module {
     let module_builder = fmm::build::ModuleBuilder::new();
@@ -33,9 +35,7 @@ pub fn compile(module: &ssf::ir::Module) -> fmm::ir::Module {
     module_builder.as_module()
 }
 
-fn compile_global_variables(
-    module: &ssf::ir::Module,
-) -> HashMap<String, fmm::build::TypedExpression> {
+fn compile_global_variables(module: &ssf::ir::Module) -> HashMap<String, TypedVariable> {
     module
         .foreign_declarations()
         .iter()
@@ -45,7 +45,8 @@ fn compile_global_variables(
                 utilities::variable(
                     declaration.name(),
                     fmm::types::Pointer::new(types::compile_unsized_closure(declaration.type_())),
-                ),
+                )
+                .into(),
             )
         })
         .chain(module.declarations().iter().map(|declaration| {
@@ -54,15 +55,19 @@ fn compile_global_variables(
                 utilities::variable(
                     declaration.name(),
                     fmm::types::Pointer::new(types::compile_unsized_closure(declaration.type_())),
-                ),
+                )
+                .into(),
             )
         }))
         .chain(module.definitions().iter().map(|definition| {
             (
                 definition.name().into(),
-                utilities::variable(
-                    definition.name(),
-                    fmm::types::Pointer::new(types::compile_sized_closure(definition)),
+                TypedVariable::with_type(
+                    utilities::variable(
+                        definition.name(),
+                        fmm::types::Pointer::new(types::compile_sized_closure(definition)),
+                    ),
+                    fmm::types::Pointer::new(types::compile_unsized_closure(definition.type_())),
                 ),
             )
         }))
@@ -855,6 +860,52 @@ mod tests {
                                 ssf::types::Primitive::Integer64,
                                 ssf::types::Primitive::Float64,
                             ),
+                        ),
+                    ],
+                ));
+            }
+
+            #[test]
+            fn compile_with_curried_function() {
+                compile_module(&ssf::ir::Module::new(
+                    vec![],
+                    vec![],
+                    vec![
+                        ssf::ir::Definition::new(
+                            "f",
+                            vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                            ssf::ir::LetRecursive::new(
+                                vec![ssf::ir::Definition::new(
+                                    "g",
+                                    vec![ssf::ir::Argument::new(
+                                        "y",
+                                        ssf::types::Primitive::Float64,
+                                    )],
+                                    ssf::ir::PrimitiveOperation::new(
+                                        ssf::ir::PrimitiveOperator::Add,
+                                        ssf::ir::Variable::new("x"),
+                                        ssf::ir::Variable::new("y"),
+                                    ),
+                                    ssf::types::Primitive::Float64,
+                                )],
+                                ssf::ir::Variable::new("g"),
+                            ),
+                            ssf::types::Function::new(
+                                ssf::types::Primitive::Float64,
+                                ssf::types::Primitive::Float64,
+                            ),
+                        ),
+                        ssf::ir::Definition::new(
+                            "g",
+                            vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                            ssf::ir::FunctionApplication::new(
+                                ssf::ir::FunctionApplication::new(
+                                    ssf::ir::Variable::new("f"),
+                                    ssf::ir::Primitive::Float64(111.0),
+                                ),
+                                ssf::ir::Primitive::Float64(222.0),
+                            ),
+                            ssf::types::Primitive::Float64,
                         ),
                     ],
                 ));
