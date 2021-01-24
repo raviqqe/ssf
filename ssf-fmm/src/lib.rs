@@ -292,6 +292,56 @@ mod tests {
             ));
         }
 
+        #[test]
+        fn compile_let_recursive_with_curried_function() {
+            compile_module(&ssf::ir::Module::new(
+                vec![],
+                vec![],
+                vec![ssf::ir::Definition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                    ssf::ir::LetRecursive::new(
+                        vec![ssf::ir::Definition::new(
+                            "g",
+                            vec![ssf::ir::Argument::new("y", ssf::types::Primitive::Float64)],
+                            ssf::ir::LetRecursive::new(
+                                vec![ssf::ir::Definition::new(
+                                    "h",
+                                    vec![ssf::ir::Argument::new(
+                                        "z",
+                                        ssf::types::Primitive::Float64,
+                                    )],
+                                    ssf::ir::PrimitiveOperation::new(
+                                        ssf::ir::PrimitiveOperator::Add,
+                                        ssf::ir::PrimitiveOperation::new(
+                                            ssf::ir::PrimitiveOperator::Add,
+                                            ssf::ir::Variable::new("x"),
+                                            ssf::ir::Variable::new("y"),
+                                        ),
+                                        ssf::ir::Variable::new("z"),
+                                    ),
+                                    ssf::types::Primitive::Float64,
+                                )],
+                                ssf::ir::Variable::new("h"),
+                            ),
+                            ssf::types::Function::new(
+                                ssf::types::Primitive::Float64,
+                                ssf::types::Primitive::Float64,
+                            ),
+                        )],
+                        ssf::ir::FunctionApplication::new(
+                            ssf::ir::FunctionApplication::new(
+                                ssf::ir::Variable::new("g"),
+                                ssf::ir::Primitive::Float64(42.0),
+                            ),
+                            ssf::ir::Primitive::Float64(42.0),
+                        ),
+                    ),
+                    ssf::types::Primitive::Float64,
+                )],
+            ));
+        }
+
         mod algebraic_cases {
             use super::*;
 
