@@ -201,10 +201,9 @@ impl<'c> FunctionCompiler<'c> {
             );
         }
 
-        Ok(self
-            .expression_compiler_factory
+        self.expression_compiler_factory
             .create(builder, self.clone().into())
-            .compile(&definition.body(), &variables)?)
+            .compile(&definition.body(), &variables)
     }
 
     fn compile_normal_entry(
