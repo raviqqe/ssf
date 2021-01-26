@@ -12,7 +12,7 @@ pub fn compile_foreign_definition(
     let foreign_function_type = types::compile_foreign_function(function_type);
     let arguments = foreign_function_type
         .arguments()
-        .into_iter()
+        .iter()
         .enumerate()
         .map(|(index, type_)| fmm::ir::Argument::new(format!("arg_{}", index), type_.clone()))
         .collect::<Vec<_>>();
