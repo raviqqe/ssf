@@ -18,6 +18,8 @@ use std::collections::HashMap;
 use variable_builder::VariableBuilder;
 
 pub fn compile(module: &ssf::ir::Module) -> fmm::ir::Module {
+    ssf::analysis::check_types(module).unwrap();
+
     let module_builder = fmm::build::ModuleBuilder::new();
 
     for declaration in module.foreign_declarations() {
