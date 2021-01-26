@@ -4,6 +4,7 @@ mod definitions;
 mod entry_functions;
 mod expressions;
 mod foreign_declarations;
+mod foreign_definitions;
 mod function_applications;
 mod types;
 mod utilities;
@@ -12,6 +13,7 @@ mod variable_builder;
 use declarations::compile_declaration;
 use definitions::compile_definition;
 use foreign_declarations::compile_foreign_declaration;
+use foreign_definitions::compile_foreign_definition;
 use std::collections::HashMap;
 use variable_builder::VariableBuilder;
 
@@ -30,6 +32,27 @@ pub fn compile(module: &ssf::ir::Module) -> fmm::ir::Module {
 
     for definition in module.definitions() {
         compile_definition(&module_builder, definition, &global_variables);
+    }
+
+    let types = module
+        .declarations()
+        .iter()
+        .map(|declaration| (declaration.name(), declaration.type_()))
+        .chain(
+            module
+                .definitions()
+                .iter()
+                .map(|definition| (definition.name(), definition.type_())),
+        )
+        .collect::<HashMap<_, _>>();
+
+    for definition in module.foreign_definitions() {
+        compile_foreign_definition(
+            &module_builder,
+            definition,
+            types[definition.name()],
+            &global_variables[definition.name()],
+        );
     }
 
     module_builder.as_module()
@@ -143,6 +166,41 @@ mod tests {
                 vec![],
                 vec![],
                 vec![],
+            ));
+        }
+    }
+
+    mod foreign_definitions {
+        use super::*;
+
+        #[test]
+        fn compile_for_declaration() {
+            compile_module(&ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::ForeignDefinition::new("f", "g")],
+                vec![ssf::ir::Declaration::new(
+                    "f",
+                    ssf::types::Function::new(
+                        ssf::types::Primitive::Float64,
+                        ssf::types::Primitive::Float64,
+                    ),
+                )],
+                vec![],
+            ));
+        }
+
+        #[test]
+        fn compile_for_definition() {
+            compile_module(&ssf::ir::Module::new(
+                vec![],
+                vec![ssf::ir::ForeignDefinition::new("f", "g")],
+                vec![],
+                vec![ssf::ir::Definition::new(
+                    "f",
+                    vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
+                    ssf::ir::Variable::new("x"),
+                    ssf::types::Primitive::Float64,
+                )],
             ));
         }
     }
