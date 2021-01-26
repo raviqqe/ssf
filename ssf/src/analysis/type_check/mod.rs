@@ -24,6 +24,14 @@ pub fn check_types(module: &Module) -> Result<(), TypeCheckError> {
         check_definition(definition, &variables)?;
     }
 
+    for definition in module.foreign_definitions() {
+        if !variables.contains_key(definition.name()) {
+            return Err(TypeCheckError::ForeignDefinitionNotFound(
+                definition.clone(),
+            ));
+        }
+    }
+
     Ok(())
 }
 
@@ -261,12 +269,16 @@ mod tests {
 
     #[test]
     fn check_types_with_empty_modules() {
-        assert_eq!(check_types(&Module::new(vec![], vec![], vec![])), Ok(()));
+        assert_eq!(
+            check_types(&Module::new(vec![], vec![], vec![], vec![])),
+            Ok(())
+        );
     }
 
     #[test]
     fn check_types_of_variables() {
         let module = Module::new(
+            vec![],
             vec![],
             vec![],
             vec![Definition::new(
@@ -282,6 +294,7 @@ mod tests {
     #[test]
     fn fail_to_check_types_of_variables() {
         let module = Module::new(
+            vec![],
             vec![],
             vec![],
             vec![
@@ -311,6 +324,7 @@ mod tests {
         let module = Module::new(
             vec![],
             vec![],
+            vec![],
             vec![Definition::new(
                 "f",
                 vec![Argument::new("x", types::Primitive::Float64)],
@@ -325,6 +339,7 @@ mod tests {
     #[test]
     fn fail_to_check_types_of_functions() {
         let module = Module::new(
+            vec![],
             vec![],
             vec![],
             vec![
@@ -354,6 +369,7 @@ mod tests {
         let module = Module::new(
             vec![],
             vec![],
+            vec![],
             vec![
                 Definition::new(
                     "f",
@@ -376,6 +392,7 @@ mod tests {
     #[test]
     fn fail_to_check_types_of_function_applications() {
         let module = Module::new(
+            vec![],
             vec![],
             vec![],
             vec![
@@ -408,6 +425,7 @@ mod tests {
         let module = Module::new(
             vec![],
             vec![],
+            vec![],
             vec![Definition::new(
                 "f",
                 vec![Argument::new("x", types::Primitive::Float64)],
@@ -425,6 +443,7 @@ mod tests {
     #[test]
     fn check_types_of_nested_let_expressions() {
         let module = Module::new(
+            vec![],
             vec![],
             vec![],
             vec![Definition::new(
@@ -451,6 +470,7 @@ mod tests {
     #[test]
     fn fail_to_check_types_of_let_expression() {
         let module = Module::new(
+            vec![],
             vec![],
             vec![],
             vec![
@@ -484,6 +504,7 @@ mod tests {
     fn check_types_of_declarations() {
         let module = Module::new(
             vec![],
+            vec![],
             vec![Declaration::new(
                 "f",
                 types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
@@ -501,6 +522,7 @@ mod tests {
     #[test]
     fn fail_to_check_types_of_declarations() {
         let module = Module::new(
+            vec![],
             vec![],
             vec![Declaration::new(
                 "f",
@@ -534,6 +556,7 @@ mod tests {
                     check_types(&Module::new(
                         vec![],
                         vec![],
+                        vec![],
                         vec![Definition::new(
                             "f",
                             vec![Argument::new("x", algebraic_type,)],
@@ -551,6 +574,7 @@ mod tests {
 
                 assert_eq!(
                     check_types(&Module::new(
+                        vec![],
                         vec![],
                         vec![],
                         vec![Definition::new(
@@ -582,6 +606,7 @@ mod tests {
                     check_types(&Module::new(
                         vec![],
                         vec![],
+                        vec![],
                         vec![Definition::new(
                             "f",
                             vec![Argument::new("x", algebraic_type.clone())],
@@ -608,6 +633,7 @@ mod tests {
                 let module = Module::new(
                     vec![],
                     vec![],
+                    vec![],
                     vec![Definition::new(
                         "f",
                         vec![Argument::new("x", algebraic_type)],
@@ -626,6 +652,7 @@ mod tests {
             fn fail_to_check_case_expressions_with_inconsistent_alternative_types() {
                 let algebraic_type = types::Algebraic::new(vec![types::Constructor::boxed(vec![])]);
                 let module = Module::new(
+                    vec![],
                     vec![],
                     vec![],
                     vec![Definition::with_environment(
@@ -670,6 +697,7 @@ mod tests {
                     check_types(&Module::new(
                         vec![],
                         vec![],
+                        vec![],
                         vec![Definition::with_environment(
                             "f",
                             vec![],
@@ -698,6 +726,7 @@ mod tests {
 
                 assert!(matches!(
                     check_types(&Module::new(
+                        vec![],
                         vec![],
                         vec![],
                         vec![Definition::with_environment(
@@ -730,6 +759,7 @@ mod tests {
                     check_types(&Module::new(
                         vec![],
                         vec![],
+                        vec![],
                         vec![Definition::with_environment(
                             "f",
                             vec![],
@@ -746,6 +776,7 @@ mod tests {
             fn check_case_expressions_with_one_alternative() {
                 assert_eq!(
                     check_types(&Module::new(
+                        vec![],
                         vec![],
                         vec![],
                         vec![Definition::with_environment(
@@ -770,6 +801,7 @@ mod tests {
                     check_types(&Module::new(
                         vec![],
                         vec![],
+                        vec![],
                         vec![Definition::with_environment(
                             "f",
                             vec![],
@@ -790,6 +822,7 @@ mod tests {
             fn fail_for_unmatched_case_type() {
                 assert!(matches!(
                     check_types(&Module::new(
+                        vec![],
                         vec![],
                         vec![],
                         vec![Definition::with_environment(
@@ -821,6 +854,7 @@ mod tests {
                 check_types(&Module::new(
                     vec![],
                     vec![],
+                    vec![],
                     vec![Definition::with_environment(
                         "f",
                         vec![],
@@ -846,6 +880,7 @@ mod tests {
                 check_types(&Module::new(
                     vec![],
                     vec![],
+                    vec![],
                     vec![Definition::with_environment(
                         "f",
                         vec![],
@@ -867,6 +902,7 @@ mod tests {
                 types::Primitive::Float64.into(),
             ])]);
             let module = Module::new(
+                vec![],
                 vec![],
                 vec![],
                 vec![Definition::with_environment(
@@ -893,6 +929,7 @@ mod tests {
                 types::Primitive::Float64.into(),
             ])]);
             let module = Module::new(
+                vec![],
                 vec![],
                 vec![],
                 vec![Definition::with_environment(
@@ -926,6 +963,7 @@ mod tests {
                 check_types(&Module::new(
                     vec![],
                     vec![],
+                    vec![],
                     vec![Definition::new(
                         "f",
                         vec![Argument::new("x", algebraic_type.clone())],
@@ -946,6 +984,7 @@ mod tests {
         let module = Module::new(
             vec![],
             vec![],
+            vec![],
             vec![Definition::with_environment(
                 "f",
                 vec![],
@@ -960,6 +999,7 @@ mod tests {
     #[test]
     fn check_equality_operator() {
         let module = Module::new(
+            vec![],
             vec![],
             vec![],
             vec![Definition::with_environment(
@@ -985,6 +1025,7 @@ mod tests {
                     types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
                 )],
                 vec![],
+                vec![],
                 vec![Definition::new(
                     "g",
                     vec![Argument::new("x", types::Primitive::Float64)],
@@ -1004,6 +1045,7 @@ mod tests {
                     types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
                 )],
                 vec![],
+                vec![],
                 vec![Definition::new(
                     "g",
                     vec![Argument::new("x", types::Primitive::Float64)],
@@ -1016,6 +1058,42 @@ mod tests {
                 check_types(&module),
                 Err(TypeCheckError::TypesNotMatched(_, _))
             ));
+        }
+    }
+
+    mod foreign_definitions {
+        use super::*;
+
+        #[test]
+        fn check_types_of_foreign_definition_for_declaration() {
+            let module = Module::new(
+                vec![],
+                vec![ForeignDefinition::new("f", "g")],
+                vec![Declaration::new(
+                    "f",
+                    types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
+                )],
+                vec![],
+            );
+
+            assert_eq!(check_types(&module), Ok(()));
+        }
+
+        #[test]
+        fn check_types_of_foreign_definition_for_definition() {
+            let module = Module::new(
+                vec![],
+                vec![ForeignDefinition::new("f", "g")],
+                vec![],
+                vec![Definition::new(
+                    "f",
+                    vec![Argument::new("x", types::Primitive::Float64)],
+                    Variable::new("x"),
+                    types::Primitive::Float64,
+                )],
+            );
+
+            assert_eq!(check_types(&module), Ok(()));
         }
     }
 }

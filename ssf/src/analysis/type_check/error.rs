@@ -5,6 +5,7 @@ use std::fmt::Display;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TypeCheckError {
+    ForeignDefinitionNotFound(ForeignDefinition),
     FunctionExpected(Expression),
     NoAlternativeFound(Case),
     TypesNotMatched(Type, Type),
