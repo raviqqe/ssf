@@ -97,7 +97,7 @@ mod tests {
     #[test]
     fn compile_() {
         compile(
-            &ssf::ir::Module::new(vec![], vec![], vec![]),
+            &ssf::ir::Module::new(vec![], vec![], vec![], vec![]),
             COMPILE_CONFIGURATION.clone(),
         )
         .unwrap();
@@ -113,6 +113,7 @@ mod tests {
 
         compile(
             &ssf::ir::Module::new(
+                vec![],
                 vec![],
                 vec![],
                 vec![ssf::ir::Definition::new(
@@ -142,6 +143,7 @@ mod tests {
             &ssf::ir::Module::new(
                 vec![],
                 vec![],
+                vec![],
                 vec![ssf::ir::Definition::new(
                     "f",
                     vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
@@ -166,6 +168,7 @@ mod tests {
 
         compile(
             &ssf::ir::Module::new(
+                vec![],
                 vec![],
                 vec![],
                 vec![ssf::ir::Definition::new(
@@ -199,6 +202,7 @@ mod tests {
             &ssf::ir::Module::new(
                 vec![],
                 vec![],
+                vec![],
                 vec![ssf::ir::Definition::new(
                     "f",
                     vec![ssf::ir::Argument::new("x", algebraic_type.clone())],
@@ -224,6 +228,7 @@ mod tests {
 
         compile(
             &ssf::ir::Module::new(
+                vec![],
                 vec![],
                 vec![],
                 vec![ssf::ir::Definition::new(
@@ -256,6 +261,7 @@ mod tests {
 
         compile(
             &ssf::ir::Module::new(
+                vec![],
                 vec![],
                 vec![],
                 vec![ssf::ir::Definition::new(
@@ -298,6 +304,7 @@ mod tests {
             &ssf::ir::Module::new(
                 vec![],
                 vec![],
+                vec![],
                 vec![ssf::ir::Definition::new(
                     "f",
                     vec![ssf::ir::Argument::new("x", algebraic_type.clone())],
@@ -332,6 +339,7 @@ mod tests {
             &ssf::ir::Module::new(
                 vec![],
                 vec![],
+                vec![],
                 vec![ssf::ir::Definition::new(
                     "f",
                     vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
@@ -359,6 +367,7 @@ mod tests {
             &ssf::ir::Module::new(
                 vec![],
                 vec![],
+                vec![],
                 vec![ssf::ir::Definition::new(
                     "f",
                     vec![ssf::ir::Argument::new("x", algebraic_type_1)],
@@ -380,6 +389,7 @@ mod tests {
 
         compile(
             &ssf::ir::Module::new(
+                vec![],
                 vec![],
                 vec![],
                 vec![ssf::ir::Definition::new(
@@ -411,6 +421,7 @@ mod tests {
                 &ssf::ir::Module::new(
                     vec![],
                     vec![],
+                    vec![],
                     vec![ssf::ir::Definition::new(
                         "f",
                         vec![ssf::ir::Argument::new("x", algebraic_type_1)],
@@ -431,6 +442,7 @@ mod tests {
     fn compile_function_applications() {
         compile(
             &ssf::ir::Module::new(
+                vec![],
                 vec![],
                 vec![],
                 vec![
@@ -460,6 +472,7 @@ mod tests {
                 &ssf::ir::Module::new(
                     vec![],
                     vec![],
+                    vec![],
                     vec![ssf::ir::Definition::new(
                         "f",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
@@ -478,6 +491,7 @@ mod tests {
         for operator in &NUMBER_ARITHMETIC_OPERATORS {
             compile(
                 &ssf::ir::Module::new(
+                    vec![],
                     vec![],
                     vec![],
                     vec![ssf::ir::Definition::new(
@@ -500,6 +514,7 @@ mod tests {
                 &ssf::ir::Module::new(
                     vec![],
                     vec![],
+                    vec![],
                     vec![ssf::ir::Definition::new(
                         "f",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
@@ -520,6 +535,7 @@ mod tests {
                 &ssf::ir::Module::new(
                     vec![],
                     vec![],
+                    vec![],
                     vec![ssf::ir::Definition::new(
                         "f",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
@@ -537,6 +553,7 @@ mod tests {
     fn compile_nested_primitive_cases() {
         compile(
             &ssf::ir::Module::new(
+                vec![],
                 vec![],
                 vec![],
                 vec![ssf::ir::Definition::new(
@@ -568,6 +585,7 @@ mod tests {
             &ssf::ir::Module::new(
                 vec![],
                 vec![],
+                vec![],
                 vec![ssf::ir::Definition::new(
                     "f",
                     vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
@@ -597,6 +615,7 @@ mod tests {
             &ssf::ir::Module::new(
                 vec![],
                 vec![],
+                vec![],
                 vec![ssf::ir::Definition::new(
                     "f",
                     vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
@@ -613,6 +632,7 @@ mod tests {
     fn compile_thunk_evaluation() {
         compile(
             &ssf::ir::Module::new(
+                vec![],
                 vec![],
                 vec![],
                 vec![
@@ -641,6 +661,7 @@ mod tests {
             &ssf::ir::Module::new(
                 vec![],
                 vec![],
+                vec![],
                 vec![
                     ssf::ir::Definition::thunk(
                         "f",
@@ -665,6 +686,7 @@ mod tests {
     fn compile_thunk_in_let_recursive_expression() {
         compile(
             &ssf::ir::Module::new(
+                vec![],
                 vec![],
                 vec![],
                 vec![ssf::ir::Definition::new(
@@ -693,6 +715,7 @@ mod tests {
             &ssf::ir::Module::new(
                 vec![],
                 vec![],
+                vec![],
                 vec![ssf::ir::Definition::new(
                     "f",
                     vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
@@ -717,6 +740,7 @@ mod tests {
     fn compile_let_recursive_expression_with_with_two_free_variables() {
         compile(
             &ssf::ir::Module::new(
+                vec![],
                 vec![],
                 vec![],
                 vec![ssf::ir::Definition::new(
@@ -750,6 +774,7 @@ mod tests {
     fn compile_global_variable_reference_in_nested_let_recursive_expressions() {
         compile(
             &ssf::ir::Module::new(
+                vec![],
                 vec![],
                 vec![],
                 vec![ssf::ir::Definition::new(
@@ -795,6 +820,7 @@ mod tests {
                 &ssf::ir::Module::new(
                     vec![],
                     vec![],
+                    vec![],
                     vec![
                         ssf::ir::Definition::new(
                             "f",
@@ -825,6 +851,7 @@ mod tests {
         fn compile_with_1_argument_and_3_arity() {
             compile(
                 &ssf::ir::Module::new(
+                    vec![],
                     vec![],
                     vec![],
                     vec![
@@ -861,6 +888,7 @@ mod tests {
         fn compile_with_2_argument_and_3_arity() {
             compile(
                 &ssf::ir::Module::new(
+                    vec![],
                     vec![],
                     vec![],
                     vec![
@@ -913,6 +941,7 @@ mod tests {
                         ),
                     )],
                     vec![],
+                    vec![],
                     vec![ssf::ir::Definition::new(
                         "h",
                         vec![ssf::ir::Argument::new("x", ssf::types::Primitive::Float64)],
@@ -943,6 +972,7 @@ mod tests {
                             ),
                         ),
                     )],
+                    vec![],
                     vec![],
                     vec![ssf::ir::Definition::new(
                         "h",

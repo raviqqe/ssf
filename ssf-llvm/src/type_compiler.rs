@@ -449,6 +449,7 @@ mod tests {
         let module = ssf::ir::Module::new(
             vec![],
             vec![],
+            vec![],
             vec![ssf::ir::Definition::new(
                 "f",
                 vec![ssf::ir::Argument::new(
