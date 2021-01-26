@@ -24,6 +24,14 @@ pub fn check_types(module: &Module) -> Result<(), TypeCheckError> {
         check_definition(definition, &variables)?;
     }
 
+    for definition in module.foreign_definitions() {
+        if !variables.contains_key(definition.name()) {
+            return Err(TypeCheckError::ForeignDefinitionNotFound(
+                definition.clone(),
+            ));
+        }
+    }
+
     Ok(())
 }
 
@@ -1050,6 +1058,42 @@ mod tests {
                 check_types(&module),
                 Err(TypeCheckError::TypesNotMatched(_, _))
             ));
+        }
+    }
+
+    mod foreign_definitions {
+        use super::*;
+
+        #[test]
+        fn check_types_of_foreign_definition_for_declaration() {
+            let module = Module::new(
+                vec![],
+                vec![ForeignDefinition::new("f", "g")],
+                vec![Declaration::new(
+                    "f",
+                    types::Function::new(types::Primitive::Float64, types::Primitive::Float64),
+                )],
+                vec![],
+            );
+
+            assert_eq!(check_types(&module), Ok(()));
+        }
+
+        #[test]
+        fn check_types_of_foreign_definition_for_definition() {
+            let module = Module::new(
+                vec![],
+                vec![ForeignDefinition::new("f", "g")],
+                vec![],
+                vec![Definition::new(
+                    "f",
+                    vec![Argument::new("x", types::Primitive::Float64)],
+                    Variable::new("x"),
+                    types::Primitive::Float64,
+                )],
+            );
+
+            assert_eq!(check_types(&module), Ok(()));
         }
     }
 }
