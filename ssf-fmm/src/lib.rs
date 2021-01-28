@@ -37,9 +37,15 @@ pub fn compile(module: &ssf::ir::Module) -> fmm::ir::Module {
     }
 
     let types = module
-        .declarations()
+        .foreign_declarations()
         .iter()
         .map(|declaration| (declaration.name(), declaration.type_()))
+        .chain(
+            module
+                .declarations()
+                .iter()
+                .map(|declaration| (declaration.name(), declaration.type_())),
+        )
         .chain(
             module
                 .definitions()
@@ -174,6 +180,23 @@ mod tests {
 
     mod foreign_definitions {
         use super::*;
+
+        #[test]
+        fn compile_for_foreign_declaration() {
+            compile_module(&ssf::ir::Module::new(
+                vec![ssf::ir::ForeignDeclaration::new(
+                    "f",
+                    "g",
+                    ssf::types::Function::new(
+                        ssf::types::Primitive::Float64,
+                        ssf::types::Primitive::Float64,
+                    ),
+                )],
+                vec![ssf::ir::ForeignDefinition::new("f", "g")],
+                vec![],
+                vec![],
+            ));
+        }
 
         #[test]
         fn compile_for_declaration() {
