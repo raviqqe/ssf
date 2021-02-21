@@ -11,7 +11,7 @@ pub fn compile_arity(arity: usize) -> fmm::ir::Primitive {
 }
 
 pub fn compile(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     expression: &ssf::ir::Expression,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
@@ -101,7 +101,7 @@ pub fn compile(
 }
 
 fn compile_case(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     case: &ssf::ir::Case,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
@@ -135,7 +135,7 @@ fn compile_case(
 }
 
 fn compile_algebraic_alternatives(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     tag: fmm::build::TypedExpression,
     argument: fmm::build::TypedExpression,
     alternatives: &[ssf::ir::AlgebraicAlternative],
@@ -222,7 +222,7 @@ fn compile_algebraic_alternatives(
 }
 
 fn compile_primitive_case(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     case: &ssf::ir::PrimitiveCase,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
@@ -239,7 +239,7 @@ fn compile_primitive_case(
 }
 
 fn compile_primitive_alternatives(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     argument: fmm::build::TypedExpression,
     alternatives: &[ssf::ir::PrimitiveAlternative],
     default_alternative: Option<&ssf::ir::Expression>,
@@ -272,7 +272,7 @@ fn compile_primitive_alternatives(
 }
 
 fn compile_let(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     let_: &ssf::ir::Let,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
@@ -291,7 +291,7 @@ fn compile_let(
 }
 
 fn compile_let_recursive(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     let_: &ssf::ir::LetRecursive,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
@@ -331,7 +331,7 @@ fn compile_let_recursive(
 }
 
 fn compile_primitive_operation(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     operation: &ssf::ir::PrimitiveOperation,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {

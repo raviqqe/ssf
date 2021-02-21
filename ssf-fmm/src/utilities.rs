@@ -1,7 +1,7 @@
 use fmm::types::{self, Type};
 
 pub fn bitcast(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     argument: impl Into<fmm::build::TypedExpression>,
     to_type: impl Into<Type>,
 ) -> fmm::build::TypedExpression {

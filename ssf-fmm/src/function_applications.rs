@@ -4,7 +4,7 @@ use super::types;
 use super::utilities;
 
 pub fn compile(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     closure_pointer: fmm::build::TypedExpression,
     arguments: &[fmm::build::TypedExpression],
 ) -> fmm::build::TypedExpression {
@@ -12,7 +12,7 @@ pub fn compile(
 }
 
 fn compile_with_min_arity(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     closure_pointer: fmm::build::TypedExpression,
     arguments: &[fmm::build::TypedExpression],
     min_arity: usize,
@@ -50,7 +50,7 @@ fn compile_with_min_arity(
 }
 
 fn compile_direct_call(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     closure_pointer: fmm::build::TypedExpression,
     arguments: &[fmm::build::TypedExpression],
 ) -> fmm::build::TypedExpression {
@@ -74,7 +74,7 @@ fn compile_direct_call(
 }
 
 fn compile_create_closure(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     closure_pointer: fmm::build::TypedExpression,
     arguments: &[fmm::build::TypedExpression],
 ) -> fmm::build::TypedExpression {
@@ -123,7 +123,7 @@ fn compile_create_closure(
 }
 
 fn compile_partially_applied_entry_function(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     entry_function_type: &fmm::types::Function,
     closure_pointer_type: &fmm::types::Type,
     argument_types: &[&fmm::types::Type],
