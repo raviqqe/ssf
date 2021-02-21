@@ -1,4 +1,3 @@
-use super::utilities;
 use crate::expressions;
 use crate::types::{self, FUNCTION_ARGUMENT_OFFSET};
 
@@ -8,7 +7,7 @@ pub fn compile_foreign_declaration(
 ) {
     module_builder.define_variable(
         declaration.name(),
-        utilities::record(vec![
+        fmm::build::record(vec![
             compile_entry_function(module_builder, declaration),
             expressions::compile_arity(declaration.type_().arguments().into_iter().count()).into(),
             fmm::ir::Undefined::new(types::compile_unsized_environment()).into(),
@@ -54,7 +53,7 @@ fn compile_entry_function(
                         .iter()
                         .skip(FUNCTION_ARGUMENT_OFFSET)
                         .map(|argument| {
-                            utilities::variable(argument.name(), argument.type_().clone())
+                            fmm::build::variable(argument.name(), argument.type_().clone())
                         })
                         .collect(),
                 ),

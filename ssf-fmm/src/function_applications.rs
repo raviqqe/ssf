@@ -162,7 +162,7 @@ fn compile_partially_applied_entry_function(
         |instruction_builder| {
             let environment = instruction_builder.load(utilities::bitcast(
                 &instruction_builder,
-                utilities::variable(arguments[0].name(), arguments[0].type_().clone()),
+                fmm::build::variable(arguments[0].name(), arguments[0].type_().clone()),
                 fmm::types::Pointer::new(fmm::types::Record::new(
                     vec![closure_pointer_type.clone()]
                         .into_iter()
@@ -173,7 +173,7 @@ fn compile_partially_applied_entry_function(
             let closure_pointer = instruction_builder.deconstruct_record(environment.clone(), 0);
             let arguments = (0..argument_types.len())
                 .map(|index| instruction_builder.deconstruct_record(environment.clone(), index + 1))
-                .chain(vec![utilities::variable(
+                .chain(vec![fmm::build::variable(
                     arguments[1].name(),
                     arguments[1].type_().clone(),
                 )])

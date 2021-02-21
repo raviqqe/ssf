@@ -34,7 +34,7 @@ pub fn compile(
             let constructor_type =
                 algebraic_type.unfold().constructors()[&constructor.tag()].clone();
 
-            utilities::record(
+            fmm::build::record(
                 if algebraic_type.is_singleton() {
                     None
                 } else {
@@ -44,7 +44,7 @@ pub fn compile(
                 .chain(if constructor_type.is_enum() {
                     None
                 } else {
-                    let payload = utilities::record(
+                    let payload = fmm::build::record(
                         constructor_application
                             .arguments()
                             .iter()

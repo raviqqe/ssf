@@ -90,7 +90,7 @@ fn compile_body(
             .chain(definition.arguments().iter().map(|argument| {
                 (
                     argument.name().into(),
-                    utilities::variable(argument.name(), types::compile(argument.type_())).into(),
+                    fmm::build::variable(argument.name(), types::compile(argument.type_())).into(),
                 )
             }))
             .collect(),
@@ -115,7 +115,7 @@ fn compile_first_thunk_entry(
             instruction_builder.if_(
                 instruction_builder.compare_and_swap(
                     compile_entry_function_pointer_pointer(&instruction_builder, definition),
-                    utilities::variable(&entry_function_name, entry_function_type.clone()),
+                    fmm::build::variable(&entry_function_name, entry_function_type.clone()),
                     lock_entry_function.clone(),
                 ),
                 |instruction_builder| {
@@ -149,7 +149,7 @@ fn compile_first_thunk_entry(
                             arguments
                                 .iter()
                                 .map(|argument| {
-                                    utilities::variable(argument.name(), argument.type_().clone())
+                                    fmm::build::variable(argument.name(), argument.type_().clone())
                                 })
                                 .collect(),
                         ),
@@ -198,7 +198,7 @@ fn compile_locked_thunk_entry(
                     ),
                     utilities::bitcast(
                         &instruction_builder,
-                        utilities::variable(
+                        fmm::build::variable(
                             &entry_function_name,
                             types::compile_entry_function_from_definition(definition),
                         ),
@@ -260,7 +260,7 @@ fn compile_arguments(definition: &ssf::ir::Definition) -> Vec<fmm::ir::Argument>
 }
 
 fn compile_environment_pointer() -> fmm::build::TypedExpression {
-    utilities::variable(
+    fmm::build::variable(
         ENVIRONMENT_NAME,
         fmm::types::Pointer::new(types::compile_unsized_environment()),
     )
