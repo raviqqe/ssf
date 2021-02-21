@@ -25,10 +25,10 @@ fn compile_non_thunk(
 ) -> fmm::build::TypedExpression {
     module_builder.define_anonymous_function(
         compile_arguments(definition),
-        |instruction_builder| {
-            instruction_builder.return_(compile_body(
+        |builder| {
+            builder.return_(compile_body(
                 module_builder,
-                &instruction_builder,
+                &builder,
                 definition,
                 variables,
             ))
@@ -118,24 +118,23 @@ fn compile_first_thunk_entry(
                     utilities::variable(&entry_function_name, entry_function_type.clone()),
                     lock_entry_function.clone(),
                 ),
-                |instruction_builder| {
-                    let value =
-                        compile_body(module_builder, &instruction_builder, definition, variables);
+                |builder| {
+                    let value = compile_body(module_builder, &builder, definition, variables);
 
-                    instruction_builder.store(
+                    builder.store(
                         value.clone(),
                         utilities::bitcast(
-                            &instruction_builder,
+                            &builder,
                             compile_environment_pointer(),
                             fmm::types::Pointer::new(types::compile(definition.result_type())),
                         ),
                     );
-                    instruction_builder.atomic_store(
+                    builder.atomic_store(
                         normal_entry_function.clone(),
-                        compile_entry_function_pointer_pointer(&instruction_builder, definition),
+                        compile_entry_function_pointer_pointer(&builder, definition),
                     );
 
-                    instruction_builder.return_(value)
+                    builder.return_(value)
                 },
                 |builder| {
                     builder.return_(
