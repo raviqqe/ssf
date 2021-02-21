@@ -43,9 +43,9 @@ fn compile_entry_function(
 
     module_builder.define_anonymous_function(
         arguments.clone(),
-        |builder| {
-            builder.return_(
-                builder.call(
+        |instruction_builder| {
+            instruction_builder.return_(
+                instruction_builder.call(
                     module_builder.declare_function(
                         declaration.foreign_name(),
                         types::compile_foreign_function(declaration.type_()),
