@@ -119,7 +119,8 @@ fn compile_first_thunk_entry(
                     lock_entry_function.clone(),
                 ),
                 |instruction_builder| {
-                    let value = compile_body(module_builder, &instruction_builder, definition, variables);
+                    let value =
+                        compile_body(module_builder, &instruction_builder, definition, variables);
 
                     instruction_builder.store(
                         value.clone(),
@@ -139,9 +140,12 @@ fn compile_first_thunk_entry(
                 |instruction_builder| {
                     instruction_builder.return_(
                         instruction_builder.call(
-                            instruction_builder.atomic_load(compile_entry_function_pointer_pointer(
-                                &instruction_builder, definition,
-                            )),
+                            instruction_builder.atomic_load(
+                                compile_entry_function_pointer_pointer(
+                                    &instruction_builder,
+                                    definition,
+                                ),
+                            ),
                             arguments
                                 .iter()
                                 .map(|argument| {
@@ -187,7 +191,8 @@ fn compile_locked_thunk_entry(
                     utilities::bitcast(
                         &instruction_builder,
                         instruction_builder.atomic_load(compile_entry_function_pointer_pointer(
-                            &instruction_builder, definition,
+                            &instruction_builder,
+                            definition,
                         )),
                         fmm::types::Primitive::PointerInteger,
                     ),
