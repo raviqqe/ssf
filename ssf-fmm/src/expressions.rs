@@ -16,9 +16,8 @@ pub fn compile(
     expression: &ssf::ir::Expression,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
-    let compile = |expression, variables| {
-        compile(module_builder, instruction_builder, expression, variables)
-    };
+    let compile =
+        |expression, variables| compile(module_builder, instruction_builder, expression, variables);
 
     match expression {
         ssf::ir::Expression::Bitcast(bitcast) => utilities::bitcast(
@@ -315,9 +314,8 @@ fn compile_let(
     let_: &ssf::ir::Let,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
-    let compile = |expression, variables| {
-        compile(module_builder, instruction_builder, expression, variables)
-    };
+    let compile =
+        |expression, variables| compile(module_builder, instruction_builder, expression, variables);
 
     compile(
         let_.expression(),
@@ -364,9 +362,7 @@ fn compile_let_recursive(
                 definition
                     .environment()
                     .iter()
-                    .map(|free_variable| {
-                        variables[free_variable.name()].build(instruction_builder)
-                    })
+                    .map(|free_variable| variables[free_variable.name()].build(instruction_builder))
                     .collect::<Vec<_>>(),
             ),
             closure_pointers[definition.name()].clone(),
@@ -432,8 +428,11 @@ fn compile_primitive_operation(
             lhs,
             rhs,
         ),
-        ssf::ir::PrimitiveOperator::GreaterThanOrEqual => instruction_builder
-            .comparison_operation(fmm::ir::ComparisonOperator::GreaterThanOrEqual, lhs, rhs),
+        ssf::ir::PrimitiveOperator::GreaterThanOrEqual => instruction_builder.comparison_operation(
+            fmm::ir::ComparisonOperator::GreaterThanOrEqual,
+            lhs,
+            rhs,
+        ),
     }
 }
 

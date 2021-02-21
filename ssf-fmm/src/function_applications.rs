@@ -47,11 +47,7 @@ fn compile_with_min_arity(
                 builder.branch(compile(
                     module_builder,
                     &builder,
-                    compile_direct_call(
-                        &builder,
-                        closure_pointer.clone(),
-                        &arguments[..min_arity],
-                    ),
+                    compile_direct_call(&builder, closure_pointer.clone(), &arguments[..min_arity]),
                     &arguments[min_arity..],
                 ))
             },
@@ -212,9 +208,7 @@ fn compile_partially_applied_entry_function(
     )
 }
 
-fn get_entry_function_type(
-    closure_pointer: &fmm::build::TypedExpression,
-) -> &fmm::types::Function {
+fn get_entry_function_type(closure_pointer: &fmm::build::TypedExpression) -> &fmm::types::Function {
     closure_pointer
         .type_()
         .to_pointer()
