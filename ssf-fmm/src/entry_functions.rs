@@ -25,7 +25,14 @@ fn compile_non_thunk(
 ) -> fmm::build::TypedExpression {
     module_builder.define_anonymous_function(
         compile_arguments(definition),
-        |builder| builder.return_(compile_body(&builder, definition, variables)),
+        |instruction_builder| {
+            instruction_builder.return_(compile_body(
+                module_builder,
+                &instruction_builder,
+                definition,
+                variables,
+            ))
+        },
         types::compile(definition.result_type()),
     )
 }
@@ -45,12 +52,14 @@ fn compile_thunk(
 }
 
 fn compile_body(
-    builder: &fmm::build::InstructionBuilder,
+    module_builder: &fmm::build::ModuleBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     definition: &ssf::ir::Definition,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
     expressions::compile(
-        builder,
+        module_builder,
+        instruction_builder,
         definition.body(),
         &variables
             .clone()
@@ -63,10 +72,10 @@ fn compile_body(
                     .map(|(index, free_variable)| {
                         (
                             free_variable.name().into(),
-                            builder
-                                .load(builder.record_address(
+                            instruction_builder
+                                .load(instruction_builder.record_address(
                                     utilities::bitcast(
-                                        builder,
+                                        instruction_builder,
                                         compile_environment_pointer(),
                                         fmm::types::Pointer::new(types::compile_environment(
                                             definition,
@@ -109,23 +118,24 @@ fn compile_first_thunk_entry(
                     utilities::variable(&entry_function_name, entry_function_type.clone()),
                     lock_entry_function.clone(),
                 ),
-                |builder| {
-                    let value = compile_body(&builder, definition, variables);
+                |instruction_builder| {
+                    let value =
+                        compile_body(module_builder, &instruction_builder, definition, variables);
 
-                    builder.store(
+                    instruction_builder.store(
                         value.clone(),
                         utilities::bitcast(
-                            &builder,
+                            &instruction_builder,
                             compile_environment_pointer(),
                             fmm::types::Pointer::new(types::compile(definition.result_type())),
                         ),
                     );
-                    builder.atomic_store(
+                    instruction_builder.atomic_store(
                         normal_entry_function.clone(),
-                        compile_entry_function_pointer_pointer(&builder, definition),
+                        compile_entry_function_pointer_pointer(&instruction_builder, definition),
                     );
 
-                    builder.return_(value)
+                    instruction_builder.return_(value)
                 },
                 |builder| {
                     builder.return_(

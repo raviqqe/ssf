@@ -11,17 +11,24 @@ pub fn compile_arity(arity: usize) -> fmm::ir::Primitive {
 }
 
 pub fn compile(
-    builder: &fmm::build::InstructionBuilder,
+    module_builder: &fmm::build::ModuleBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     expression: &ssf::ir::Expression,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
+    let compile = |expression, variables| {
+        compile(module_builder, instruction_builder, expression, variables)
+    };
+
     match expression {
         ssf::ir::Expression::Bitcast(bitcast) => utilities::bitcast(
-            builder,
-            compile(builder, bitcast.expression(), variables),
+            instruction_builder,
+            compile(bitcast.expression(), variables),
             types::compile(bitcast.type_()),
         ),
-        ssf::ir::Expression::Case(case) => compile_case(builder, case, variables),
+        ssf::ir::Expression::Case(case) => {
+            compile_case(module_builder, instruction_builder, case, variables)
+        }
         ssf::ir::Expression::ConstructorApplication(constructor_application) => {
             let constructor = constructor_application.constructor();
             let algebraic_type = constructor.algebraic_type();
@@ -42,7 +49,7 @@ pub fn compile(
                         constructor_application
                             .arguments()
                             .iter()
-                            .map(|argument| compile(builder, argument, variables))
+                            .map(|argument| compile(argument, variables))
                             .collect(),
                     );
                     let union_type = types::compile_constructor_union(algebraic_type);
@@ -54,11 +61,12 @@ pub fn compile(
                             union_type.clone(),
                             member_index,
                             if constructor_type.is_boxed() {
-                                let pointer = builder.allocate_heap(payload.type_().clone());
-                                builder.store(payload, pointer.clone());
+                                let pointer =
+                                    instruction_builder.allocate_heap(payload.type_().clone());
+                                instruction_builder.store(payload, pointer.clone());
 
                                 utilities::bitcast(
-                                    &builder,
+                                    &instruction_builder,
                                     pointer,
                                     union_type.members()[member_index].clone(),
                                 )
@@ -77,42 +85,50 @@ pub fn compile(
         }
         ssf::ir::Expression::FunctionApplication(function_application) => {
             function_applications::compile(
-                builder,
-                compile(builder, function_application.first_function(), variables),
+                instruction_builder,
+                compile(function_application.first_function(), variables),
                 &function_application
                     .arguments()
                     .into_iter()
-                    .map(|argument| compile(builder, argument, variables))
+                    .map(|argument| compile(argument, variables))
                     .collect::<Vec<_>>(),
             )
         }
-        ssf::ir::Expression::Let(let_) => compile_let(builder, let_, variables),
-        ssf::ir::Expression::LetRecursive(let_recursive) => {
-            compile_let_recursive(builder, let_recursive, variables)
+        ssf::ir::Expression::Let(let_) => {
+            compile_let(module_builder, instruction_builder, let_, variables)
         }
+        ssf::ir::Expression::LetRecursive(let_recursive) => compile_let_recursive(
+            module_builder,
+            instruction_builder,
+            let_recursive,
+            variables,
+        ),
         ssf::ir::Expression::Primitive(primitive) => compile_primitive(primitive).into(),
         ssf::ir::Expression::PrimitiveOperation(operation) => {
-            compile_primitive_operation(builder, operation, variables)
+            compile_primitive_operation(module_builder, instruction_builder, operation, variables)
         }
-        ssf::ir::Expression::Variable(variable) => {
-            variables.get(variable.name()).unwrap().build(builder)
-        }
+        ssf::ir::Expression::Variable(variable) => variables
+            .get(variable.name())
+            .unwrap()
+            .build(instruction_builder),
     }
 }
 
 fn compile_case(
-    builder: &fmm::build::InstructionBuilder,
+    module_builder: &fmm::build::ModuleBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     case: &ssf::ir::Case,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
-    let compile = |expression| compile(builder, expression, variables);
+    let compile = |expression| compile(module_builder, instruction_builder, expression, variables);
 
     match case {
         ssf::ir::Case::Algebraic(case) => {
             let argument = compile(case.argument());
 
             compile_algebraic_alternatives(
-                builder,
+                module_builder,
+                instruction_builder,
                 if case
                     .alternatives()
                     .get(0)
@@ -121,7 +137,7 @@ fn compile_case(
                 {
                     fmm::ir::Primitive::PointerInteger(0).into()
                 } else {
-                    builder.deconstruct_record(argument.clone(), 0)
+                    instruction_builder.deconstruct_record(argument.clone(), 0)
                 },
                 argument,
                 case.alternatives(),
@@ -130,12 +146,15 @@ fn compile_case(
             )
             .unwrap()
         }
-        ssf::ir::Case::Primitive(case) => compile_primitive_case(builder, case, variables),
+        ssf::ir::Case::Primitive(case) => {
+            compile_primitive_case(module_builder, instruction_builder, case, variables)
+        }
     }
 }
 
 fn compile_algebraic_alternatives(
-    builder: &fmm::build::InstructionBuilder,
+    module_builder: &fmm::build::ModuleBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     tag: fmm::build::TypedExpression,
     argument: fmm::build::TypedExpression,
     alternatives: &[ssf::ir::AlgebraicAlternative],
@@ -143,19 +162,25 @@ fn compile_algebraic_alternatives(
     variables: &HashMap<String, VariableBuilder>,
 ) -> Option<fmm::build::TypedExpression> {
     Some(match alternatives {
-        [] => compile(builder, default_alternative?, variables),
+        [] => compile(
+            module_builder,
+            instruction_builder,
+            default_alternative?,
+            variables,
+        ),
         [alternative, ..] => {
             let constructor = alternative.constructor();
 
-            builder.if_(
-                builder.comparison_operation(
+            instruction_builder.if_(
+                instruction_builder.comparison_operation(
                     fmm::ir::ComparisonOperator::Equal,
                     tag.clone(),
                     fmm::ir::Primitive::PointerInteger(constructor.tag() as i64),
                 ),
                 |builder| {
                     builder.branch(compile(
-                        &builder,
+                        module_builder,
+                        instruction_builder,
                         alternative.expression(),
                         &if constructor.constructor_type().is_enum() {
                             variables.clone()
@@ -204,7 +229,8 @@ fn compile_algebraic_alternatives(
                 },
                 |builder| {
                     if let Some(expression) = compile_algebraic_alternatives(
-                        &builder,
+                        module_builder,
+                        instruction_builder,
                         tag.clone(),
                         argument.clone(),
                         &alternatives[1..],
@@ -222,14 +248,21 @@ fn compile_algebraic_alternatives(
 }
 
 fn compile_primitive_case(
-    builder: &fmm::build::InstructionBuilder,
+    module_builder: &fmm::build::ModuleBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     case: &ssf::ir::PrimitiveCase,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
-    let argument = compile(builder, case.argument(), variables);
+    let argument = compile(
+        module_builder,
+        instruction_builder,
+        case.argument(),
+        variables,
+    );
 
     compile_primitive_alternatives(
-        builder,
+        module_builder,
+        instruction_builder,
         argument,
         case.alternatives(),
         case.default_alternative(),
@@ -239,24 +272,28 @@ fn compile_primitive_case(
 }
 
 fn compile_primitive_alternatives(
-    builder: &fmm::build::InstructionBuilder,
+    module_builder: &fmm::build::ModuleBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     argument: fmm::build::TypedExpression,
     alternatives: &[ssf::ir::PrimitiveAlternative],
     default_alternative: Option<&ssf::ir::Expression>,
     variables: &HashMap<String, VariableBuilder>,
 ) -> Option<fmm::build::TypedExpression> {
+    let compile = |expression| compile(module_builder, instruction_builder, expression, variables);
+
     match alternatives {
-        [] => default_alternative.map(|expression| compile(builder, expression, variables)),
-        [alternative, ..] => Some(builder.if_(
-            builder.comparison_operation(
+        [] => default_alternative.map(compile),
+        [alternative, ..] => Some(instruction_builder.if_(
+            instruction_builder.comparison_operation(
                 fmm::ir::ComparisonOperator::Equal,
                 argument.clone(),
                 compile_primitive(alternative.primitive()),
             ),
-            |builder| builder.branch(compile(&builder, alternative.expression(), variables)),
+            |builder| builder.branch(compile(alternative.expression())),
             |builder| {
                 if let Some(expression) = compile_primitive_alternatives(
-                    &builder,
+                    module_builder,
+                    instruction_builder,
                     argument.clone(),
                     &alternatives[1..],
                     default_alternative,
@@ -272,26 +309,31 @@ fn compile_primitive_alternatives(
 }
 
 fn compile_let(
-    builder: &fmm::build::InstructionBuilder,
+    module_builder: &fmm::build::ModuleBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     let_: &ssf::ir::Let,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
+    let compile = |expression, variables| {
+        compile(module_builder, instruction_builder, expression, variables)
+    };
+
     compile(
-        builder,
         let_.expression(),
         &variables
             .clone()
             .drain()
             .chain(vec![(
                 let_.name().into(),
-                compile(builder, let_.bound_expression(), variables).into(),
+                compile(let_.bound_expression(), variables).into(),
             )])
             .collect(),
     )
 }
 
 fn compile_let_recursive(
-    builder: &fmm::build::InstructionBuilder,
+    module_builder: &fmm::build::ModuleBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     let_: &ssf::ir::LetRecursive,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
@@ -299,12 +341,13 @@ fn compile_let_recursive(
     let mut closure_pointers = HashMap::new();
 
     for definition in let_.definitions() {
-        let closure_pointer = builder.allocate_heap(types::compile_sized_closure(definition));
+        let closure_pointer =
+            instruction_builder.allocate_heap(types::compile_sized_closure(definition));
 
         variables.insert(
             definition.name().into(),
             utilities::bitcast(
-                builder,
+                instruction_builder,
                 closure_pointer.clone(),
                 fmm::types::Pointer::new(types::compile_unsized_closure(definition.type_())),
             )
@@ -314,61 +357,82 @@ fn compile_let_recursive(
     }
 
     for definition in let_.definitions() {
-        builder.store(
+        instruction_builder.store(
             closures::compile_closure_content(
-                entry_functions::compile(builder.module_builder(), definition, &variables),
+                entry_functions::compile(module_builder, definition, &variables),
                 definition
                     .environment()
                     .iter()
-                    .map(|free_variable| variables[free_variable.name()].build(builder))
+                    .map(|free_variable| {
+                        variables[free_variable.name()].build(instruction_builder)
+                    })
                     .collect::<Vec<_>>(),
             ),
             closure_pointers[definition.name()].clone(),
         );
     }
 
-    compile(builder, let_.expression(), &variables)
+    compile(
+        module_builder,
+        instruction_builder,
+        let_.expression(),
+        &variables,
+    )
 }
 
 fn compile_primitive_operation(
-    builder: &fmm::build::InstructionBuilder,
+    module_builder: &fmm::build::ModuleBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     operation: &ssf::ir::PrimitiveOperation,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
-    let lhs = compile(builder, operation.lhs(), variables);
-    let rhs = compile(builder, operation.rhs(), variables);
+    let compile = |expression| compile(module_builder, instruction_builder, expression, variables);
+
+    let lhs = compile(operation.lhs());
+    let rhs = compile(operation.rhs());
 
     match operation.operator() {
         ssf::ir::PrimitiveOperator::Add => {
-            builder.arithmetic_operation(fmm::ir::ArithmeticOperator::Add, lhs, rhs)
+            instruction_builder.arithmetic_operation(fmm::ir::ArithmeticOperator::Add, lhs, rhs)
         }
-        ssf::ir::PrimitiveOperator::Subtract => {
-            builder.arithmetic_operation(fmm::ir::ArithmeticOperator::Subtract, lhs, rhs)
-        }
-        ssf::ir::PrimitiveOperator::Multiply => {
-            builder.arithmetic_operation(fmm::ir::ArithmeticOperator::Multiply, lhs, rhs)
-        }
+        ssf::ir::PrimitiveOperator::Subtract => instruction_builder.arithmetic_operation(
+            fmm::ir::ArithmeticOperator::Subtract,
+            lhs,
+            rhs,
+        ),
+        ssf::ir::PrimitiveOperator::Multiply => instruction_builder.arithmetic_operation(
+            fmm::ir::ArithmeticOperator::Multiply,
+            lhs,
+            rhs,
+        ),
         ssf::ir::PrimitiveOperator::Divide => {
-            builder.arithmetic_operation(fmm::ir::ArithmeticOperator::Divide, lhs, rhs)
+            instruction_builder.arithmetic_operation(fmm::ir::ArithmeticOperator::Divide, lhs, rhs)
         }
         ssf::ir::PrimitiveOperator::Equal => {
-            builder.comparison_operation(fmm::ir::ComparisonOperator::Equal, lhs, rhs)
+            instruction_builder.comparison_operation(fmm::ir::ComparisonOperator::Equal, lhs, rhs)
         }
-        ssf::ir::PrimitiveOperator::NotEqual => {
-            builder.comparison_operation(fmm::ir::ComparisonOperator::NotEqual, lhs, rhs)
-        }
-        ssf::ir::PrimitiveOperator::LessThan => {
-            builder.comparison_operation(fmm::ir::ComparisonOperator::LessThan, lhs, rhs)
-        }
-        ssf::ir::PrimitiveOperator::LessThanOrEqual => {
-            builder.comparison_operation(fmm::ir::ComparisonOperator::LessThanOrEqual, lhs, rhs)
-        }
-        ssf::ir::PrimitiveOperator::GreaterThan => {
-            builder.comparison_operation(fmm::ir::ComparisonOperator::GreaterThan, lhs, rhs)
-        }
-        ssf::ir::PrimitiveOperator::GreaterThanOrEqual => {
-            builder.comparison_operation(fmm::ir::ComparisonOperator::GreaterThanOrEqual, lhs, rhs)
-        }
+        ssf::ir::PrimitiveOperator::NotEqual => instruction_builder.comparison_operation(
+            fmm::ir::ComparisonOperator::NotEqual,
+            lhs,
+            rhs,
+        ),
+        ssf::ir::PrimitiveOperator::LessThan => instruction_builder.comparison_operation(
+            fmm::ir::ComparisonOperator::LessThan,
+            lhs,
+            rhs,
+        ),
+        ssf::ir::PrimitiveOperator::LessThanOrEqual => instruction_builder.comparison_operation(
+            fmm::ir::ComparisonOperator::LessThanOrEqual,
+            lhs,
+            rhs,
+        ),
+        ssf::ir::PrimitiveOperator::GreaterThan => instruction_builder.comparison_operation(
+            fmm::ir::ComparisonOperator::GreaterThan,
+            lhs,
+            rhs,
+        ),
+        ssf::ir::PrimitiveOperator::GreaterThanOrEqual => instruction_builder
+            .comparison_operation(fmm::ir::ComparisonOperator::GreaterThanOrEqual, lhs, rhs),
     }
 }
 
