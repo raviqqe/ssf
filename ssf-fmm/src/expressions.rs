@@ -85,6 +85,7 @@ pub fn compile(
         }
         ssf::ir::Expression::FunctionApplication(function_application) => {
             function_applications::compile(
+                module_builder,
                 instruction_builder,
                 compile(function_application.first_function(), variables),
                 &function_application

@@ -22,6 +22,7 @@ pub fn compile_foreign_definition(
         arguments.clone(),
         |builder| {
             builder.return_(function_applications::compile(
+                module_builder,
                 &builder,
                 global_variable_builder.build(&builder),
                 &arguments

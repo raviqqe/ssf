@@ -4,15 +4,23 @@ use super::types;
 use super::utilities;
 
 pub fn compile(
-    builder: &fmm::build::InstructionBuilder,
+    module_builder: &fmm::build::ModuleBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     closure_pointer: fmm::build::TypedExpression,
     arguments: &[fmm::build::TypedExpression],
 ) -> fmm::build::TypedExpression {
-    compile_with_min_arity(builder, closure_pointer, arguments, 1)
+    compile_with_min_arity(
+        module_builder,
+        instruction_builder,
+        closure_pointer,
+        arguments,
+        1,
+    )
 }
 
 fn compile_with_min_arity(
-    builder: &fmm::build::InstructionBuilder,
+    module_builder: &fmm::build::ModuleBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     closure_pointer: fmm::build::TypedExpression,
     arguments: &[fmm::build::TypedExpression],
     min_arity: usize,
@@ -20,25 +28,36 @@ fn compile_with_min_arity(
     if arguments.is_empty() {
         closure_pointer
     } else if arguments.len() < min_arity {
-        compile_create_closure(builder, closure_pointer, arguments)
+        compile_create_closure(
+            module_builder,
+            instruction_builder,
+            closure_pointer,
+            arguments,
+        )
     } else if types::get_arity(get_entry_function_type(&closure_pointer)) == min_arity {
-        compile_direct_call(builder, closure_pointer, arguments)
+        compile_direct_call(instruction_builder, closure_pointer, arguments)
     } else {
-        builder.if_(
-            builder.comparison_operation(
+        instruction_builder.if_(
+            instruction_builder.comparison_operation(
                 fmm::ir::ComparisonOperator::Equal,
-                closures::compile_load_arity(builder, closure_pointer.clone()),
+                closures::compile_load_arity(instruction_builder, closure_pointer.clone()),
                 expressions::compile_arity(min_arity),
             ),
             |builder| {
                 builder.branch(compile(
+                    module_builder,
                     &builder,
-                    compile_direct_call(&builder, closure_pointer.clone(), &arguments[..min_arity]),
+                    compile_direct_call(
+                        &builder,
+                        closure_pointer.clone(),
+                        &arguments[..min_arity],
+                    ),
                     &arguments[min_arity..],
                 ))
             },
             |builder| {
                 builder.branch(compile_with_min_arity(
+                    module_builder,
                     &builder,
                     closure_pointer.clone(),
                     arguments,
@@ -74,7 +93,8 @@ fn compile_direct_call(
 }
 
 fn compile_create_closure(
-    builder: &fmm::build::InstructionBuilder,
+    module_builder: &fmm::build::ModuleBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     closure_pointer: fmm::build::TypedExpression,
     arguments: &[fmm::build::TypedExpression],
 ) -> fmm::build::TypedExpression {
@@ -96,7 +116,7 @@ fn compile_create_closure(
 
     let closure = closures::compile_closure_content(
         compile_partially_applied_entry_function(
-            builder,
+            module_builder,
             &target_entry_function_type,
             &closure_pointer.type_(),
             &arguments
@@ -109,11 +129,11 @@ fn compile_create_closure(
             .chain(arguments.iter().cloned())
             .collect::<Vec<_>>(),
     );
-    let closure_pointer = builder.allocate_heap(closure.type_().clone());
-    builder.store(closure, closure_pointer.clone());
+    let closure_pointer = instruction_builder.allocate_heap(closure.type_().clone());
+    instruction_builder.store(closure, closure_pointer.clone());
 
     utilities::bitcast(
-        builder,
+        instruction_builder,
         closure_pointer,
         fmm::types::Pointer::new(types::compile_raw_closure(
             target_entry_function_type,
@@ -123,7 +143,7 @@ fn compile_create_closure(
 }
 
 fn compile_partially_applied_entry_function(
-    builder: &fmm::build::InstructionBuilder,
+    module_builder: &fmm::build::ModuleBuilder,
     entry_function_type: &fmm::types::Function,
     closure_pointer_type: &fmm::types::Type,
     argument_types: &[&fmm::types::Type],
@@ -137,7 +157,7 @@ fn compile_partially_applied_entry_function(
         .map(|(index, type_)| fmm::ir::Argument::new(format!("arg_{}", index), type_.clone()))
         .collect::<Vec<_>>();
 
-    builder.module_builder().define_anonymous_function(
+    module_builder.define_anonymous_function(
         arguments.clone(),
         |builder| {
             let environment = builder.load(utilities::bitcast(
@@ -178,6 +198,7 @@ fn compile_partially_applied_entry_function(
                         },
                         |builder| {
                             builder.branch(compile_create_closure(
+                                module_builder,
                                 &builder,
                                 closure_pointer.clone(),
                                 &arguments,
@@ -191,7 +212,9 @@ fn compile_partially_applied_entry_function(
     )
 }
 
-fn get_entry_function_type(closure_pointer: &fmm::build::TypedExpression) -> &fmm::types::Function {
+fn get_entry_function_type(
+    closure_pointer: &fmm::build::TypedExpression,
+) -> &fmm::types::Function {
     closure_pointer
         .type_()
         .to_pointer()
