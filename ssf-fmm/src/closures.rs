@@ -35,13 +35,13 @@ pub fn compile_closure_content(
 ) -> fmm::build::TypedExpression {
     let entry_function = entry_function.into();
 
-    utilities::record(vec![
+    fmm::build::record(vec![
         entry_function.clone(),
         expressions::compile_arity(types::get_arity(
             entry_function.type_().to_function().unwrap(),
         ))
         .into(),
-        utilities::record(free_variables).into(),
+        fmm::build::record(free_variables).into(),
     ])
     .into()
 }

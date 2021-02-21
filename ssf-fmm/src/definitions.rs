@@ -1,7 +1,6 @@
 use crate::entry_functions;
 use crate::expressions;
 use crate::types;
-use crate::utilities;
 use crate::variable_builder::VariableBuilder;
 use std::collections::HashMap;
 
@@ -12,7 +11,7 @@ pub fn compile_definition(
 ) {
     module_builder.define_variable(
         definition.name(),
-        utilities::record(vec![
+        fmm::build::record(vec![
             entry_functions::compile(module_builder, definition, global_variables),
             expressions::compile_arity(definition.arguments().iter().count()).into(),
             fmm::ir::Undefined::new(types::compile_closure_payload(definition)).into(),

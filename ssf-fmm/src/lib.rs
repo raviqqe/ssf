@@ -73,7 +73,7 @@ fn compile_global_variables(module: &ssf::ir::Module) -> HashMap<String, Variabl
         .map(|declaration| {
             (
                 declaration.name().into(),
-                utilities::variable(
+                fmm::build::variable(
                     declaration.name(),
                     fmm::types::Pointer::new(types::compile_unsized_closure(declaration.type_())),
                 )
@@ -83,7 +83,7 @@ fn compile_global_variables(module: &ssf::ir::Module) -> HashMap<String, Variabl
         .chain(module.declarations().iter().map(|declaration| {
             (
                 declaration.name().into(),
-                utilities::variable(
+                fmm::build::variable(
                     declaration.name(),
                     fmm::types::Pointer::new(types::compile_unsized_closure(declaration.type_())),
                 )
@@ -94,7 +94,7 @@ fn compile_global_variables(module: &ssf::ir::Module) -> HashMap<String, Variabl
             (
                 definition.name().into(),
                 VariableBuilder::with_type(
-                    utilities::variable(
+                    fmm::build::variable(
                         definition.name(),
                         fmm::types::Pointer::new(types::compile_sized_closure(definition)),
                     ),

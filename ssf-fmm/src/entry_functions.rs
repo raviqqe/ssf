@@ -25,7 +25,14 @@ fn compile_non_thunk(
 ) -> fmm::build::TypedExpression {
     module_builder.define_anonymous_function(
         compile_arguments(definition),
-        |builder| builder.return_(compile_body(&builder, definition, variables)),
+        |instruction_builder| {
+            instruction_builder.return_(compile_body(
+                module_builder,
+                &instruction_builder,
+                definition,
+                variables,
+            ))
+        },
         types::compile(definition.result_type()),
     )
 }
@@ -45,12 +52,14 @@ fn compile_thunk(
 }
 
 fn compile_body(
-    builder: &fmm::build::InstructionBuilder,
+    module_builder: &fmm::build::ModuleBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     definition: &ssf::ir::Definition,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
     expressions::compile(
-        builder,
+        module_builder,
+        instruction_builder,
         definition.body(),
         &variables
             .clone()
@@ -63,10 +72,10 @@ fn compile_body(
                     .map(|(index, free_variable)| {
                         (
                             free_variable.name().into(),
-                            builder
-                                .load(builder.record_address(
+                            instruction_builder
+                                .load(instruction_builder.record_address(
                                     utilities::bitcast(
-                                        builder,
+                                        instruction_builder,
                                         compile_environment_pointer(),
                                         fmm::types::Pointer::new(types::compile_environment(
                                             definition,
@@ -81,7 +90,7 @@ fn compile_body(
             .chain(definition.arguments().iter().map(|argument| {
                 (
                     argument.name().into(),
-                    utilities::variable(argument.name(), types::compile(argument.type_())).into(),
+                    fmm::build::variable(argument.name(), types::compile(argument.type_())).into(),
                 )
             }))
             .collect(),
@@ -102,41 +111,45 @@ fn compile_first_thunk_entry(
     module_builder.define_function(
         &entry_function_name,
         arguments.clone(),
-        |builder| {
-            builder.if_(
-                builder.compare_and_swap(
-                    compile_entry_function_pointer_pointer(&builder, definition),
-                    utilities::variable(&entry_function_name, entry_function_type.clone()),
+        |instruction_builder| {
+            instruction_builder.if_(
+                instruction_builder.compare_and_swap(
+                    compile_entry_function_pointer_pointer(&instruction_builder, definition),
+                    fmm::build::variable(&entry_function_name, entry_function_type.clone()),
                     lock_entry_function.clone(),
                 ),
-                |builder| {
-                    let value = compile_body(&builder, definition, variables);
+                |instruction_builder| {
+                    let value =
+                        compile_body(module_builder, &instruction_builder, definition, variables);
 
-                    builder.store(
+                    instruction_builder.store(
                         value.clone(),
                         utilities::bitcast(
-                            &builder,
+                            &instruction_builder,
                             compile_environment_pointer(),
                             fmm::types::Pointer::new(types::compile(definition.result_type())),
                         ),
                     );
-                    builder.atomic_store(
+                    instruction_builder.atomic_store(
                         normal_entry_function.clone(),
-                        compile_entry_function_pointer_pointer(&builder, definition),
+                        compile_entry_function_pointer_pointer(&instruction_builder, definition),
                     );
 
-                    builder.return_(value)
+                    instruction_builder.return_(value)
                 },
-                |builder| {
-                    builder.return_(
-                        builder.call(
-                            builder.atomic_load(compile_entry_function_pointer_pointer(
-                                &builder, definition,
-                            )),
+                |instruction_builder| {
+                    instruction_builder.return_(
+                        instruction_builder.call(
+                            instruction_builder.atomic_load(
+                                compile_entry_function_pointer_pointer(
+                                    &instruction_builder,
+                                    definition,
+                                ),
+                            ),
                             arguments
                                 .iter()
                                 .map(|argument| {
-                                    utilities::variable(argument.name(), argument.type_().clone())
+                                    fmm::build::variable(argument.name(), argument.type_().clone())
                                 })
                                 .collect(),
                         ),
@@ -144,7 +157,7 @@ fn compile_first_thunk_entry(
                 },
             );
 
-            builder.unreachable()
+            instruction_builder.unreachable()
         },
         types::compile(definition.result_type()),
         false,
@@ -157,7 +170,7 @@ fn compile_normal_thunk_entry(
 ) -> fmm::build::TypedExpression {
     module_builder.define_anonymous_function(
         compile_arguments(definition),
-        |builder| compile_normal_body(&builder, definition),
+        |instruction_builder| compile_normal_body(&instruction_builder, definition),
         types::compile(definition.result_type()),
     )
 }
@@ -171,20 +184,21 @@ fn compile_locked_thunk_entry(
     module_builder.define_function(
         &entry_function_name,
         compile_arguments(definition),
-        |builder| {
-            builder.if_(
-                builder.comparison_operation(
+        |instruction_builder| {
+            instruction_builder.if_(
+                instruction_builder.comparison_operation(
                     fmm::ir::ComparisonOperator::Equal,
                     utilities::bitcast(
-                        &builder,
-                        builder.atomic_load(compile_entry_function_pointer_pointer(
-                            &builder, definition,
+                        &instruction_builder,
+                        instruction_builder.atomic_load(compile_entry_function_pointer_pointer(
+                            &instruction_builder,
+                            definition,
                         )),
                         fmm::types::Primitive::PointerInteger,
                     ),
                     utilities::bitcast(
-                        &builder,
-                        utilities::variable(
+                        &instruction_builder,
+                        fmm::build::variable(
                             &entry_function_name,
                             types::compile_entry_function_from_definition(definition),
                         ),
@@ -192,11 +206,11 @@ fn compile_locked_thunk_entry(
                     ),
                 ),
                 // TODO Return to handle thunk locks asynchronously.
-                |builder| builder.unreachable(),
-                |builder| compile_normal_body(&builder, definition),
+                |instruction_builder| instruction_builder.unreachable(),
+                |instruction_builder| compile_normal_body(&instruction_builder, definition),
             );
 
-            builder.unreachable()
+            instruction_builder.unreachable()
         },
         types::compile(definition.result_type()),
         false,
@@ -204,26 +218,26 @@ fn compile_locked_thunk_entry(
 }
 
 fn compile_normal_body(
-    builder: &fmm::build::InstructionBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     definition: &ssf::ir::Definition,
 ) -> fmm::ir::Block {
-    builder.return_(builder.load(utilities::bitcast(
-        &builder,
+    instruction_builder.return_(instruction_builder.load(utilities::bitcast(
+        &instruction_builder,
         compile_environment_pointer(),
         fmm::types::Pointer::new(types::compile(definition.result_type())),
     )))
 }
 
 fn compile_entry_function_pointer_pointer(
-    builder: &fmm::build::InstructionBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
     definition: &ssf::ir::Definition,
 ) -> fmm::build::TypedExpression {
     // TODO Calculate entry function pointer properly.
     // The offset should be calculated by allocating a record of
     // { pointer, { pointer, arity, environment } }.
-    builder.pointer_address(
+    instruction_builder.pointer_address(
         utilities::bitcast(
-            builder,
+            instruction_builder,
             compile_environment_pointer(),
             fmm::types::Pointer::new(types::compile_entry_function_from_definition(definition)),
         ),
@@ -246,7 +260,7 @@ fn compile_arguments(definition: &ssf::ir::Definition) -> Vec<fmm::ir::Argument>
 }
 
 fn compile_environment_pointer() -> fmm::build::TypedExpression {
-    utilities::variable(
+    fmm::build::variable(
         ENVIRONMENT_NAME,
         fmm::types::Pointer::new(types::compile_unsized_environment()),
     )

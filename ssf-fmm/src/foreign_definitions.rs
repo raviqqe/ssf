@@ -1,6 +1,5 @@
 use crate::function_applications;
 use crate::types;
-use crate::utilities;
 use crate::variable_builder::VariableBuilder;
 
 pub fn compile_foreign_definition(
@@ -20,13 +19,14 @@ pub fn compile_foreign_definition(
     module_builder.define_function(
         definition.foreign_name(),
         arguments.clone(),
-        |builder| {
-            builder.return_(function_applications::compile(
-                &builder,
-                global_variable_builder.build(&builder),
+        |instruction_builder| {
+            instruction_builder.return_(function_applications::compile(
+                module_builder,
+                &instruction_builder,
+                global_variable_builder.build(&instruction_builder),
                 &arguments
                     .iter()
-                    .map(|argument| utilities::variable(argument.name(), argument.type_().clone()))
+                    .map(|argument| fmm::build::variable(argument.name(), argument.type_().clone()))
                     .collect::<Vec<_>>(),
             ))
         },
