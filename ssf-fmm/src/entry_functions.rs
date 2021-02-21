@@ -45,7 +45,7 @@ fn compile_thunk(
 }
 
 fn compile_body(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     definition: &ssf::ir::Definition,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
@@ -204,7 +204,7 @@ fn compile_locked_thunk_entry(
 }
 
 fn compile_normal_body(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     definition: &ssf::ir::Definition,
 ) -> fmm::ir::Block {
     builder.return_(builder.load(utilities::bitcast(
@@ -215,7 +215,7 @@ fn compile_normal_body(
 }
 
 fn compile_entry_function_pointer_pointer(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     definition: &ssf::ir::Definition,
 ) -> fmm::build::TypedExpression {
     // TODO Calculate entry function pointer properly.

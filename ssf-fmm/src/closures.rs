@@ -3,7 +3,7 @@ use super::types;
 use super::utilities;
 
 pub fn compile_load_entry_pointer(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     closure_pointer: impl Into<fmm::build::TypedExpression>,
 ) -> fmm::build::TypedExpression {
     // Entry functions of thunks need to be loaded atomically
@@ -12,14 +12,14 @@ pub fn compile_load_entry_pointer(
 }
 
 pub fn compile_load_arity(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     closure_pointer: impl Into<fmm::build::TypedExpression>,
 ) -> fmm::build::TypedExpression {
     builder.load(builder.record_address(closure_pointer, 1))
 }
 
 pub fn compile_environment_pointer(
-    builder: &fmm::build::BlockBuilder,
+    builder: &fmm::build::InstructionBuilder,
     closure_pointer: impl Into<fmm::build::TypedExpression>,
 ) -> fmm::build::TypedExpression {
     utilities::bitcast(
