@@ -173,9 +173,7 @@ fn compile_partially_applied_entry_function(
             ));
             let closure_pointer = instruction_builder.deconstruct_record(environment.clone(), 0);
             let arguments = (0..argument_types.len())
-                .map(|index| {
-                    instruction_builder.deconstruct_record(environment.clone(), index + 1)
-                })
+                .map(|index| instruction_builder.deconstruct_record(environment.clone(), index + 1))
                 .chain(vec![fmm::build::variable(
                     arguments[1].name(),
                     arguments[1].type_().clone(),
@@ -219,9 +217,7 @@ fn compile_partially_applied_entry_function(
     )
 }
 
-fn get_entry_function_type(
-    closure_pointer: &fmm::build::TypedExpression,
-) -> &fmm::types::Function {
+fn get_entry_function_type(closure_pointer: &fmm::build::TypedExpression) -> &fmm::types::Function {
     closure_pointer
         .type_()
         .to_pointer()
