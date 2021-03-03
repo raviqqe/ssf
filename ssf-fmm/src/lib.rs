@@ -192,7 +192,7 @@ mod tests {
                         ssf::types::Primitive::Float64,
                     ),
                 )],
-                vec![ssf::ir::ForeignDefinition::new("f", "g")],
+                vec![ssf::ir::ForeignDefinition::new("f", "h")],
                 vec![],
                 vec![],
             ));

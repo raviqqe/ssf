@@ -190,11 +190,23 @@ pub fn compile_entry_function<'a>(
     )
 }
 
-pub fn compile_foreign_function(function: &ssf::types::Function) -> fmm::types::Function {
+pub fn compile_foreign_function_of_declaration(
+    function: &ssf::types::Function,
+) -> fmm::types::Function {
     fmm::types::Function::new(
         function.arguments().into_iter().map(compile).collect(),
         compile(function.last_result()),
         fmm::types::CallingConvention::Target,
+    )
+}
+
+pub fn compile_foreign_function_of_definition(
+    function: &ssf::types::Function,
+) -> fmm::types::Function {
+    fmm::types::Function::new(
+        function.arguments().into_iter().map(compile).collect(),
+        compile(function.last_result()),
+        fmm::types::CallingConvention::Source,
     )
 }
 
