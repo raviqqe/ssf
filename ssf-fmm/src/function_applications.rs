@@ -112,6 +112,7 @@ fn compile_create_closure(
             )
             .collect(),
         entry_function_type.result().clone(),
+        fmm::types::CallingConvention::Source,
     );
 
     let closure = closures::compile_closure_content(
@@ -212,6 +213,7 @@ fn compile_partially_applied_entry_function(
             )
         },
         curried_entry_function_type.result().clone(),
+        fmm::types::CallingConvention::Source,
     )
 }
 

@@ -110,9 +110,18 @@ mod tests {
     use super::*;
 
     fn compile_module(module: &ssf::ir::Module) {
+        let module = compile(module);
+
+        compile_final_module(&module);
+        compile_final_module(
+            &fmm::analysis::transform_to_cps(&module, fmm::types::Record::new(vec![])).unwrap(),
+        );
+    }
+
+    fn compile_final_module(module: &fmm::ir::Module) {
         let directory = tempfile::tempdir().unwrap();
         let file_path = directory.path().join("foo.c");
-        let source = fmm_c::compile(&compile(module), None);
+        let source = fmm_c::compile(&module, None);
 
         println!("{}", source);
 
@@ -192,7 +201,7 @@ mod tests {
                         ssf::types::Primitive::Float64,
                     ),
                 )],
-                vec![ssf::ir::ForeignDefinition::new("f", "g")],
+                vec![ssf::ir::ForeignDefinition::new("f", "h")],
                 vec![],
                 vec![],
             ));

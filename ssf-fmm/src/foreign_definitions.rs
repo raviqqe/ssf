@@ -8,7 +8,7 @@ pub fn compile_foreign_definition(
     function_type: &ssf::types::Function,
     global_variable_builder: &VariableBuilder,
 ) {
-    let foreign_function_type = types::compile_foreign_function(function_type);
+    let foreign_function_type = types::compile_foreign_function_of_definition(function_type);
     let arguments = foreign_function_type
         .arguments()
         .iter()
@@ -31,6 +31,7 @@ pub fn compile_foreign_definition(
             ))
         },
         foreign_function_type.result().clone(),
+        foreign_function_type.calling_convention(),
         true,
     );
 }

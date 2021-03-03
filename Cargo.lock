@@ -52,15 +52,16 @@ checksum = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
 [[package]]
 name = "fmm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#008abf05091e8e5a40df5dfa2e7fb163d8cdba5d"
+source = "git+https://github.com/raviqqe/fmm?branch=main#72024e90b6fd6fe9dfb759e62ad9da767c825624"
 dependencies = [
+ "once_cell",
  "petgraph",
 ]
 
 [[package]]
 name = "fmm-c"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#008abf05091e8e5a40df5dfa2e7fb163d8cdba5d"
+source = "git+https://github.com/raviqqe/fmm?branch=main#72024e90b6fd6fe9dfb759e62ad9da767c825624"
 dependencies = [
  "fmm",
  "tempfile",
@@ -95,9 +96,15 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.86"
+version = "0.2.87"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7282d924be3275cec7f6756ff4121987bc6481325397dde6ba3e7802b1a8b1c"
+checksum = "265d751d31d6780a3f956bb5b8022feba2d94eeee5a84ba64f4212eedca42213"
+
+[[package]]
+name = "once_cell"
+version = "1.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af8b08b04175473088b46763e51ee54da5f9a164bc162f615b91bc179dbf15a3"
 
 [[package]]
 name = "output_vt100"
