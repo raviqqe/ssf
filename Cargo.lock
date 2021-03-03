@@ -52,7 +52,7 @@ checksum = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
 [[package]]
 name = "fmm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#dba5a88eff559c742f6a6d576a3dc06c1eafdb87"
+source = "git+https://github.com/raviqqe/fmm?branch=main#57e7e194b710a2b5029d31360a120768aa8990b6"
 dependencies = [
  "once_cell",
  "petgraph",
@@ -61,7 +61,7 @@ dependencies = [
 [[package]]
 name = "fmm-c"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#dba5a88eff559c742f6a6d576a3dc06c1eafdb87"
+source = "git+https://github.com/raviqqe/fmm?branch=main#57e7e194b710a2b5029d31360a120768aa8990b6"
 dependencies = [
  "fmm",
  "tempfile",
