@@ -31,7 +31,7 @@ pub fn compile_foreign_definition(
             ))
         },
         foreign_function_type.result().clone(),
-        fmm::types::CallingConvention::Target,
+        fmm::types::CallingConvention::Source,
         true,
     );
 }
