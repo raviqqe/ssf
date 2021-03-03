@@ -26,11 +26,14 @@ pub fn compile_foreign_definition(
                 global_variable_builder.build(&instruction_builder),
                 &arguments
                     .iter()
-                    .map(|argument| fmm::build::variable(argument.name(), argument.type_().clone()))
+                    .map(|argument| {
+                        fmm::build::variable(argument.name(), argument.type_().clone())
+                    })
                     .collect::<Vec<_>>(),
             ))
         },
         foreign_function_type.result().clone(),
+        fmm::types::CallingConvention::Target,
         true,
     );
 }

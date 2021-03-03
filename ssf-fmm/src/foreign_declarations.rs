@@ -60,5 +60,6 @@ fn compile_entry_function(
             )
         },
         foreign_function_type.result().clone(),
+        fmm::types::CallingConvention::Source,
     )
 }

@@ -34,6 +34,7 @@ fn compile_non_thunk(
             ))
         },
         types::compile(definition.result_type()),
+        fmm::types::CallingConvention::Source,
     )
 }
 
@@ -160,6 +161,7 @@ fn compile_first_thunk_entry(
             instruction_builder.unreachable()
         },
         types::compile(definition.result_type()),
+        fmm::types::CallingConvention::Source,
         false,
     )
 }
@@ -172,6 +174,7 @@ fn compile_normal_thunk_entry(
         compile_arguments(definition),
         |instruction_builder| compile_normal_body(&instruction_builder, definition),
         types::compile(definition.result_type()),
+        fmm::types::CallingConvention::Source,
     )
 }
 
@@ -213,6 +216,7 @@ fn compile_locked_thunk_entry(
             instruction_builder.unreachable()
         },
         types::compile(definition.result_type()),
+        fmm::types::CallingConvention::Source,
         false,
     )
 }

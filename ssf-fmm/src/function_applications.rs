@@ -112,6 +112,7 @@ fn compile_create_closure(
             )
             .collect(),
         entry_function_type.result().clone(),
+        fmm::types::CallingConvention::Source,
     );
 
     let closure = closures::compile_closure_content(
@@ -172,7 +173,9 @@ fn compile_partially_applied_entry_function(
             ));
             let closure_pointer = instruction_builder.deconstruct_record(environment.clone(), 0);
             let arguments = (0..argument_types.len())
-                .map(|index| instruction_builder.deconstruct_record(environment.clone(), index + 1))
+                .map(|index| {
+                    instruction_builder.deconstruct_record(environment.clone(), index + 1)
+                })
                 .chain(vec![fmm::build::variable(
                     arguments[1].name(),
                     arguments[1].type_().clone(),
@@ -212,10 +215,13 @@ fn compile_partially_applied_entry_function(
             )
         },
         curried_entry_function_type.result().clone(),
+        fmm::types::CallingConvention::Source,
     )
 }
 
-fn get_entry_function_type(closure_pointer: &fmm::build::TypedExpression) -> &fmm::types::Function {
+fn get_entry_function_type(
+    closure_pointer: &fmm::build::TypedExpression,
+) -> &fmm::types::Function {
     closure_pointer
         .type_()
         .to_pointer()
