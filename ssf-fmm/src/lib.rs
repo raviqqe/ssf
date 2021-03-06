@@ -159,6 +159,7 @@ mod tests {
                         ssf::types::Primitive::Float64,
                         ssf::types::Primitive::Float64,
                     ),
+                    ssf::ir::CallingConvention::Target,
                 )],
                 vec![],
                 vec![],
@@ -179,6 +180,25 @@ mod tests {
                             ssf::types::Primitive::Float64,
                         ),
                     ),
+                    ssf::ir::CallingConvention::Target,
+                )],
+                vec![],
+                vec![],
+                vec![],
+            ));
+        }
+
+        #[test]
+        fn compile_with_source_calling_convention() {
+            compile_module(&ssf::ir::Module::new(
+                vec![ssf::ir::ForeignDeclaration::new(
+                    "f",
+                    "g",
+                    ssf::types::Function::new(
+                        ssf::types::Primitive::Float64,
+                        ssf::types::Primitive::Float64,
+                    ),
+                    ssf::ir::CallingConvention::Source,
                 )],
                 vec![],
                 vec![],
@@ -200,6 +220,7 @@ mod tests {
                         ssf::types::Primitive::Float64,
                         ssf::types::Primitive::Float64,
                     ),
+                    ssf::ir::CallingConvention::Target,
                 )],
                 vec![ssf::ir::ForeignDefinition::new("f", "h")],
                 vec![],
