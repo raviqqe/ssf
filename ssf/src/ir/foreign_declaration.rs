@@ -5,6 +5,7 @@ pub struct ForeignDeclaration {
     name: String,
     foreign_name: String,
     type_: types::Function,
+    calling_convention: CallingConvention,
 }
 
 impl ForeignDeclaration {
