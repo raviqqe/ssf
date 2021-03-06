@@ -190,14 +190,24 @@ pub fn compile_entry_function<'a>(
     )
 }
 
-pub fn compile_foreign_function_of_declaration(
+pub fn compile_foreign_function(
     function: &ssf::types::Function,
+    calling_convention: fmm::types::CallingConvention,
 ) -> fmm::types::Function {
     fmm::types::Function::new(
         function.arguments().into_iter().map(compile).collect(),
         compile(function.last_result()),
-        fmm::types::CallingConvention::Target,
+        calling_convention,
     )
+}
+
+pub fn compile_calling_convention(
+    calling_convention: ssf::ir::CallingConvention,
+) -> fmm::types::CallingConvention {
+    match calling_convention {
+        ssf::ir::CallingConvention::Source => fmm::types::CallingConvention::Source,
+        ssf::ir::CallingConvention::Target => fmm::types::CallingConvention::Target,
+    }
 }
 
 pub fn compile_foreign_function_of_definition(

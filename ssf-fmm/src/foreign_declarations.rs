@@ -21,20 +21,6 @@ fn compile_entry_function(
     module_builder: &fmm::build::ModuleBuilder,
     declaration: &ssf::ir::ForeignDeclaration,
 ) -> fmm::build::TypedExpression {
-    match declaration.calling_convention() {
-        ssf::ir::CallingConvention::Source => {
-            compile_source_entry_function(module_builder, declaration)
-        }
-        ssf::ir::CallingConvention::Target => {
-            compile_target_entry_function(module_builder, declaration)
-        }
-    }
-}
-
-fn compile_source_entry_function(
-    module_builder: &fmm::build::ModuleBuilder,
-    declaration: &ssf::ir::ForeignDeclaration,
-) -> fmm::build::TypedExpression {
     let arguments = vec![fmm::ir::Argument::new(
         "_env",
         fmm::types::Pointer::new(types::compile_unsized_environment()),
@@ -52,54 +38,10 @@ fn compile_source_entry_function(
     )
     .collect::<Vec<_>>();
 
-    let foreign_function_type = types::compile_foreign_function_of_definition(declaration.type_());
-
-    module_builder.define_anonymous_function(
-        arguments.clone(),
-        |instruction_builder| {
-            instruction_builder.return_(
-                instruction_builder.call(
-                    module_builder.declare_function(
-                        declaration.foreign_name(),
-                        foreign_function_type.clone(),
-                    ),
-                    arguments
-                        .iter()
-                        .skip(FUNCTION_ARGUMENT_OFFSET)
-                        .map(|argument| {
-                            fmm::build::variable(argument.name(), argument.type_().clone())
-                        })
-                        .collect(),
-                ),
-            )
-        },
-        foreign_function_type.result().clone(),
-        fmm::types::CallingConvention::Source,
-    )
-}
-
-fn compile_target_entry_function(
-    module_builder: &fmm::build::ModuleBuilder,
-    declaration: &ssf::ir::ForeignDeclaration,
-) -> fmm::build::TypedExpression {
-    let arguments = vec![fmm::ir::Argument::new(
-        "_env",
-        fmm::types::Pointer::new(types::compile_unsized_environment()),
-    )]
-    .into_iter()
-    .chain(
-        declaration
-            .type_()
-            .arguments()
-            .into_iter()
-            .enumerate()
-            .map(|(index, type_)| {
-                fmm::ir::Argument::new(format!("arg_{}", index), types::compile(type_))
-            }),
-    )
-    .collect::<Vec<_>>();
-
-    let foreign_function_type = types::compile_foreign_function_of_declaration(declaration.type_());
+    let foreign_function_type = types::compile_foreign_function(
+        declaration.type_(),
+        types::compile_calling_convention(declaration.calling_convention()),
+    );
 
     module_builder.define_anonymous_function(
         arguments.clone(),
