@@ -38,7 +38,8 @@ fn compile_entry_function(
     )
     .collect::<Vec<_>>();
 
-    let foreign_function_type = types::compile_foreign_function_of_declaration(declaration.type_());
+    let foreign_function_type =
+        types::compile_foreign_function(declaration.type_(), declaration.calling_convention());
 
     module_builder.define_anonymous_function(
         arguments.clone(),

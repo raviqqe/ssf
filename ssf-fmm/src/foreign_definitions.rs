@@ -8,7 +8,9 @@ pub fn compile_foreign_definition(
     function_type: &ssf::types::Function,
     global_variable_builder: &VariableBuilder,
 ) {
-    let foreign_function_type = types::compile_foreign_function_of_definition(function_type);
+    // TODO Support a target calling convention.
+    let foreign_function_type =
+        types::compile_foreign_function(function_type, ssf::ir::CallingConvention::Source);
     let arguments = foreign_function_type
         .arguments()
         .iter()
