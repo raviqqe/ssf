@@ -52,7 +52,7 @@ checksum = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
 [[package]]
 name = "fmm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#bcdc1c0b792b6dce960987db96f688bba6a64588"
+source = "git+https://github.com/raviqqe/fmm?branch=main#c16cb5ef34f3743b6bfbe9a58788eeee8ee3cd28"
 dependencies = [
  "once_cell",
  "petgraph",
@@ -61,7 +61,7 @@ dependencies = [
 [[package]]
 name = "fmm-c"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#bcdc1c0b792b6dce960987db96f688bba6a64588"
+source = "git+https://github.com/raviqqe/fmm?branch=main#c16cb5ef34f3743b6bfbe9a58788eeee8ee3cd28"
 dependencies = [
  "fmm",
  "tempfile",
@@ -238,9 +238,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.62"
+version = "1.0.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "123a78a3596b24fee53a6464ce52d8ecbf62241e6294c7e7fe12086cd161f512"
+checksum = "8fd9bc7ccc2688b3344c2f48b9b546648b25ce0b20fc717ee7fa7981a8ca9717"
 dependencies = [
  "proc-macro2",
  "quote",
