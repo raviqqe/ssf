@@ -116,14 +116,22 @@ mod tests {
         compile_final_module(
             &fmm::analysis::transform_to_cps(&module, fmm::types::Record::new(vec![])).unwrap(),
         );
+
+        fmm_llvm::compile(
+            &module,
+            "x86_64-unknown-linux-gnu",
+            &fmm_llvm::HeapConfiguration {
+                allocate_function_name: "malloc".into(),
+                reallocate_function_name: "realloc".into(),
+            },
+        )
+        .unwrap();
     }
 
     fn compile_final_module(module: &fmm::ir::Module) {
         let directory = tempfile::tempdir().unwrap();
         let file_path = directory.path().join("foo.c");
         let source = fmm_c::compile(&module, None);
-
-        println!("{}", source);
 
         std::fs::write(&file_path, source).unwrap();
         let output = std::process::Command::new("clang")
@@ -785,7 +793,9 @@ mod tests {
             fn compile_multiple_members() {
                 let algebraic_type = ssf::types::Algebraic::new(vec![
                     ssf::types::Constructor::unboxed(vec![ssf::types::Primitive::Float64.into()]),
-                    ssf::types::Constructor::unboxed(vec![ssf::types::Primitive::Integer64.into()]),
+                    ssf::types::Constructor::unboxed(
+                        vec![ssf::types::Primitive::Integer64.into()],
+                    ),
                 ]);
 
                 compile_module(&ssf::ir::Module::new(
