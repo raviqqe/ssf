@@ -8,7 +8,9 @@ edition = "2018"
 
 [dependencies]
 fmm = { git = "https://github.com/raviqqe/fmm", branch = "main" }
+ssf = { path = "../ssf" }
+
+[dev-dependencies]
+tempfile = "3"
 fmm-c = { git = "https://github.com/raviqqe/fmm", branch = "main" }
 fmm-llvm = { git = "https://github.com/raviqqe/fmm", branch = "main" }
-ssf = { path = "../ssf" }
-tempfile = "3"
