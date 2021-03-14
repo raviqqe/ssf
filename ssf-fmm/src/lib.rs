@@ -793,9 +793,7 @@ mod tests {
             fn compile_multiple_members() {
                 let algebraic_type = ssf::types::Algebraic::new(vec![
                     ssf::types::Constructor::unboxed(vec![ssf::types::Primitive::Float64.into()]),
-                    ssf::types::Constructor::unboxed(
-                        vec![ssf::types::Primitive::Integer64.into()],
-                    ),
+                    ssf::types::Constructor::unboxed(vec![ssf::types::Primitive::Integer64.into()]),
                 ]);
 
                 compile_module(&ssf::ir::Module::new(
