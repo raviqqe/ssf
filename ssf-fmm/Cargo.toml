@@ -7,8 +7,8 @@ authors = ["Yota Toyama <raviqqe@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-fmm = { git = "https://github.com/raviqqe/fmm", branch = "main" }
-fmm-c = { git = "https://github.com/raviqqe/fmm", branch = "main" }
-fmm-llvm = { git = "https://github.com/raviqqe/fmm", branch = "main" }
+fmm = { git = "https://github.com/raviqqe/fmm", branch = "bug/llvm" }
+fmm-c = { git = "https://github.com/raviqqe/fmm", branch = "bug/llvm" }
+fmm-llvm = { git = "https://github.com/raviqqe/fmm", branch = "bug/llvm" }
 ssf = { path = "../ssf" }
 tempfile = "3"
