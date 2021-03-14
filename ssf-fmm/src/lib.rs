@@ -116,14 +116,22 @@ mod tests {
         compile_final_module(
             &fmm::analysis::transform_to_cps(&module, fmm::types::Record::new(vec![])).unwrap(),
         );
+
+        fmm_llvm::compile(
+            &module,
+            "x86_64-unknown-linux-gnu",
+            &fmm_llvm::HeapConfiguration {
+                allocate_function_name: "allocate_heap".into(),
+                reallocate_function_name: "reallocate_heap".into(),
+            },
+        )
+        .unwrap();
     }
 
     fn compile_final_module(module: &fmm::ir::Module) {
         let directory = tempfile::tempdir().unwrap();
         let file_path = directory.path().join("foo.c");
         let source = fmm_c::compile(&module, None);
-
-        println!("{}", source);
 
         std::fs::write(&file_path, source).unwrap();
         let output = std::process::Command::new("clang")
