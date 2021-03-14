@@ -32,17 +32,13 @@ pub fn compile_primitive(primitive: &ssf::types::Primitive) -> fmm::types::Type 
 }
 
 pub fn compile_algebraic(algebraic: &ssf::types::Algebraic) -> fmm::types::Record {
-    let mut elements = vec![];
-
-    if !algebraic.is_singleton() {
-        elements.push(compile_tag().into());
-    }
-
-    if !algebraic.is_enum() {
-        elements.push(compile_constructor_union(algebraic).into());
-    }
-
-    fmm::types::Record::new(elements)
+    fmm::types::Record::new(
+        (!algebraic.is_singleton())
+            .then(|| compile_tag().into())
+            .into_iter()
+            .chain((!algebraic.is_enum()).then(|| compile_constructor_union(algebraic).into()))
+            .collect(),
+    )
 }
 
 pub fn compile_constructor_union(algebraic_type: &ssf::types::Algebraic) -> fmm::types::Union {
