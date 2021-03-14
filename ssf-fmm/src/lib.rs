@@ -121,8 +121,8 @@ mod tests {
             &module,
             "x86_64-unknown-linux-gnu",
             &fmm_llvm::HeapConfiguration {
-                allocate_function_name: "malloc".into(),
-                reallocate_function_name: "realloc".into(),
+                allocate_function_name: "allocate_heap".into(),
+                reallocate_function_name: "reallocate_heap".into(),
             },
         )
         .unwrap();
