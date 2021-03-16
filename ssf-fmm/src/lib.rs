@@ -117,7 +117,7 @@ mod tests {
             &fmm::analysis::transform_to_cps(&module, fmm::types::Record::new(vec![])).unwrap(),
         );
 
-        fmm_llvm::compile(
+        fmm_llvm::compile_to_object(
             &module,
             &fmm_llvm::HeapConfiguration {
                 allocate_function_name: "allocate_heap".into(),
