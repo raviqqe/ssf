@@ -45,8 +45,8 @@ jobs:
   code-coverage:
     runs-on: ubuntu-latest
     steps:
-      - run: curl -f https://apt.llvm.org/llvm.sh | sudo bash /dev/stdin 10
-      - uses: actions/checkout@master
+      - run: curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s 11
+      - uses: actions/checkout@main
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
