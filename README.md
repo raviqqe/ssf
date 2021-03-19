@@ -100,4 +100,4 @@ let bitcode = ssf_llvm::compile(
 
 ## License
 
-[MIT](LICENSE)
+[Apache 2.0](LICENSE)
