@@ -1,9 +1,5 @@
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum PrimitiveOperator {
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
+pub enum ComparisonOperator {
     Equal,
     NotEqual,
     LessThan,

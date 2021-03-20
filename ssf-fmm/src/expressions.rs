@@ -20,6 +20,9 @@ pub fn compile(
         |expression, variables| compile(module_builder, instruction_builder, expression, variables);
 
     match expression {
+        ssf::ir::Expression::ArithmeticOperation(operation) => {
+            compile_arithmetic_operation(module_builder, instruction_builder, operation, variables)
+        }
         ssf::ir::Expression::Bitcast(bitcast) => utilities::bitcast(
             instruction_builder,
             compile(bitcast.expression(), variables),
@@ -27,6 +30,9 @@ pub fn compile(
         ),
         ssf::ir::Expression::Case(case) => {
             compile_case(module_builder, instruction_builder, case, variables)
+        }
+        ssf::ir::Expression::ComparisonOperation(operation) => {
+            compile_comparison_operation(module_builder, instruction_builder, operation, variables)
         }
         ssf::ir::Expression::ConstructorApplication(constructor_application) => {
             let constructor = constructor_application.constructor();
@@ -104,9 +110,6 @@ pub fn compile(
             variables,
         ),
         ssf::ir::Expression::Primitive(primitive) => compile_primitive(primitive).into(),
-        ssf::ir::Expression::PrimitiveOperation(operation) => {
-            compile_primitive_operation(module_builder, instruction_builder, operation, variables)
-        }
         ssf::ir::Expression::Variable(variable) => variables
             .get(variable.name())
             .unwrap()
@@ -377,10 +380,10 @@ fn compile_let_recursive(
     )
 }
 
-fn compile_primitive_operation(
+fn compile_arithmetic_operation(
     module_builder: &fmm::build::ModuleBuilder,
     instruction_builder: &fmm::build::InstructionBuilder,
-    operation: &ssf::ir::PrimitiveOperation,
+    operation: &ssf::ir::ArithmeticOperation,
     variables: &HashMap<String, VariableBuilder>,
 ) -> fmm::build::TypedExpression {
     let compile = |expression| compile(module_builder, instruction_builder, expression, variables);
@@ -389,50 +392,62 @@ fn compile_primitive_operation(
     let rhs = compile(operation.rhs());
 
     match operation.operator() {
-        ssf::ir::PrimitiveOperator::Add => {
+        ssf::ir::ArithmeticOperator::Add => {
             instruction_builder.arithmetic_operation(fmm::ir::ArithmeticOperator::Add, lhs, rhs)
         }
-        ssf::ir::PrimitiveOperator::Subtract => instruction_builder.arithmetic_operation(
+        ssf::ir::ArithmeticOperator::Subtract => instruction_builder.arithmetic_operation(
             fmm::ir::ArithmeticOperator::Subtract,
             lhs,
             rhs,
         ),
-        ssf::ir::PrimitiveOperator::Multiply => instruction_builder.arithmetic_operation(
+        ssf::ir::ArithmeticOperator::Multiply => instruction_builder.arithmetic_operation(
             fmm::ir::ArithmeticOperator::Multiply,
             lhs,
             rhs,
         ),
-        ssf::ir::PrimitiveOperator::Divide => {
+        ssf::ir::ArithmeticOperator::Divide => {
             instruction_builder.arithmetic_operation(fmm::ir::ArithmeticOperator::Divide, lhs, rhs)
         }
-        ssf::ir::PrimitiveOperator::Equal => {
+    }
+}
+
+fn compile_comparison_operation(
+    module_builder: &fmm::build::ModuleBuilder,
+    instruction_builder: &fmm::build::InstructionBuilder,
+    operation: &ssf::ir::ComparisonOperation,
+    variables: &HashMap<String, VariableBuilder>,
+) -> fmm::build::TypedExpression {
+    let compile = |expression| compile(module_builder, instruction_builder, expression, variables);
+
+    let lhs = compile(operation.lhs());
+    let rhs = compile(operation.rhs());
+
+    match operation.operator() {
+        ssf::ir::ComparisonOperator::Equal => {
             instruction_builder.comparison_operation(fmm::ir::ComparisonOperator::Equal, lhs, rhs)
         }
-        ssf::ir::PrimitiveOperator::NotEqual => instruction_builder.comparison_operation(
+        ssf::ir::ComparisonOperator::NotEqual => instruction_builder.comparison_operation(
             fmm::ir::ComparisonOperator::NotEqual,
             lhs,
             rhs,
         ),
-        ssf::ir::PrimitiveOperator::LessThan => instruction_builder.comparison_operation(
+        ssf::ir::ComparisonOperator::LessThan => instruction_builder.comparison_operation(
             fmm::ir::ComparisonOperator::LessThan,
             lhs,
             rhs,
         ),
-        ssf::ir::PrimitiveOperator::LessThanOrEqual => instruction_builder.comparison_operation(
+        ssf::ir::ComparisonOperator::LessThanOrEqual => instruction_builder.comparison_operation(
             fmm::ir::ComparisonOperator::LessThanOrEqual,
             lhs,
             rhs,
         ),
-        ssf::ir::PrimitiveOperator::GreaterThan => instruction_builder.comparison_operation(
+        ssf::ir::ComparisonOperator::GreaterThan => instruction_builder.comparison_operation(
             fmm::ir::ComparisonOperator::GreaterThan,
             lhs,
             rhs,
         ),
-        ssf::ir::PrimitiveOperator::GreaterThanOrEqual => instruction_builder.comparison_operation(
-            fmm::ir::ComparisonOperator::GreaterThanOrEqual,
-            lhs,
-            rhs,
-        ),
+        ssf::ir::ComparisonOperator::GreaterThanOrEqual => instruction_builder
+            .comparison_operation(fmm::ir::ComparisonOperator::GreaterThanOrEqual, lhs, rhs),
     }
 }
 
