@@ -337,8 +337,8 @@ mod tests {
                         ssf::ir::Argument::new("x", ssf::types::Primitive::Float64),
                         ssf::ir::Argument::new("y", ssf::types::Primitive::Float64),
                     ],
-                    ssf::ir::PrimitiveOperation::new(
-                        ssf::ir::PrimitiveOperator::Add,
+                    ssf::ir::ArithmeticOperation::new(
+                        ssf::ir::ArithmeticOperator::Add,
                         ssf::ir::Variable::new("x"),
                         ssf::ir::Variable::new("y"),
                     ),
@@ -410,8 +410,8 @@ mod tests {
                         vec![ssf::ir::Definition::new(
                             "g",
                             vec![ssf::ir::Argument::new("y", ssf::types::Primitive::Float64)],
-                            ssf::ir::PrimitiveOperation::new(
-                                ssf::ir::PrimitiveOperator::Add,
+                            ssf::ir::ArithmeticOperation::new(
+                                ssf::ir::ArithmeticOperator::Add,
                                 ssf::ir::Variable::new("x"),
                                 ssf::ir::Variable::new("y"),
                             ),
@@ -447,10 +447,10 @@ mod tests {
                                         "z",
                                         ssf::types::Primitive::Float64,
                                     )],
-                                    ssf::ir::PrimitiveOperation::new(
-                                        ssf::ir::PrimitiveOperator::Add,
-                                        ssf::ir::PrimitiveOperation::new(
-                                            ssf::ir::PrimitiveOperator::Add,
+                                    ssf::ir::ArithmeticOperation::new(
+                                        ssf::ir::ArithmeticOperator::Add,
+                                        ssf::ir::ArithmeticOperation::new(
+                                            ssf::ir::ArithmeticOperator::Add,
                                             ssf::ir::Variable::new("x"),
                                             ssf::ir::Variable::new("y"),
                                         ),
@@ -1031,8 +1031,8 @@ mod tests {
                                         "y",
                                         ssf::types::Primitive::Float64,
                                     )],
-                                    ssf::ir::PrimitiveOperation::new(
-                                        ssf::ir::PrimitiveOperator::Add,
+                                    ssf::ir::ArithmeticOperation::new(
+                                        ssf::ir::ArithmeticOperator::Add,
                                         ssf::ir::Variable::new("x"),
                                         ssf::ir::Variable::new("y"),
                                     ),

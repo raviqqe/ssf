@@ -60,11 +60,31 @@ fn check_expression(
     variables: &HashMap<&str, Type>,
 ) -> Result<Type, TypeCheckError> {
     Ok(match expression {
+        Expression::ArithmeticOperation(operation) => {
+            let lhs_type = check_expression(operation.lhs(), variables)?;
+            let rhs_type = check_expression(operation.rhs(), variables)?;
+
+            if !lhs_type.is_primitive() || !rhs_type.is_primitive() || lhs_type != rhs_type {
+                return Err(TypeCheckError::TypesNotMatched(lhs_type, rhs_type));
+            }
+
+            lhs_type
+        }
         Expression::Bitcast(bitcast) => {
             check_expression(bitcast.expression(), variables)?;
             bitcast.type_().clone()
         }
         Expression::Case(case) => check_case(case, variables)?,
+        Expression::ComparisonOperation(operation) => {
+            let lhs_type = check_expression(operation.lhs(), variables)?;
+            let rhs_type = check_expression(operation.rhs(), variables)?;
+
+            if !lhs_type.is_primitive() || !rhs_type.is_primitive() || lhs_type != rhs_type {
+                return Err(TypeCheckError::TypesNotMatched(lhs_type, rhs_type));
+            }
+
+            types::Primitive::Boolean.into()
+        }
         Expression::ConstructorApplication(constructor_application) => {
             let constructor = constructor_application.constructor();
 
@@ -127,27 +147,6 @@ fn check_expression(
             check_expression(let_.expression(), &variables)?
         }
         Expression::Primitive(primitive) => Ok(check_primitive(primitive).into())?,
-        Expression::PrimitiveOperation(operation) => {
-            let lhs_type = check_expression(operation.lhs(), variables)?;
-            let rhs_type = check_expression(operation.rhs(), variables)?;
-
-            if !lhs_type.is_primitive() || !rhs_type.is_primitive() || lhs_type != rhs_type {
-                return Err(TypeCheckError::TypesNotMatched(lhs_type, rhs_type));
-            }
-
-            match operation.operator() {
-                PrimitiveOperator::Equal
-                | PrimitiveOperator::NotEqual
-                | PrimitiveOperator::GreaterThan
-                | PrimitiveOperator::GreaterThanOrEqual
-                | PrimitiveOperator::LessThan
-                | PrimitiveOperator::LessThanOrEqual => types::Primitive::Boolean.into(),
-                PrimitiveOperator::Add
-                | PrimitiveOperator::Subtract
-                | PrimitiveOperator::Multiply
-                | PrimitiveOperator::Divide => lhs_type,
-            }
-        }
         Expression::Variable(variable) => check_variable(variable, variables)?,
     })
 }
@@ -997,6 +996,23 @@ mod tests {
     }
 
     #[test]
+    fn check_add_operator() {
+        let module = Module::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![Definition::with_environment(
+                "f",
+                vec![],
+                vec![Argument::new("x", types::Primitive::Float64)],
+                ArithmeticOperation::new(ArithmeticOperator::Add, 42.0, 42.0),
+                types::Primitive::Float64,
+            )],
+        );
+        assert_eq!(check_types(&module), Ok(()));
+    }
+
+    #[test]
     fn check_equality_operator() {
         let module = Module::new(
             vec![],
@@ -1006,7 +1022,7 @@ mod tests {
                 "f",
                 vec![],
                 vec![Argument::new("x", types::Primitive::Float64)],
-                PrimitiveOperation::new(PrimitiveOperator::Equal, 42.0, 42.0),
+                ComparisonOperation::new(ComparisonOperator::Equal, 42.0, 42.0),
                 types::Primitive::Boolean,
             )],
         );

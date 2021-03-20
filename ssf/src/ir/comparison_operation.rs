@@ -1,19 +1,19 @@
+use super::comparison_operator::ComparisonOperator;
 use super::expression::Expression;
-use super::primitive_operator::PrimitiveOperator;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct PrimitiveOperation {
-    operator: PrimitiveOperator,
+pub struct ComparisonOperation {
+    operator: ComparisonOperator,
     lhs: Arc<Expression>,
     rhs: Arc<Expression>,
 }
 
-impl PrimitiveOperation {
+impl ComparisonOperation {
     pub fn new(
-        operator: PrimitiveOperator,
+        operator: ComparisonOperator,
         lhs: impl Into<Expression>,
         rhs: impl Into<Expression>,
     ) -> Self {
@@ -24,7 +24,7 @@ impl PrimitiveOperation {
         }
     }
 
-    pub fn operator(&self) -> PrimitiveOperator {
+    pub fn operator(&self) -> ComparisonOperator {
         self.operator
     }
 

@@ -1,27 +1,29 @@
 use super::algebraic_case::AlgebraicCase;
+use super::arithmetic_operation::ArithmeticOperation;
 use super::bitcast::Bitcast;
 use super::case::Case;
+use super::comparison_operation::ComparisonOperation;
 use super::constructor_application::ConstructorApplication;
 use super::function_application::FunctionApplication;
 use super::let_::Let;
 use super::let_recursive::LetRecursive;
 use super::primitive::Primitive;
 use super::primitive_case::PrimitiveCase;
-use super::primitive_operation::PrimitiveOperation;
 use super::variable::Variable;
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expression {
+    ArithmeticOperation(ArithmeticOperation),
     Bitcast(Bitcast),
     Case(Case),
+    ComparisonOperation(ComparisonOperation),
     ConstructorApplication(ConstructorApplication),
     FunctionApplication(FunctionApplication),
-    LetRecursive(LetRecursive),
     Let(Let),
+    LetRecursive(LetRecursive),
     Primitive(Primitive),
-    PrimitiveOperation(PrimitiveOperation),
     Variable(Variable),
 }
 
@@ -35,8 +37,10 @@ impl Expression {
 
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         match self {
+            Self::ArithmeticOperation(operation) => operation.find_variables(),
             Self::Bitcast(bitcast) => bitcast.find_variables(),
             Self::Case(case) => case.find_variables(),
+            Self::ComparisonOperation(operation) => operation.find_variables(),
             Self::ConstructorApplication(constructor_application) => {
                 constructor_application.find_variables()
             }
@@ -45,7 +49,6 @@ impl Expression {
             }
             Self::LetRecursive(let_recursive) => let_recursive.find_variables(),
             Self::Let(let_) => let_.find_variables(),
-            Self::PrimitiveOperation(operation) => operation.find_variables(),
             Self::Variable(variable) => variable.find_variables(),
             Self::Primitive(_) => HashSet::new(),
         }
@@ -53,8 +56,10 @@ impl Expression {
 
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         match self {
+            Self::ArithmeticOperation(operation) => operation.infer_environment(variables).into(),
             Self::Bitcast(bitcast) => bitcast.infer_environment(variables).into(),
             Self::Case(case) => case.infer_environment(variables).into(),
+            Self::ComparisonOperation(operation) => operation.infer_environment(variables).into(),
             Self::ConstructorApplication(constructor_application) => {
                 constructor_application.infer_environment(variables).into()
             }
@@ -63,15 +68,16 @@ impl Expression {
             }
             Self::LetRecursive(let_recursive) => let_recursive.infer_environment(variables).into(),
             Self::Let(let_) => let_.infer_environment(variables).into(),
-            Self::PrimitiveOperation(operation) => operation.infer_environment(variables).into(),
             Self::Primitive(_) | Self::Variable(_) => self.clone(),
         }
     }
 
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         match self {
+            Self::ArithmeticOperation(operation) => operation.convert_types(convert).into(),
             Self::Bitcast(bitcast) => bitcast.convert_types(convert).into(),
             Self::Case(case) => case.convert_types(convert).into(),
+            Self::ComparisonOperation(operation) => operation.convert_types(convert).into(),
             Self::ConstructorApplication(constructor_application) => {
                 constructor_application.convert_types(convert).into()
             }
@@ -80,7 +86,6 @@ impl Expression {
             }
             Self::LetRecursive(let_recursive) => let_recursive.convert_types(convert).into(),
             Self::Let(let_) => let_.convert_types(convert).into(),
-            Self::PrimitiveOperation(operation) => operation.convert_types(convert).into(),
             Self::Primitive(_) | Self::Variable(_) => self.clone(),
         }
     }
@@ -89,6 +94,12 @@ impl Expression {
 impl From<AlgebraicCase> for Expression {
     fn from(algebraic_case: AlgebraicCase) -> Self {
         Self::Case(algebraic_case.into())
+    }
+}
+
+impl From<ArithmeticOperation> for Expression {
+    fn from(operation: ArithmeticOperation) -> Self {
+        Self::ArithmeticOperation(operation)
     }
 }
 
@@ -101,6 +112,12 @@ impl From<Bitcast> for Expression {
 impl From<Case> for Expression {
     fn from(case: Case) -> Self {
         Self::Case(case)
+    }
+}
+
+impl From<ComparisonOperation> for Expression {
+    fn from(operation: ComparisonOperation) -> Self {
+        Self::ComparisonOperation(operation)
     }
 }
 
@@ -125,12 +142,6 @@ impl From<LetRecursive> for Expression {
 impl From<Let> for Expression {
     fn from(let_: Let) -> Self {
         Self::Let(let_)
-    }
-}
-
-impl From<PrimitiveOperation> for Expression {
-    fn from(operation: PrimitiveOperation) -> Self {
-        Self::PrimitiveOperation(operation)
     }
 }
 
