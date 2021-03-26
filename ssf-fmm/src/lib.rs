@@ -122,6 +122,7 @@ mod tests {
             &fmm_llvm::HeapConfiguration {
                 allocate_function_name: "allocate_heap".into(),
                 reallocate_function_name: "reallocate_heap".into(),
+                free_function_name: "free_heap".into(),
             },
             None,
         )
