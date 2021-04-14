@@ -112,7 +112,7 @@ mod tests {
     use super::*;
 
     fn compile_module(module: &ssf::ir::Module) {
-        let module = compile(module);
+        let module = compile(module).unwrap();
 
         compile_final_module(&module);
         compile_final_module(
