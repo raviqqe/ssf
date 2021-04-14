@@ -73,7 +73,7 @@ fn compile_direct_call(
     closure_pointer: fmm::build::TypedExpression,
     arguments: &[fmm::build::TypedExpression],
 ) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
-    Ok(instruction_builder.call(
+    instruction_builder.call(
         utilities::bit_cast(
             &instruction_builder,
             closures::compile_load_entry_pointer(&instruction_builder, closure_pointer.clone())?,
@@ -89,7 +89,7 @@ fn compile_direct_call(
         .into_iter()
         .chain(arguments.iter().cloned())
         .collect(),
-    )?)
+    )
 }
 
 fn compile_create_closure(
@@ -158,7 +158,7 @@ fn compile_partially_applied_entry_function(
         .map(|(index, type_)| fmm::ir::Argument::new(format!("arg_{}", index), type_.clone()))
         .collect::<Vec<_>>();
 
-    Ok(module_builder.define_anonymous_function(
+    module_builder.define_anonymous_function(
         arguments.clone(),
         |instruction_builder| {
             let environment = instruction_builder.load(utilities::bit_cast(
@@ -214,7 +214,7 @@ fn compile_partially_applied_entry_function(
         },
         curried_entry_function_type.result().clone(),
         fmm::types::CallingConvention::Source,
-    )?)
+    )
 }
 
 fn get_entry_function_type(closure_pointer: &fmm::build::TypedExpression) -> &fmm::types::Function {
