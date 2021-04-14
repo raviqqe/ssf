@@ -5,26 +5,26 @@ use super::utilities;
 pub fn compile_load_entry_pointer(
     builder: &fmm::build::InstructionBuilder,
     closure_pointer: impl Into<fmm::build::TypedExpression>,
-) -> fmm::build::TypedExpression {
+) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
     // Entry functions of thunks need to be loaded atomically
     // to make thunk update thread-safe.
-    builder.atomic_load(builder.record_address(closure_pointer, 0))
+    builder.atomic_load(builder.record_address(closure_pointer, 0)?)
 }
 
 pub fn compile_load_arity(
     builder: &fmm::build::InstructionBuilder,
     closure_pointer: impl Into<fmm::build::TypedExpression>,
-) -> fmm::build::TypedExpression {
-    builder.load(builder.record_address(closure_pointer, 1))
+) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
+    builder.load(builder.record_address(closure_pointer, 1)?)
 }
 
 pub fn compile_environment_pointer(
     builder: &fmm::build::InstructionBuilder,
     closure_pointer: impl Into<fmm::build::TypedExpression>,
-) -> fmm::build::TypedExpression {
-    utilities::bitcast(
+) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
+    utilities::bit_cast(
         builder,
-        builder.record_address(closure_pointer, 2),
+        builder.record_address(closure_pointer, 2)?,
         fmm::types::Pointer::new(types::compile_unsized_environment()),
     )
 }

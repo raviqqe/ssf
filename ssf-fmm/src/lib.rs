@@ -2,6 +2,7 @@ mod closures;
 mod declarations;
 mod definitions;
 mod entry_functions;
+mod error;
 mod expressions;
 mod foreign_declarations;
 mod foreign_definitions;
@@ -12,18 +13,19 @@ mod variable_builder;
 
 use declarations::compile_declaration;
 use definitions::compile_definition;
+use error::CompileError;
 use foreign_declarations::compile_foreign_declaration;
 use foreign_definitions::compile_foreign_definition;
 use std::collections::HashMap;
 use variable_builder::VariableBuilder;
 
-pub fn compile(module: &ssf::ir::Module) -> fmm::ir::Module {
-    ssf::analysis::check_types(module).unwrap();
+pub fn compile(module: &ssf::ir::Module) -> Result<fmm::ir::Module, CompileError> {
+    ssf::analysis::check_types(module)?;
 
     let module_builder = fmm::build::ModuleBuilder::new();
 
     for declaration in module.foreign_declarations() {
-        compile_foreign_declaration(&module_builder, declaration);
+        compile_foreign_declaration(&module_builder, declaration)?;
     }
 
     for declaration in module.declarations() {
@@ -33,7 +35,7 @@ pub fn compile(module: &ssf::ir::Module) -> fmm::ir::Module {
     let global_variables = compile_global_variables(module);
 
     for definition in module.definitions() {
-        compile_definition(&module_builder, definition, &global_variables);
+        compile_definition(&module_builder, definition, &global_variables)?;
     }
 
     let types = module
@@ -60,10 +62,10 @@ pub fn compile(module: &ssf::ir::Module) -> fmm::ir::Module {
             definition,
             types[definition.name()],
             &global_variables[definition.name()],
-        );
+        )?;
     }
 
-    module_builder.as_module()
+    Ok(module_builder.as_module())
 }
 
 fn compile_global_variables(module: &ssf::ir::Module) -> HashMap<String, VariableBuilder> {

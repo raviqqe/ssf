@@ -21,8 +21,11 @@ impl VariableBuilder {
         }
     }
 
-    pub fn build(&self, builder: &fmm::build::InstructionBuilder) -> fmm::build::TypedExpression {
-        utilities::bitcast(&builder, self.typed_expression.clone(), self.type_.clone())
+    pub fn build(
+        &self,
+        builder: &fmm::build::InstructionBuilder,
+    ) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
+        utilities::bit_cast(&builder, self.typed_expression.clone(), self.type_.clone())
     }
 }
 
