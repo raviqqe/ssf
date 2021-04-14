@@ -13,7 +13,7 @@ mod variable_builder;
 
 use declarations::compile_declaration;
 use definitions::compile_definition;
-use error::CompileError;
+pub use error::CompileError;
 use foreign_declarations::compile_foreign_declaration;
 use foreign_definitions::compile_foreign_definition;
 use std::collections::HashMap;
