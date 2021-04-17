@@ -73,7 +73,7 @@ checksum = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
 [[package]]
 name = "fmm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#89c67d35ced8ec87578f3928347a29bdefd8818e"
+source = "git+https://github.com/raviqqe/fmm?branch=main#afadd476b78784f38a1b543a7d091f812791c403"
 dependencies = [
  "once_cell",
  "petgraph",
@@ -82,7 +82,7 @@ dependencies = [
 [[package]]
 name = "fmm-c"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#89c67d35ced8ec87578f3928347a29bdefd8818e"
+source = "git+https://github.com/raviqqe/fmm?branch=main#afadd476b78784f38a1b543a7d091f812791c403"
 dependencies = [
  "fmm",
  "tempfile",
@@ -91,7 +91,7 @@ dependencies = [
 [[package]]
 name = "fmm-llvm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#89c67d35ced8ec87578f3928347a29bdefd8818e"
+source = "git+https://github.com/raviqqe/fmm?branch=main#afadd476b78784f38a1b543a7d091f812791c403"
 dependencies = [
  "fmm",
  "inkwell",
@@ -266,9 +266,9 @@ checksum = "ac74c624d6b2d21f425f752262f42188365d7b8ff1aff74c82e45136510a4857"
 
 [[package]]
 name = "pretty_assertions"
-version = "0.7.1"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f297542c27a7df8d45de2b0e620308ab883ad232d06c14b76ac3e144bda50184"
+checksum = "1cab0e7c02cf376875e9335e0ba1da535775beb5450d21e1dffca068818ed98b"
 dependencies = [
  "ansi_term",
  "ctor",
