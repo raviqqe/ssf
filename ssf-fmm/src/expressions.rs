@@ -225,8 +225,7 @@ fn compile_algebraic_alternatives(
                                             Ok((
                                                 name.into(),
                                                 instruction_builder
-                                                    .deconstruct_record(payload.clone(), index)?
-                                                    .into(),
+                                                    .deconstruct_record(payload.clone(), index)?,
                                             ))
                                         })
                                         .collect::<Result<Vec<_>, _>>()?,
@@ -338,7 +337,7 @@ fn compile_let(
             .drain()
             .chain(vec![(
                 let_.name().into(),
-                compile(let_.bound_expression(), variables)?.into(),
+                compile(let_.bound_expression(), variables)?,
             )])
             .collect(),
     )
@@ -363,8 +362,7 @@ fn compile_let_recursive(
                 instruction_builder,
                 closure_pointer.clone(),
                 fmm::types::Pointer::new(types::compile_unsized_closure(definition.type_())),
-            )?
-            .into(),
+            )?,
         );
         closure_pointers.insert(definition.name(), closure_pointer);
     }

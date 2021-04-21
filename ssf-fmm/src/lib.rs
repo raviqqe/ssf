@@ -78,8 +78,7 @@ fn compile_global_variables(
                 fmm::build::variable(
                     declaration.name(),
                     fmm::types::Pointer::new(types::compile_unsized_closure(declaration.type_())),
-                )
-                .into(),
+                ),
             )
         })
         .chain(module.declarations().iter().map(|declaration| {
@@ -88,8 +87,7 @@ fn compile_global_variables(
                 fmm::build::variable(
                     declaration.name(),
                     fmm::types::Pointer::new(types::compile_unsized_closure(declaration.type_())),
-                )
-                .into(),
+                ),
             )
         }))
         .chain(module.definitions().iter().map(|definition| {

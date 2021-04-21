@@ -82,8 +82,7 @@ fn compile_body(
                                         )),
                                     )?,
                                     index,
-                                )?)?
-                                .into(),
+                                )?)?,
                         ))
                     })
                     .collect::<Result<Vec<_>, _>>()?,
