@@ -1,7 +1,6 @@
 use crate::expressions;
 use crate::types;
 use crate::utilities;
-use crate::variable_builder::VariableBuilder;
 use std::collections::HashMap;
 
 const ENVIRONMENT_NAME: &str = "_env";
@@ -9,7 +8,7 @@ const ENVIRONMENT_NAME: &str = "_env";
 pub fn compile(
     module_builder: &fmm::build::ModuleBuilder,
     definition: &ssf::ir::Definition,
-    variables: &HashMap<String, VariableBuilder>,
+    variables: &HashMap<String, fmm::build::TypedExpression>,
 ) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
     Ok(if definition.is_thunk() {
         compile_thunk(module_builder, definition, variables)?
@@ -21,7 +20,7 @@ pub fn compile(
 fn compile_non_thunk(
     module_builder: &fmm::build::ModuleBuilder,
     definition: &ssf::ir::Definition,
-    variables: &HashMap<String, VariableBuilder>,
+    variables: &HashMap<String, fmm::build::TypedExpression>,
 ) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
     module_builder.define_anonymous_function(
         compile_arguments(definition),
@@ -41,7 +40,7 @@ fn compile_non_thunk(
 fn compile_thunk(
     module_builder: &fmm::build::ModuleBuilder,
     definition: &ssf::ir::Definition,
-    variables: &HashMap<String, VariableBuilder>,
+    variables: &HashMap<String, fmm::build::TypedExpression>,
 ) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
     compile_first_thunk_entry(
         module_builder,
@@ -56,7 +55,7 @@ fn compile_body(
     module_builder: &fmm::build::ModuleBuilder,
     instruction_builder: &fmm::build::InstructionBuilder,
     definition: &ssf::ir::Definition,
-    variables: &HashMap<String, VariableBuilder>,
+    variables: &HashMap<String, fmm::build::TypedExpression>,
 ) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
     expressions::compile(
         module_builder,
@@ -92,7 +91,7 @@ fn compile_body(
             .chain(definition.arguments().iter().map(|argument| {
                 (
                     argument.name().into(),
-                    fmm::build::variable(argument.name(), types::compile(argument.type_())).into(),
+                    fmm::build::variable(argument.name(), types::compile(argument.type_())),
                 )
             }))
             .collect(),
@@ -104,7 +103,7 @@ fn compile_first_thunk_entry(
     definition: &ssf::ir::Definition,
     normal_entry_function: fmm::build::TypedExpression,
     lock_entry_function: fmm::build::TypedExpression,
-    variables: &HashMap<String, VariableBuilder>,
+    variables: &HashMap<String, fmm::build::TypedExpression>,
 ) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
     let entry_function_name = module_builder.generate_name();
     let entry_function_type = types::compile_entry_function_from_definition(definition);

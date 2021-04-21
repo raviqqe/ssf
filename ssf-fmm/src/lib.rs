@@ -9,7 +9,6 @@ mod foreign_definitions;
 mod function_applications;
 mod types;
 mod utilities;
-mod variable_builder;
 
 use declarations::compile_declaration;
 use definitions::compile_definition;
@@ -17,7 +16,6 @@ pub use error::CompileError;
 use foreign_declarations::compile_foreign_declaration;
 use foreign_definitions::compile_foreign_definition;
 use std::collections::HashMap;
-use variable_builder::VariableBuilder;
 
 pub fn compile(module: &ssf::ir::Module) -> Result<fmm::ir::Module, CompileError> {
     ssf::analysis::check_types(module)?;
@@ -68,7 +66,9 @@ pub fn compile(module: &ssf::ir::Module) -> Result<fmm::ir::Module, CompileError
     Ok(module_builder.as_module())
 }
 
-fn compile_global_variables(module: &ssf::ir::Module) -> HashMap<String, VariableBuilder> {
+fn compile_global_variables(
+    module: &ssf::ir::Module,
+) -> HashMap<String, fmm::build::TypedExpression> {
     module
         .foreign_declarations()
         .iter()
@@ -95,13 +95,14 @@ fn compile_global_variables(module: &ssf::ir::Module) -> HashMap<String, Variabl
         .chain(module.definitions().iter().map(|definition| {
             (
                 definition.name().into(),
-                VariableBuilder::with_type(
+                fmm::build::bit_cast(
+                    fmm::types::Pointer::new(types::compile_unsized_closure(definition.type_())),
                     fmm::build::variable(
                         definition.name(),
                         fmm::types::Pointer::new(types::compile_sized_closure(definition)),
                     ),
-                    fmm::types::Pointer::new(types::compile_unsized_closure(definition.type_())),
-                ),
+                )
+                .into(),
             )
         }))
         .collect()
