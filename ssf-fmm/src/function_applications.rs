@@ -1,7 +1,6 @@
 use super::closures;
 use super::expressions;
 use super::types;
-use super::utilities;
 
 pub fn compile(
     module_builder: &fmm::build::ModuleBuilder,
@@ -74,14 +73,13 @@ fn compile_direct_call(
     arguments: &[fmm::build::TypedExpression],
 ) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
     instruction_builder.call(
-        utilities::bit_cast(
-            &instruction_builder,
-            closures::compile_load_entry_pointer(&instruction_builder, closure_pointer.clone())?,
+        fmm::build::bit_cast(
             types::compile_curried_entry_function(
                 get_entry_function_type(&closure_pointer),
                 arguments.len(),
             ),
-        )?,
+            closures::compile_load_entry_pointer(&instruction_builder, closure_pointer.clone())?,
+        ),
         vec![closures::compile_environment_pointer(
             &instruction_builder,
             closure_pointer,
@@ -133,14 +131,14 @@ fn compile_create_closure(
     let closure_pointer = instruction_builder.allocate_heap(closure.type_().clone());
     instruction_builder.store(closure, closure_pointer.clone());
 
-    utilities::bit_cast(
-        instruction_builder,
-        closure_pointer,
+    Ok(fmm::build::bit_cast(
         fmm::types::Pointer::new(types::compile_raw_closure(
             target_entry_function_type,
             types::compile_unsized_environment(),
         )),
+        closure_pointer,
     )
+    .into())
 }
 
 fn compile_partially_applied_entry_function(
@@ -161,16 +159,15 @@ fn compile_partially_applied_entry_function(
     module_builder.define_anonymous_function(
         arguments.clone(),
         |instruction_builder| {
-            let environment = instruction_builder.load(utilities::bit_cast(
-                &instruction_builder,
-                fmm::build::variable(arguments[0].name(), arguments[0].type_().clone()),
+            let environment = instruction_builder.load(fmm::build::bit_cast(
                 fmm::types::Pointer::new(fmm::types::Record::new(
                     vec![closure_pointer_type.clone()]
                         .into_iter()
                         .chain(argument_types.iter().cloned().cloned())
                         .collect(),
                 )),
-            )?)?;
+                fmm::build::variable(arguments[0].name(), arguments[0].type_().clone()),
+            ))?;
             let closure_pointer = instruction_builder.deconstruct_record(environment.clone(), 0)?;
             let arguments = (0..argument_types.len())
                 .map(|index| instruction_builder.deconstruct_record(environment.clone(), index + 1))

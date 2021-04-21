@@ -1,6 +1,5 @@
 use crate::expressions;
 use crate::types;
-use crate::utilities;
 use std::collections::HashMap;
 
 const ENVIRONMENT_NAME: &str = "_env";
@@ -72,17 +71,15 @@ fn compile_body(
                     .map(|(index, free_variable)| {
                         Ok((
                             free_variable.name().into(),
-                            instruction_builder
-                                .load(instruction_builder.record_address(
-                                    utilities::bit_cast(
-                                        instruction_builder,
-                                        compile_environment_pointer(),
-                                        fmm::types::Pointer::new(types::compile_environment(
-                                            definition,
-                                        )),
-                                    )?,
-                                    index,
-                                )?)?,
+                            instruction_builder.load(instruction_builder.record_address(
+                                fmm::build::bit_cast(
+                                    fmm::types::Pointer::new(types::compile_environment(
+                                        definition,
+                                    )),
+                                    compile_environment_pointer(),
+                                ),
+                                index,
+                            )?)?,
                         ))
                     })
                     .collect::<Result<Vec<_>, _>>()?,
@@ -124,11 +121,10 @@ fn compile_first_thunk_entry(
 
                     instruction_builder.store(
                         value.clone(),
-                        utilities::bit_cast(
-                            &instruction_builder,
-                            compile_environment_pointer(),
+                        fmm::build::bit_cast(
                             fmm::types::Pointer::new(types::compile(definition.result_type())),
-                        )?,
+                            compile_environment_pointer(),
+                        ),
                     );
                     instruction_builder.atomic_store(
                         normal_entry_function.clone(),
@@ -190,22 +186,20 @@ fn compile_locked_thunk_entry(
             instruction_builder.if_(
                 instruction_builder.comparison_operation(
                     fmm::ir::ComparisonOperator::Equal,
-                    utilities::bit_cast(
-                        &instruction_builder,
+                    fmm::build::bit_cast(
+                        fmm::types::Primitive::PointerInteger,
                         instruction_builder.atomic_load(compile_entry_function_pointer_pointer(
                             &instruction_builder,
                             definition,
                         )?)?,
+                    ),
+                    fmm::build::bit_cast(
                         fmm::types::Primitive::PointerInteger,
-                    )?,
-                    utilities::bit_cast(
-                        &instruction_builder,
                         fmm::build::variable(
                             &entry_function_name,
                             types::compile_entry_function_from_definition(definition),
                         ),
-                        fmm::types::Primitive::PointerInteger,
-                    )?,
+                    ),
                 )?,
                 // TODO Return to handle thunk locks asynchronously.
                 |instruction_builder| Ok(instruction_builder.unreachable()),
@@ -225,11 +219,10 @@ fn compile_normal_body(
     definition: &ssf::ir::Definition,
 ) -> Result<fmm::ir::Block, fmm::build::BuildError> {
     Ok(
-        instruction_builder.return_(instruction_builder.load(utilities::bit_cast(
-            &instruction_builder,
-            compile_environment_pointer(),
+        instruction_builder.return_(instruction_builder.load(fmm::build::bit_cast(
             fmm::types::Pointer::new(types::compile(definition.result_type())),
-        )?)?),
+            compile_environment_pointer(),
+        ))?),
     )
 }
 
@@ -241,11 +234,10 @@ fn compile_entry_function_pointer_pointer(
     // The offset should be calculated by allocating a record of
     // { pointer, { pointer, arity, environment } }.
     instruction_builder.pointer_address(
-        utilities::bit_cast(
-            instruction_builder,
-            compile_environment_pointer(),
+        fmm::build::bit_cast(
             fmm::types::Pointer::new(types::compile_entry_function_from_definition(definition)),
-        )?,
+            compile_environment_pointer(),
+        ),
         fmm::ir::Primitive::PointerInteger(-2),
     )
 }

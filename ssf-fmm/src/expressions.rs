@@ -2,7 +2,6 @@ use crate::closures;
 use crate::entry_functions;
 use crate::function_applications;
 use crate::types;
-use crate::utilities;
 use std::collections::HashMap;
 
 pub fn compile_arity(arity: usize) -> fmm::ir::Primitive {
@@ -22,11 +21,11 @@ pub fn compile(
         ssf::ir::Expression::ArithmeticOperation(operation) => {
             compile_arithmetic_operation(module_builder, instruction_builder, operation, variables)?
         }
-        ssf::ir::Expression::Bitcast(bit_cast) => utilities::bit_cast(
-            instruction_builder,
-            compile(bit_cast.expression(), variables)?,
+        ssf::ir::Expression::Bitcast(bit_cast) => fmm::build::bit_cast(
             types::compile(bit_cast.type_()),
-        )?,
+            compile(bit_cast.expression(), variables)?,
+        )
+        .into(),
         ssf::ir::Expression::Case(case) => {
             compile_case(module_builder, instruction_builder, case, variables)?
         }
@@ -69,11 +68,10 @@ pub fn compile(
                                     instruction_builder.allocate_heap(payload.type_().clone());
                                 instruction_builder.store(payload, pointer.clone());
 
-                                utilities::bit_cast(
-                                    &instruction_builder,
-                                    pointer,
+                                fmm::build::bit_cast(
                                     union_type.members()[member_index].clone(),
-                                )?
+                                    pointer,
+                                )
                                 .expression()
                                 .clone()
                             } else {
@@ -204,13 +202,12 @@ fn compile_algebraic_alternatives(
                             )?;
 
                             if constructor.constructor_type().is_boxed() {
-                                payload = instruction_builder.load(utilities::bit_cast(
-                                    &instruction_builder,
-                                    payload,
+                                payload = instruction_builder.load(fmm::build::bit_cast(
                                     types::compile_boxed_constructor(
                                         constructor.constructor_type(),
                                     ),
-                                )?)?;
+                                    payload,
+                                ))?;
                             }
 
                             variables
@@ -358,11 +355,11 @@ fn compile_let_recursive(
 
         variables.insert(
             definition.name().into(),
-            utilities::bit_cast(
-                instruction_builder,
-                closure_pointer.clone(),
+            fmm::build::bit_cast(
                 fmm::types::Pointer::new(types::compile_unsized_closure(definition.type_())),
-            )?,
+                closure_pointer.clone(),
+            )
+            .into(),
         );
         closure_pointers.insert(definition.name(), closure_pointer);
     }
