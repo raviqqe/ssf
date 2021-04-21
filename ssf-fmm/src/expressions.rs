@@ -68,12 +68,10 @@ pub fn compile(
                                     instruction_builder.allocate_heap(payload.type_().clone());
                                 instruction_builder.store(payload, pointer.clone());
 
-                                fmm::build::bit_cast(
+                                fmm::ir::Expression::from(fmm::build::bit_cast(
                                     union_type.members()[member_index].clone(),
                                     pointer,
-                                )
-                                .expression()
-                                .clone()
+                                ))
                             } else {
                                 payload.into()
                             },
