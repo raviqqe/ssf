@@ -1,6 +1,5 @@
 use super::expressions;
 use super::types;
-use super::utilities;
 
 pub fn compile_load_entry_pointer(
     builder: &fmm::build::InstructionBuilder,
@@ -22,11 +21,11 @@ pub fn compile_environment_pointer(
     builder: &fmm::build::InstructionBuilder,
     closure_pointer: impl Into<fmm::build::TypedExpression>,
 ) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
-    utilities::bit_cast(
-        builder,
-        builder.record_address(closure_pointer, 2)?,
+    Ok(fmm::build::bit_cast(
         fmm::types::Pointer::new(types::compile_unsized_environment()),
+        builder.record_address(closure_pointer, 2)?,
     )
+    .into())
 }
 
 pub fn compile_closure_content(

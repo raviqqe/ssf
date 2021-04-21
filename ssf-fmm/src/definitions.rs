@@ -1,13 +1,12 @@
 use crate::entry_functions;
 use crate::expressions;
 use crate::types;
-use crate::variable_builder::VariableBuilder;
 use std::collections::HashMap;
 
 pub fn compile_definition(
     module_builder: &fmm::build::ModuleBuilder,
     definition: &ssf::ir::Definition,
-    global_variables: &HashMap<String, VariableBuilder>,
+    global_variables: &HashMap<String, fmm::build::TypedExpression>,
 ) -> Result<(), fmm::build::BuildError> {
     module_builder.define_variable(
         definition.name(),

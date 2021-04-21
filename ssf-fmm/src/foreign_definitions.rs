@@ -1,12 +1,11 @@
 use crate::function_applications;
 use crate::types;
-use crate::variable_builder::VariableBuilder;
 
 pub fn compile_foreign_definition(
     module_builder: &fmm::build::ModuleBuilder,
     definition: &ssf::ir::ForeignDefinition,
     function_type: &ssf::types::Function,
-    global_variable_builder: &VariableBuilder,
+    global_variable: &fmm::build::TypedExpression,
 ) -> Result<(), fmm::build::BuildError> {
     // TODO Support a target calling convention.
     let foreign_function_type =
@@ -25,7 +24,7 @@ pub fn compile_foreign_definition(
             Ok(instruction_builder.return_(function_applications::compile(
                 module_builder,
                 &instruction_builder,
-                global_variable_builder.build(&instruction_builder)?,
+                global_variable.clone(),
                 &arguments
                     .iter()
                     .map(|argument| fmm::build::variable(argument.name(), argument.type_().clone()))
