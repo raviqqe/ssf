@@ -37,7 +37,7 @@ fn compile_with_min_arity(
         compile_direct_call(instruction_builder, closure_pointer, arguments)?
     } else {
         instruction_builder.if_(
-            instruction_builder.comparison_operation(
+            fmm::build::comparison_operation(
                 fmm::ir::ComparisonOperator::Equal,
                 closures::compile_load_arity(instruction_builder, closure_pointer.clone())?,
                 expressions::compile_arity(min_arity),
@@ -182,7 +182,7 @@ fn compile_partially_applied_entry_function(
                     compile_direct_call(&instruction_builder, closure_pointer, &arguments)?
                 } else {
                     instruction_builder.if_(
-                        instruction_builder.comparison_operation(
+                        fmm::build::comparison_operation(
                             fmm::ir::ComparisonOperator::Equal,
                             closures::compile_load_arity(
                                 &instruction_builder,

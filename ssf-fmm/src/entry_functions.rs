@@ -184,7 +184,7 @@ fn compile_locked_thunk_entry(
         compile_arguments(definition),
         |instruction_builder| {
             instruction_builder.if_(
-                instruction_builder.comparison_operation(
+                fmm::build::comparison_operation(
                     fmm::ir::ComparisonOperator::Equal,
                     fmm::build::bit_cast(
                         fmm::types::Primitive::PointerInteger,
