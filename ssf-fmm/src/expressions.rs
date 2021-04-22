@@ -20,6 +20,7 @@ pub fn compile(
     Ok(match expression {
         ssf::ir::Expression::ArithmeticOperation(operation) => {
             compile_arithmetic_operation(module_builder, instruction_builder, operation, variables)?
+                .into()
         }
         ssf::ir::Expression::Bitcast(bit_cast) => fmm::build::bit_cast(
             types::compile(bit_cast.type_()),
@@ -31,6 +32,7 @@ pub fn compile(
         }
         ssf::ir::Expression::ComparisonOperation(operation) => {
             compile_comparison_operation(module_builder, instruction_builder, operation, variables)?
+                .into()
         }
         ssf::ir::Expression::ConstructorApplication(constructor_application) => {
             let constructor = constructor_application.constructor();
@@ -171,7 +173,7 @@ fn compile_algebraic_alternatives(
             let constructor = alternative.constructor();
 
             Some(instruction_builder.if_(
-                instruction_builder.comparison_operation(
+                fmm::build::comparison_operation(
                     fmm::ir::ComparisonOperator::Equal,
                     tag.clone(),
                     fmm::ir::Primitive::PointerInteger(constructor.tag() as i64),
@@ -288,7 +290,7 @@ fn compile_primitive_alternatives(
     Ok(match alternatives {
         [] => default_alternative.map(compile).transpose()?,
         [alternative, ..] => Some(instruction_builder.if_(
-            instruction_builder.comparison_operation(
+            fmm::build::comparison_operation(
                 fmm::ir::ComparisonOperator::Equal,
                 argument.clone(),
                 compile_primitive(alternative.primitive()),
@@ -389,7 +391,7 @@ fn compile_arithmetic_operation(
     instruction_builder: &fmm::build::InstructionBuilder,
     operation: &ssf::ir::ArithmeticOperation,
     variables: &HashMap<String, fmm::build::TypedExpression>,
-) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
+) -> Result<fmm::ir::ArithmeticOperation, fmm::build::BuildError> {
     let compile = |expression| compile(module_builder, instruction_builder, expression, variables);
 
     let lhs = compile(operation.lhs())?;
@@ -397,23 +399,17 @@ fn compile_arithmetic_operation(
 
     Ok(match operation.operator() {
         ssf::ir::ArithmeticOperator::Add => {
-            instruction_builder.arithmetic_operation(fmm::ir::ArithmeticOperator::Add, lhs, rhs)?
+            fmm::build::arithmetic_operation(fmm::ir::ArithmeticOperator::Add, lhs, rhs)?
         }
-        ssf::ir::ArithmeticOperator::Subtract => instruction_builder.arithmetic_operation(
-            fmm::ir::ArithmeticOperator::Subtract,
-            lhs,
-            rhs,
-        )?,
-        ssf::ir::ArithmeticOperator::Multiply => instruction_builder.arithmetic_operation(
-            fmm::ir::ArithmeticOperator::Multiply,
-            lhs,
-            rhs,
-        )?,
-        ssf::ir::ArithmeticOperator::Divide => instruction_builder.arithmetic_operation(
-            fmm::ir::ArithmeticOperator::Divide,
-            lhs,
-            rhs,
-        )?,
+        ssf::ir::ArithmeticOperator::Subtract => {
+            fmm::build::arithmetic_operation(fmm::ir::ArithmeticOperator::Subtract, lhs, rhs)?
+        }
+        ssf::ir::ArithmeticOperator::Multiply => {
+            fmm::build::arithmetic_operation(fmm::ir::ArithmeticOperator::Multiply, lhs, rhs)?
+        }
+        ssf::ir::ArithmeticOperator::Divide => {
+            fmm::build::arithmetic_operation(fmm::ir::ArithmeticOperator::Divide, lhs, rhs)?
+        }
     })
 }
 
@@ -422,13 +418,13 @@ fn compile_comparison_operation(
     instruction_builder: &fmm::build::InstructionBuilder,
     operation: &ssf::ir::ComparisonOperation,
     variables: &HashMap<String, fmm::build::TypedExpression>,
-) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
+) -> Result<fmm::ir::ComparisonOperation, fmm::build::BuildError> {
     let compile = |expression| compile(module_builder, instruction_builder, expression, variables);
 
     let lhs = compile(operation.lhs())?;
     let rhs = compile(operation.rhs())?;
 
-    instruction_builder.comparison_operation(
+    fmm::build::comparison_operation(
         match operation.operator() {
             ssf::ir::ComparisonOperator::Equal => fmm::ir::ComparisonOperator::Equal,
             ssf::ir::ComparisonOperator::NotEqual => fmm::ir::ComparisonOperator::NotEqual,
