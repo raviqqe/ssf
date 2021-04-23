@@ -21,7 +21,7 @@ ssf-llvm = { git = "https://github.com/raviqqe/ssf", branch = "master" }
 
 - Inference of closure environment types
 - Partial application
-- Bitcast
+- Bit cast
 - Lazy evaluation
 
 ### Ones not supported...
