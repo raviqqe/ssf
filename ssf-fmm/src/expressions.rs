@@ -22,7 +22,7 @@ pub fn compile(
             compile_arithmetic_operation(module_builder, instruction_builder, operation, variables)?
                 .into()
         }
-        ssf::ir::Expression::Bitcast(bit_cast) => fmm::build::bit_cast(
+        ssf::ir::Expression::BitCast(bit_cast) => fmm::build::bit_cast(
             types::compile(bit_cast.type_()),
             compile(bit_cast.expression(), variables)?,
         )

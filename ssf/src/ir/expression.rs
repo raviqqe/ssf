@@ -1,6 +1,6 @@
 use super::algebraic_case::AlgebraicCase;
 use super::arithmetic_operation::ArithmeticOperation;
-use super::bitcast::Bitcast;
+use super::bit_cast::BitCast;
 use super::case::Case;
 use super::comparison_operation::ComparisonOperation;
 use super::constructor_application::ConstructorApplication;
@@ -16,7 +16,7 @@ use std::collections::{HashMap, HashSet};
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expression {
     ArithmeticOperation(ArithmeticOperation),
-    Bitcast(Bitcast),
+    BitCast(BitCast),
     Case(Case),
     ComparisonOperation(ComparisonOperation),
     ConstructorApplication(ConstructorApplication),
@@ -38,7 +38,7 @@ impl Expression {
     pub(crate) fn find_variables(&self) -> HashSet<String> {
         match self {
             Self::ArithmeticOperation(operation) => operation.find_variables(),
-            Self::Bitcast(bitcast) => bitcast.find_variables(),
+            Self::BitCast(bit_cast) => bit_cast.find_variables(),
             Self::Case(case) => case.find_variables(),
             Self::ComparisonOperation(operation) => operation.find_variables(),
             Self::ConstructorApplication(constructor_application) => {
@@ -57,7 +57,7 @@ impl Expression {
     pub(crate) fn infer_environment(&self, variables: &HashMap<String, Type>) -> Self {
         match self {
             Self::ArithmeticOperation(operation) => operation.infer_environment(variables).into(),
-            Self::Bitcast(bitcast) => bitcast.infer_environment(variables).into(),
+            Self::BitCast(bit_cast) => bit_cast.infer_environment(variables).into(),
             Self::Case(case) => case.infer_environment(variables).into(),
             Self::ComparisonOperation(operation) => operation.infer_environment(variables).into(),
             Self::ConstructorApplication(constructor_application) => {
@@ -75,7 +75,7 @@ impl Expression {
     pub(crate) fn convert_types(&self, convert: &impl Fn(&Type) -> Type) -> Self {
         match self {
             Self::ArithmeticOperation(operation) => operation.convert_types(convert).into(),
-            Self::Bitcast(bitcast) => bitcast.convert_types(convert).into(),
+            Self::BitCast(bit_cast) => bit_cast.convert_types(convert).into(),
             Self::Case(case) => case.convert_types(convert).into(),
             Self::ComparisonOperation(operation) => operation.convert_types(convert).into(),
             Self::ConstructorApplication(constructor_application) => {
@@ -103,9 +103,9 @@ impl From<ArithmeticOperation> for Expression {
     }
 }
 
-impl From<Bitcast> for Expression {
-    fn from(bitcast: Bitcast) -> Self {
-        Self::Bitcast(bitcast)
+impl From<BitCast> for Expression {
+    fn from(bit_cast: BitCast) -> Self {
+        Self::BitCast(bit_cast)
     }
 }
 
