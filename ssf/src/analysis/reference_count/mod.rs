@@ -37,11 +37,11 @@ fn convert_expression(
                 variables,
             )
         }
-        Expression::BitCast(bitcast) => {
-            let (expression, variables) = convert_expression(bitcast.expression(), variables);
+        Expression::BitCast(bit_cast) => {
+            let (expression, variables) = convert_expression(bit_cast.expression(), variables);
 
             (
-                BitCast::new(expression, bitcast.type_().clone()).into(),
+                BitCast::new(expression, bit_cast.type_().clone()).into(),
                 variables,
             )
         }
