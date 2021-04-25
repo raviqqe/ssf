@@ -157,7 +157,7 @@ fn compile_first_thunk_entry(
         },
         types::compile(definition.result_type()),
         fmm::types::CallingConvention::Source,
-        false,
+        fmm::ir::Linkage::Internal,
     )
 }
 
@@ -210,7 +210,7 @@ fn compile_locked_thunk_entry(
         },
         types::compile(definition.result_type()),
         fmm::types::CallingConvention::Source,
-        false,
+        fmm::ir::Linkage::Internal,
     )
 }
 

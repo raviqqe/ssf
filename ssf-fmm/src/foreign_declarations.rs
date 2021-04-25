@@ -13,7 +13,7 @@ pub fn compile_foreign_declaration(
             fmm::ir::Undefined::new(types::compile_unsized_environment()).into(),
         ]),
         false,
-        false,
+        fmm::ir::Linkage::Internal,
     );
 
     Ok(())

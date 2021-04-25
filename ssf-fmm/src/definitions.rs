@@ -16,7 +16,7 @@ pub fn compile_definition(
             fmm::ir::Undefined::new(types::compile_closure_payload(definition)).into(),
         ]),
         definition.is_thunk(),
-        true,
+        fmm::ir::Linkage::External,
     );
 
     Ok(())
