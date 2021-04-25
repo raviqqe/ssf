@@ -33,7 +33,7 @@ pub fn compile_foreign_definition(
         },
         foreign_function_type.result().clone(),
         foreign_function_type.calling_convention(),
-        true,
+        fmm::ir::Linkage::External,
     )?;
 
     Ok(())
