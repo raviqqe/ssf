@@ -63,9 +63,15 @@ pub fn compile(
                             union_type.clone(),
                             member_index,
                             if constructor_type.is_boxed() {
-                                let pointer =
-                                    instruction_builder.allocate_heap(payload.type_().clone());
-                                instruction_builder.store(payload, pointer.clone());
+                                let pointer = instruction_builder
+                                    .allocate_heap(fmm::build::size_of(payload.type_().clone()));
+                                instruction_builder.store(
+                                    payload.clone(),
+                                    fmm::build::bit_cast(
+                                        fmm::types::Pointer::new(payload.type_().clone()),
+                                        pointer.clone(),
+                                    ),
+                                );
 
                                 fmm::ir::Expression::from(fmm::build::bit_cast(
                                     union_type.members()[member_index].clone(),
@@ -347,8 +353,9 @@ fn compile_let_recursive(
     let mut closure_pointers = HashMap::new();
 
     for definition in let_.definitions() {
-        let closure_pointer =
-            instruction_builder.allocate_heap(types::compile_sized_closure(definition));
+        let closure_pointer = instruction_builder.allocate_heap(fmm::build::size_of(
+            types::compile_sized_closure(definition),
+        ));
 
         variables.insert(
             definition.name().into(),
@@ -358,7 +365,13 @@ fn compile_let_recursive(
             )
             .into(),
         );
-        closure_pointers.insert(definition.name(), closure_pointer);
+        closure_pointers.insert(
+            definition.name(),
+            fmm::build::bit_cast(
+                fmm::types::Pointer::new(types::compile_sized_closure(definition)),
+                closure_pointer.clone(),
+            ),
+        );
     }
 
     for definition in let_.definitions() {

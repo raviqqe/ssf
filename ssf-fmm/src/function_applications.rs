@@ -78,13 +78,10 @@ fn compile_direct_call(
             ),
             closures::compile_load_entry_pointer(instruction_builder, closure_pointer.clone())?,
         ),
-        vec![closures::compile_environment_pointer(
-            instruction_builder,
-            closure_pointer,
-        )?]
-        .into_iter()
-        .chain(arguments.iter().cloned())
-        .collect(),
+        vec![closures::compile_environment_pointer(closure_pointer)?]
+            .into_iter()
+            .chain(arguments.iter().cloned())
+            .collect(),
     )
 }
 
@@ -126,8 +123,15 @@ fn compile_create_closure(
             .chain(arguments.iter().cloned())
             .collect::<Vec<_>>(),
     );
-    let closure_pointer = instruction_builder.allocate_heap(closure.type_().clone());
-    instruction_builder.store(closure, closure_pointer.clone());
+    let closure_pointer =
+        instruction_builder.allocate_heap(fmm::build::size_of(closure.type_().clone()));
+    instruction_builder.store(
+        closure.clone(),
+        fmm::build::bit_cast(
+            fmm::types::Pointer::new(closure.type_().clone()),
+            closure_pointer.clone(),
+        ),
+    );
 
     Ok(fmm::build::bit_cast(
         fmm::types::Pointer::new(types::compile_raw_closure(
@@ -219,7 +223,7 @@ fn get_entry_function_type(closure_pointer: &fmm::build::TypedExpression) -> &fm
         .element()
         .to_record()
         .unwrap()
-        .elements()[0]
+        .fields()[0]
         .to_function()
         .unwrap()
 }

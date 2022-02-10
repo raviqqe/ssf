@@ -119,10 +119,11 @@ mod tests {
 
         fmm_llvm::compile_to_object(
             &module,
-            &fmm_llvm::HeapConfiguration {
+            &fmm_llvm::InstructionConfiguration {
                 allocate_function_name: "allocate_heap".into(),
                 reallocate_function_name: "reallocate_heap".into(),
                 free_function_name: "free_heap".into(),
+                unreachable_function_name: None,
             },
             None,
         )
@@ -134,7 +135,7 @@ mod tests {
 
         let directory = tempfile::tempdir().unwrap();
         let file_path = directory.path().join("foo.c");
-        let source = fmm_c::compile(module, None);
+        let source = fmm_c::compile(module, None).unwrap();
 
         std::fs::write(&file_path, source).unwrap();
         let output = std::process::Command::new("clang")
