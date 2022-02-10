@@ -78,13 +78,10 @@ fn compile_direct_call(
             ),
             closures::compile_load_entry_pointer(instruction_builder, closure_pointer.clone())?,
         ),
-        vec![closures::compile_environment_pointer(
-            instruction_builder,
-            closure_pointer,
-        )?]
-        .into_iter()
-        .chain(arguments.iter().cloned())
-        .collect(),
+        vec![closures::compile_environment_pointer(closure_pointer)?]
+            .into_iter()
+            .chain(arguments.iter().cloned())
+            .collect(),
     )
 }
 

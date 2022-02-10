@@ -20,7 +20,6 @@ pub fn compile_load_arity(
 }
 
 pub fn compile_environment_pointer(
-    builder: &fmm::build::InstructionBuilder,
     closure_pointer: impl Into<fmm::build::TypedExpression>,
 ) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
     Ok(fmm::build::bit_cast(

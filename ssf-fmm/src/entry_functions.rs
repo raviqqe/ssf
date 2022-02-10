@@ -110,7 +110,7 @@ fn compile_first_thunk_entry(
         |instruction_builder| {
             instruction_builder.if_(
                 instruction_builder.compare_and_swap(
-                    compile_entry_function_pointer_pointer(&instruction_builder, definition)?,
+                    compile_entry_function_pointer_pointer(definition)?,
                     fmm::build::variable(&entry_function_name, entry_function_type.clone()),
                     lock_entry_function.clone(),
                     fmm::ir::AtomicOrdering::SequentiallyConsistent,
@@ -129,7 +129,7 @@ fn compile_first_thunk_entry(
                     );
                     instruction_builder.atomic_store(
                         normal_entry_function.clone(),
-                        compile_entry_function_pointer_pointer(&instruction_builder, definition)?,
+                        compile_entry_function_pointer_pointer(definition)?,
                         fmm::ir::AtomicOrdering::SequentiallyConsistent,
                     );
 
@@ -139,10 +139,7 @@ fn compile_first_thunk_entry(
                     Ok(instruction_builder.return_(
                         instruction_builder.call(
                             instruction_builder.atomic_load(
-                                compile_entry_function_pointer_pointer(
-                                    &instruction_builder,
-                                    definition,
-                                )?,
+                                compile_entry_function_pointer_pointer(definition)?,
                                 fmm::ir::AtomicOrdering::SequentiallyConsistent,
                             )?,
                             arguments
@@ -192,10 +189,7 @@ fn compile_locked_thunk_entry(
                     fmm::build::bit_cast(
                         fmm::types::Primitive::PointerInteger,
                         instruction_builder.atomic_load(
-                            compile_entry_function_pointer_pointer(
-                                &instruction_builder,
-                                definition,
-                            )?,
+                            compile_entry_function_pointer_pointer(definition)?,
                             fmm::ir::AtomicOrdering::SequentiallyConsistent,
                         )?,
                     ),
@@ -233,7 +227,6 @@ fn compile_normal_body(
 }
 
 fn compile_entry_function_pointer_pointer(
-    instruction_builder: &fmm::build::InstructionBuilder,
     definition: &ssf::ir::Definition,
 ) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
     // TODO Calculate entry function pointer properly.
