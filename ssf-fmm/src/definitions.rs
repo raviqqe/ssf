@@ -1,6 +1,4 @@
-use crate::entry_functions;
-use crate::expressions;
-use crate::types;
+use crate::{entry_functions, expressions, types};
 use std::collections::HashMap;
 
 pub fn compile_definition(

@@ -1,6 +1,4 @@
-use super::closures;
-use super::expressions;
-use super::types;
+use super::{closures, expressions, types};
 
 pub fn compile(
     module_builder: &fmm::build::ModuleBuilder,
@@ -78,10 +76,10 @@ fn compile_direct_call(
                 get_entry_function_type(&closure_pointer),
                 arguments.len(),
             ),
-            closures::compile_load_entry_pointer(&instruction_builder, closure_pointer.clone())?,
+            closures::compile_load_entry_pointer(instruction_builder, closure_pointer.clone())?,
         ),
         vec![closures::compile_environment_pointer(
-            &instruction_builder,
+            instruction_builder,
             closure_pointer,
         )?]
         .into_iter()
@@ -117,7 +115,7 @@ fn compile_create_closure(
         compile_partially_applied_entry_function(
             module_builder,
             &target_entry_function_type,
-            &closure_pointer.type_(),
+            closure_pointer.type_(),
             &arguments
                 .iter()
                 .map(|argument| argument.type_())
@@ -147,8 +145,7 @@ fn compile_partially_applied_entry_function(
     closure_pointer_type: &fmm::types::Type,
     argument_types: &[&fmm::types::Type],
 ) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
-    let curried_entry_function_type =
-        types::compile_curried_entry_function(&entry_function_type, 1);
+    let curried_entry_function_type = types::compile_curried_entry_function(entry_function_type, 1);
     let arguments = curried_entry_function_type
         .arguments()
         .iter()

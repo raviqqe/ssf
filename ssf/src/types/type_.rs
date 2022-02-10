@@ -1,6 +1,4 @@
-use super::algebraic::Algebraic;
-use super::function::Function;
-use super::primitive::Primitive;
+use super::{algebraic::Algebraic, function::Function, primitive::Primitive};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Type {

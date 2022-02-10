@@ -1,7 +1,7 @@
-use super::declaration::Declaration;
-use super::definition::Definition;
-use super::foreign_declaration::ForeignDeclaration;
-use super::foreign_definition::ForeignDefinition;
+use super::{
+    declaration::Declaration, definition::Definition, foreign_declaration::ForeignDeclaration,
+    foreign_definition::ForeignDefinition,
+};
 use crate::types::canonicalize;
 
 #[derive(Clone, Debug, PartialEq)]

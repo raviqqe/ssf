@@ -1,8 +1,9 @@
-use super::algebraic_alternative::AlgebraicAlternative;
-use super::expression::Expression;
+use super::{algebraic_alternative::AlgebraicAlternative, expression::Expression};
 use crate::types::Type;
-use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct AlgebraicCase {

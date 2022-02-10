@@ -1,5 +1,4 @@
-use crate::function_applications;
-use crate::types;
+use crate::{function_applications, types};
 
 pub fn compile_foreign_definition(
     module_builder: &fmm::build::ModuleBuilder,

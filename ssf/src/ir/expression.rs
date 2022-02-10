@@ -1,15 +1,10 @@
-use super::algebraic_case::AlgebraicCase;
-use super::arithmetic_operation::ArithmeticOperation;
-use super::bit_cast::BitCast;
-use super::case::Case;
-use super::comparison_operation::ComparisonOperation;
-use super::constructor_application::ConstructorApplication;
-use super::function_application::FunctionApplication;
-use super::let_::Let;
-use super::let_recursive::LetRecursive;
-use super::primitive::Primitive;
-use super::primitive_case::PrimitiveCase;
-use super::variable::Variable;
+use super::{
+    algebraic_case::AlgebraicCase, arithmetic_operation::ArithmeticOperation, bit_cast::BitCast,
+    case::Case, comparison_operation::ComparisonOperation,
+    constructor_application::ConstructorApplication, function_application::FunctionApplication,
+    let_::Let, let_recursive::LetRecursive, primitive::Primitive, primitive_case::PrimitiveCase,
+    variable::Variable,
+};
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 

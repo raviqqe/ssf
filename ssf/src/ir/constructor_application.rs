@@ -1,5 +1,4 @@
-use super::constructor::Constructor;
-use super::expression::Expression;
+use super::{constructor::Constructor, expression::Expression};
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 

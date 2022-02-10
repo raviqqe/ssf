@@ -1,5 +1,4 @@
-use crate::expressions;
-use crate::types;
+use crate::{expressions, types};
 use std::collections::HashMap;
 
 const ENVIRONMENT_NAME: &str = "_env";
