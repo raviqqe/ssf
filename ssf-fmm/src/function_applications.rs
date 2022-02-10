@@ -125,7 +125,13 @@ fn compile_create_closure(
     );
     let closure_pointer =
         instruction_builder.allocate_heap(fmm::build::size_of(closure.type_().clone()));
-    instruction_builder.store(closure, closure_pointer.clone());
+    instruction_builder.store(
+        closure.clone(),
+        fmm::build::bit_cast(
+            fmm::types::Pointer::new(closure.type_().clone()),
+            closure_pointer.clone(),
+        ),
+    );
 
     Ok(fmm::build::bit_cast(
         fmm::types::Pointer::new(types::compile_raw_closure(
