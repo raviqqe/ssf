@@ -1,7 +1,5 @@
-use crate::ir::*;
-use crate::types::Type;
-use std::error::Error;
-use std::fmt::Display;
+use crate::{ir::*, types::Type};
+use std::{error::Error, fmt::Display};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TypeCheckError {

@@ -1,8 +1,9 @@
-use super::expression::Expression;
-use super::primitive_alternative::PrimitiveAlternative;
+use super::{expression::Expression, primitive_alternative::PrimitiveAlternative};
 use crate::types::Type;
-use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PrimitiveCase {

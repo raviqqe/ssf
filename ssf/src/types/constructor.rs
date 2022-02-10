@@ -34,8 +34,7 @@ impl Constructor {
 
 #[cfg(test)]
 mod tests {
-    use super::super::primitive::Primitive;
-    use super::*;
+    use super::{super::primitive::Primitive, *};
 
     #[test]
     fn is_enum() {

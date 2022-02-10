@@ -1,5 +1,4 @@
-use super::expression::Expression;
-use super::primitive::Primitive;
+use super::{expression::Expression, primitive::Primitive};
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 

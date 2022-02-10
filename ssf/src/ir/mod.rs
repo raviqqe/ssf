@@ -38,7 +38,6 @@ pub use constructor::*;
 pub use constructor_application::*;
 pub use declaration::*;
 pub use definition::*;
-pub use definition::*;
 pub use expression::*;
 pub use foreign_declaration::*;
 pub use foreign_definition::*;

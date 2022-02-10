@@ -1,7 +1,9 @@
 use super::expression::Expression;
 use crate::types::Type;
-use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Let {
@@ -58,7 +60,7 @@ impl Let {
         Self::new(
             self.name.clone(),
             self.type_.clone(),
-            self.bound_expression.infer_environment(&variables),
+            self.bound_expression.infer_environment(variables),
             {
                 let mut variables = variables.clone();
 

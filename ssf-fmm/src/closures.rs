@@ -1,5 +1,4 @@
-use super::expressions;
-use super::types;
+use super::{expressions, types};
 
 pub fn compile_load_entry_pointer(
     builder: &fmm::build::InstructionBuilder,

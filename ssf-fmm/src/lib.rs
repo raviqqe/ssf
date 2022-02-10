@@ -130,11 +130,11 @@ mod tests {
     }
 
     fn compile_final_module(module: &fmm::ir::Module) {
-        fmm::analysis::check_types(&module).unwrap();
+        fmm::analysis::check_types(module).unwrap();
 
         let directory = tempfile::tempdir().unwrap();
         let file_path = directory.path().join("foo.c");
-        let source = fmm_c::compile(&module, None);
+        let source = fmm_c::compile(module, None);
 
         std::fs::write(&file_path, source).unwrap();
         let output = std::process::Command::new("clang")

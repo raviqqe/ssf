@@ -48,8 +48,7 @@ impl Function {
 
 #[cfg(test)]
 mod tests {
-    use super::super::primitive::Primitive;
-    use super::*;
+    use super::{super::primitive::Primitive, *};
 
     #[test]
     fn argument() {

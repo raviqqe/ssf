@@ -1,7 +1,4 @@
-use crate::closures;
-use crate::entry_functions;
-use crate::function_applications;
-use crate::types;
+use crate::{closures, entry_functions, function_applications, types};
 use std::collections::HashMap;
 
 pub fn compile_arity(arity: usize) -> fmm::ir::Primitive {

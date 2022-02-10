@@ -1,7 +1,9 @@
 mod error;
 
-use crate::ir::*;
-use crate::types::{self, Type};
+use crate::{
+    ir::*,
+    types::{self, Type},
+};
 pub use error::TypeCheckError;
 use std::collections::*;
 
@@ -99,7 +101,7 @@ fn check_expression(
                 .iter()
                 .zip(constructor.constructor_type().elements())
             {
-                check_equality(&check_expression(argument, variables)?, &element_type)?;
+                check_equality(&check_expression(argument, variables)?, element_type)?;
             }
 
             constructor_application
@@ -185,7 +187,7 @@ fn check_case(case: &Case, variables: &HashMap<&str, Type>) -> Result<Type, Type
             }
 
             if let Some(expression) = algebraic_case.default_alternative() {
-                let alternative_type = check_expression(expression, &variables)?;
+                let alternative_type = check_expression(expression, variables)?;
 
                 if let Some(expression_type) = &expression_type {
                     check_equality(&alternative_type, expression_type)?;
@@ -216,7 +218,7 @@ fn check_case(case: &Case, variables: &HashMap<&str, Type>) -> Result<Type, Type
             }
 
             if let Some(expression) = primitive_case.default_alternative() {
-                let alternative_type = check_expression(expression, &variables)?;
+                let alternative_type = check_expression(expression, variables)?;
 
                 if let Some(expression_type) = &expression_type {
                     check_equality(&alternative_type, expression_type)?;
@@ -261,10 +263,11 @@ fn check_equality(one: &Type, other: &Type) -> Result<(), TypeCheckError> {
 
 #[cfg(test)]
 mod tests {
-    use super::check_types;
-    use super::error::*;
-    use crate::ir::*;
-    use crate::types::{self, Type};
+    use super::{check_types, error::*};
+    use crate::{
+        ir::*,
+        types::{self, Type},
+    };
 
     #[test]
     fn check_types_with_empty_modules() {

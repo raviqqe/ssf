@@ -1,5 +1,4 @@
-use super::constructor::Constructor;
-use super::unfold::unfold;
+use super::{constructor::Constructor, unfold::unfold};
 use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

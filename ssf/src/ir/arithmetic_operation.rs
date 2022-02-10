@@ -1,8 +1,9 @@
-use super::arithmetic_operator::ArithmeticOperator;
-use super::expression::Expression;
+use super::{arithmetic_operator::ArithmeticOperator, expression::Expression};
 use crate::types::Type;
-use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ArithmeticOperation {

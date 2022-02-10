@@ -1,5 +1,4 @@
-use super::algebraic_case::AlgebraicCase;
-use super::primitive_case::PrimitiveCase;
+use super::{algebraic_case::AlgebraicCase, primitive_case::PrimitiveCase};
 use crate::types::Type;
 use std::collections::{HashMap, HashSet};
 

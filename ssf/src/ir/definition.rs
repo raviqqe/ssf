@@ -1,5 +1,4 @@
-use super::argument::Argument;
-use super::expression::Expression;
+use super::{argument::Argument, expression::Expression};
 use crate::types::{self, Type};
 use std::collections::{HashMap, HashSet};
 
