@@ -126,7 +126,8 @@ fn compile_create_closure(
             .chain(arguments.iter().cloned())
             .collect::<Vec<_>>(),
     );
-    let closure_pointer = instruction_builder.allocate_heap(closure.type_().clone());
+    let closure_pointer =
+        instruction_builder.allocate_heap(fmm::build::size_of(closure.type_().clone()));
     instruction_builder.store(closure, closure_pointer.clone());
 
     Ok(fmm::build::bit_cast(
@@ -219,7 +220,7 @@ fn get_entry_function_type(closure_pointer: &fmm::build::TypedExpression) -> &fm
         .element()
         .to_record()
         .unwrap()
-        .elements()[0]
+        .fields()[0]
         .to_function()
         .unwrap()
 }

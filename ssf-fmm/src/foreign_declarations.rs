@@ -16,6 +16,7 @@ pub fn compile_foreign_declaration(
         ]),
         false,
         fmm::ir::Linkage::Internal,
+        None,
     );
 
     Ok(())

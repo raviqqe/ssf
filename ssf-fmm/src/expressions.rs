@@ -63,8 +63,8 @@ pub fn compile(
                             union_type.clone(),
                             member_index,
                             if constructor_type.is_boxed() {
-                                let pointer =
-                                    instruction_builder.allocate_heap(payload.type_().clone());
+                                let pointer = instruction_builder
+                                    .allocate_heap(fmm::build::size_of(payload.type_().clone()));
                                 instruction_builder.store(payload, pointer.clone());
 
                                 fmm::ir::Expression::from(fmm::build::bit_cast(
@@ -347,8 +347,9 @@ fn compile_let_recursive(
     let mut closure_pointers = HashMap::new();
 
     for definition in let_.definitions() {
-        let closure_pointer =
-            instruction_builder.allocate_heap(types::compile_sized_closure(definition));
+        let closure_pointer = instruction_builder.allocate_heap(fmm::build::size_of(
+            types::compile_sized_closure(definition),
+        ));
 
         variables.insert(
             definition.name().into(),

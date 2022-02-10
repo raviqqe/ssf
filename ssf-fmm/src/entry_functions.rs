@@ -70,7 +70,7 @@ fn compile_body(
                     .map(|(index, free_variable)| {
                         Ok((
                             free_variable.name().into(),
-                            instruction_builder.load(instruction_builder.record_address(
+                            instruction_builder.load(fmm::build::record_address(
                                 fmm::build::bit_cast(
                                     fmm::types::Pointer::new(types::compile_environment(
                                         definition,
@@ -113,6 +113,8 @@ fn compile_first_thunk_entry(
                     compile_entry_function_pointer_pointer(&instruction_builder, definition)?,
                     fmm::build::variable(&entry_function_name, entry_function_type.clone()),
                     lock_entry_function.clone(),
+                    fmm::ir::AtomicOrdering::SequentiallyConsistent,
+                    fmm::ir::AtomicOrdering::SequentiallyConsistent,
                 ),
                 |instruction_builder| {
                     let value =
@@ -128,6 +130,7 @@ fn compile_first_thunk_entry(
                     instruction_builder.atomic_store(
                         normal_entry_function.clone(),
                         compile_entry_function_pointer_pointer(&instruction_builder, definition)?,
+                        fmm::ir::AtomicOrdering::SequentiallyConsistent,
                     );
 
                     Ok(instruction_builder.return_(value))
@@ -140,6 +143,7 @@ fn compile_first_thunk_entry(
                                     &instruction_builder,
                                     definition,
                                 )?,
+                                fmm::ir::AtomicOrdering::SequentiallyConsistent,
                             )?,
                             arguments
                                 .iter()
@@ -187,10 +191,13 @@ fn compile_locked_thunk_entry(
                     fmm::ir::ComparisonOperator::Equal,
                     fmm::build::bit_cast(
                         fmm::types::Primitive::PointerInteger,
-                        instruction_builder.atomic_load(compile_entry_function_pointer_pointer(
-                            &instruction_builder,
-                            definition,
-                        )?)?,
+                        instruction_builder.atomic_load(
+                            compile_entry_function_pointer_pointer(
+                                &instruction_builder,
+                                definition,
+                            )?,
+                            fmm::ir::AtomicOrdering::SequentiallyConsistent,
+                        )?,
                     ),
                     fmm::build::bit_cast(
                         fmm::types::Primitive::PointerInteger,
@@ -232,13 +239,14 @@ fn compile_entry_function_pointer_pointer(
     // TODO Calculate entry function pointer properly.
     // The offset should be calculated by allocating a record of
     // { pointer, { pointer, arity, environment } }.
-    instruction_builder.pointer_address(
+    Ok(fmm::build::pointer_address(
         fmm::build::bit_cast(
             fmm::types::Pointer::new(types::compile_entry_function_from_definition(definition)),
             compile_environment_pointer(),
         ),
         fmm::ir::Primitive::PointerInteger(-2),
-    )
+    )?
+    .into())
 }
 
 fn compile_arguments(definition: &ssf::ir::Definition) -> Vec<fmm::ir::Argument> {
