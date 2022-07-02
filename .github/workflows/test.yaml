@@ -3,33 +3,33 @@ on:
   - push
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - run: curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s 14
+      - run: brew install llvm@14
       - uses: actions/checkout@v2
       - run: cargo test
   format:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - run: cargo fmt -- --check
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - run: curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s 14
+      - run: brew install llvm@14
       - uses: actions/checkout@v2
       - run: cargo clippy -- -D warnings
   spell-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - uses: streetsidesoftware/cspell-action@main
         with:
           files: "**/*.{md,rs}"
   code-coverage:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - run: curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s 14
+      - run: brew install llvm@14
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
