@@ -438,13 +438,15 @@ fn compile_comparison_operation(
         match operation.operator() {
             ssf::ir::ComparisonOperator::Equal => fmm::ir::ComparisonOperator::Equal,
             ssf::ir::ComparisonOperator::NotEqual => fmm::ir::ComparisonOperator::NotEqual,
-            ssf::ir::ComparisonOperator::GreaterThan => fmm::ir::ComparisonOperator::GreaterThan,
-            ssf::ir::ComparisonOperator::GreaterThanOrEqual => {
-                fmm::ir::ComparisonOperator::GreaterThanOrEqual
+            ssf::ir::ComparisonOperator::GreaterThan => {
+                fmm::ir::ComparisonOperator::GreaterThan(true)
             }
-            ssf::ir::ComparisonOperator::LessThan => fmm::ir::ComparisonOperator::LessThan,
+            ssf::ir::ComparisonOperator::GreaterThanOrEqual => {
+                fmm::ir::ComparisonOperator::GreaterThanOrEqual(true)
+            }
+            ssf::ir::ComparisonOperator::LessThan => fmm::ir::ComparisonOperator::LessThan(true),
             ssf::ir::ComparisonOperator::LessThanOrEqual => {
-                fmm::ir::ComparisonOperator::LessThanOrEqual
+                fmm::ir::ComparisonOperator::LessThanOrEqual(true)
             }
         },
         lhs,
