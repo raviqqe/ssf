@@ -141,6 +141,7 @@ mod tests {
         let output = std::process::Command::new("clang")
             .arg("-Werror") // cspell:disable-line
             .arg("-Wno-incompatible-pointer-types-discards-qualifiers") // cspell:disable-line
+            .arg("-Wno-parentheses-equality") // cspell:disable-line
             .arg("-o")
             .arg(directory.path().join("foo.o"))
             .arg("-c")
