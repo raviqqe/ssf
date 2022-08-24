@@ -3,6 +3,12 @@ use std::collections::HashMap;
 
 const ENVIRONMENT_NAME: &str = "_env";
 
+fn function_definition_options() -> fmm::ir::FunctionDefinitionOptions {
+    fmm::ir::FunctionDefinitionOptions::new()
+        .set_calling_convention(fmm::types::CallingConvention::Source)
+        .set_linkage(fmm::ir::Linkage::Internal)
+}
+
 pub fn compile(
     module_builder: &fmm::build::ModuleBuilder,
     definition: &ssf::ir::Definition,
@@ -22,6 +28,7 @@ fn compile_non_thunk(
 ) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
     module_builder.define_anonymous_function(
         compile_arguments(definition),
+        types::compile(definition.result_type()),
         |instruction_builder| {
             Ok(instruction_builder.return_(compile_body(
                 module_builder,
@@ -30,8 +37,7 @@ fn compile_non_thunk(
                 variables,
             )?))
         },
-        types::compile(definition.result_type()),
-        fmm::types::CallingConvention::Source,
+        function_definition_options(),
     )
 }
 
@@ -107,6 +113,7 @@ fn compile_first_thunk_entry(
     module_builder.define_function(
         &entry_function_name,
         arguments.clone(),
+        types::compile(definition.result_type()),
         |instruction_builder| {
             instruction_builder.if_(
                 instruction_builder.compare_and_swap(
@@ -155,9 +162,7 @@ fn compile_first_thunk_entry(
 
             Ok(instruction_builder.unreachable())
         },
-        types::compile(definition.result_type()),
-        fmm::types::CallingConvention::Source,
-        fmm::ir::Linkage::Internal,
+        function_definition_options(),
     )
 }
 
@@ -167,9 +172,9 @@ fn compile_normal_thunk_entry(
 ) -> Result<fmm::build::TypedExpression, fmm::build::BuildError> {
     module_builder.define_anonymous_function(
         compile_arguments(definition),
-        |instruction_builder| compile_normal_body(&instruction_builder, definition),
         types::compile(definition.result_type()),
-        fmm::types::CallingConvention::Source,
+        |instruction_builder| compile_normal_body(&instruction_builder, definition),
+        function_definition_options(),
     )
 }
 
@@ -182,6 +187,7 @@ fn compile_locked_thunk_entry(
     module_builder.define_function(
         &entry_function_name,
         compile_arguments(definition),
+        types::compile(definition.result_type()),
         |instruction_builder| {
             instruction_builder.if_(
                 fmm::build::comparison_operation(
@@ -208,9 +214,7 @@ fn compile_locked_thunk_entry(
 
             Ok(instruction_builder.unreachable())
         },
-        types::compile(definition.result_type()),
-        fmm::types::CallingConvention::Source,
-        fmm::ir::Linkage::Internal,
+        function_definition_options(),
     )
 }
 

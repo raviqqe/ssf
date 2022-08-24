@@ -19,6 +19,7 @@ pub fn compile_foreign_definition(
     module_builder.define_function(
         definition.foreign_name(),
         arguments.clone(),
+        foreign_function_type.result().clone(),
         |instruction_builder| {
             Ok(instruction_builder.return_(function_applications::compile(
                 module_builder,
@@ -30,9 +31,9 @@ pub fn compile_foreign_definition(
                     .collect::<Vec<_>>(),
             )?))
         },
-        foreign_function_type.result().clone(),
-        foreign_function_type.calling_convention(),
-        fmm::ir::Linkage::External,
+        fmm::ir::FunctionDefinitionOptions::new()
+            .set_calling_convention(foreign_function_type.calling_convention())
+            .set_linkage(fmm::ir::Linkage::External),
     )?;
 
     Ok(())
