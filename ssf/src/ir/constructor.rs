@@ -1,6 +1,6 @@
 use crate::types::{self, Algebraic, Type};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Constructor {
     type_: Algebraic,
     unfolded_type: Algebraic,
