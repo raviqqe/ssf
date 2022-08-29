@@ -114,7 +114,7 @@ mod tests {
 
         compile_final_module(&module);
         compile_final_module(
-            &fmm::analysis::transform_to_cps(&module, fmm::types::Record::new(vec![])).unwrap(),
+            &fmm::analysis::cps::transform(&module, fmm::types::Record::new(vec![])).unwrap(),
         );
 
         fmm_llvm::compile_to_object(
@@ -131,7 +131,7 @@ mod tests {
     }
 
     fn compile_final_module(module: &fmm::ir::Module) {
-        fmm::analysis::check_types(module).unwrap();
+        fmm::analysis::type_check::check(module).unwrap();
 
         let directory = tempfile::tempdir().unwrap();
         let file_path = directory.path().join("foo.c");
