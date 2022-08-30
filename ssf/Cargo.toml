@@ -7,4 +7,4 @@ authors = ["Yota Toyama <raviqqe@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-pretty_assertions = "1.2"
+pretty_assertions = "1.3"
