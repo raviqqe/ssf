@@ -164,7 +164,7 @@ checksum = "279fb028e20b3c4c320317955b77c5e0c9701f05a1d309905d6fc702cdc5053e"
 [[package]]
 name = "fmm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#e4ce2492da4c01595fa9f09640f9dcaa39bc5158"
+source = "git+https://github.com/raviqqe/fmm?branch=main#7ad520af28ac50bb554d9e4c237e944a065028e1"
 dependencies = [
  "cached",
  "fnv",
@@ -177,7 +177,7 @@ dependencies = [
 [[package]]
 name = "fmm-c"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#e4ce2492da4c01595fa9f09640f9dcaa39bc5158"
+source = "git+https://github.com/raviqqe/fmm?branch=main#7ad520af28ac50bb554d9e4c237e944a065028e1"
 dependencies = [
  "fmm",
  "fnv",
@@ -187,7 +187,7 @@ dependencies = [
 [[package]]
 name = "fmm-llvm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#e4ce2492da4c01595fa9f09640f9dcaa39bc5158"
+source = "git+https://github.com/raviqqe/fmm?branch=main#7ad520af28ac50bb554d9e4c237e944a065028e1"
 dependencies = [
  "fmm",
  "fnv",
