@@ -164,7 +164,7 @@ checksum = "279fb028e20b3c4c320317955b77c5e0c9701f05a1d309905d6fc702cdc5053e"
 [[package]]
 name = "fmm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#e3a1247f8bed25a15300164fddefaaf206a09db9"
+source = "git+https://github.com/raviqqe/fmm?branch=main#d6e64f13090d71f1246bd7a3143a19efaa96dd0e"
 dependencies = [
  "cached",
  "fnv",
@@ -177,7 +177,7 @@ dependencies = [
 [[package]]
 name = "fmm-c"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#e3a1247f8bed25a15300164fddefaaf206a09db9"
+source = "git+https://github.com/raviqqe/fmm?branch=main#d6e64f13090d71f1246bd7a3143a19efaa96dd0e"
 dependencies = [
  "fmm",
  "fnv",
@@ -187,7 +187,7 @@ dependencies = [
 [[package]]
 name = "fmm-llvm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#e3a1247f8bed25a15300164fddefaaf206a09db9"
+source = "git+https://github.com/raviqqe/fmm?branch=main#d6e64f13090d71f1246bd7a3143a19efaa96dd0e"
 dependencies = [
  "fmm",
  "fnv",
@@ -267,7 +267,7 @@ dependencies = [
 [[package]]
 name = "hamt"
 version = "0.3.1"
-source = "git+https://github.com/raviqqe/hamt-rs?branch=main#3aab04bf2f668a8005bd2ce15f32a3f471047311"
+source = "git+https://github.com/raviqqe/hamt-rs?branch=main#34249d59c2871cc4dc96d7583b2998d11ec0a101"
 
 [[package]]
 name = "hashbrown"
