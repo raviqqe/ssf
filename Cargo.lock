@@ -75,10 +75,9 @@ checksum = "279fb028e20b3c4c320317955b77c5e0c9701f05a1d309905d6fc702cdc5053e"
 [[package]]
 name = "fmm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#3663271a0134da4e5767e2e5cccabf11a7391930"
+source = "git+https://github.com/raviqqe/fmm?branch=main#c1e9867da7d3e0e7769b7f11a2fcfd0f991ac574"
 dependencies = [
  "fnv",
- "hamt",
  "once_cell",
  "petgraph",
  "regex",
@@ -87,7 +86,7 @@ dependencies = [
 [[package]]
 name = "fmm-c"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#3663271a0134da4e5767e2e5cccabf11a7391930"
+source = "git+https://github.com/raviqqe/fmm?branch=main#c1e9867da7d3e0e7769b7f11a2fcfd0f991ac574"
 dependencies = [
  "fmm",
  "fnv",
@@ -97,7 +96,7 @@ dependencies = [
 [[package]]
 name = "fmm-llvm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#3663271a0134da4e5767e2e5cccabf11a7391930"
+source = "git+https://github.com/raviqqe/fmm?branch=main#c1e9867da7d3e0e7769b7f11a2fcfd0f991ac574"
 dependencies = [
  "fmm",
  "fnv",
@@ -111,11 +110,6 @@ name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
-
-[[package]]
-name = "hamt"
-version = "0.3.1"
-source = "git+https://github.com/raviqqe/hamt-rs?branch=main#34249d59c2871cc4dc96d7583b2998d11ec0a101"
 
 [[package]]
 name = "hashbrown"
