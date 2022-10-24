@@ -75,9 +75,10 @@ checksum = "279fb028e20b3c4c320317955b77c5e0c9701f05a1d309905d6fc702cdc5053e"
 [[package]]
 name = "fmm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#e004307f3b4f9aeeb773ba1ed2c37dc1b560df5b"
+source = "git+https://github.com/raviqqe/fmm?branch=main#f5d5175b4cb79bfe976e27adcc1922b85800561f"
 dependencies = [
  "fnv",
+ "indexmap",
  "once_cell",
  "petgraph",
  "regex",
@@ -86,7 +87,7 @@ dependencies = [
 [[package]]
 name = "fmm-c"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#e004307f3b4f9aeeb773ba1ed2c37dc1b560df5b"
+source = "git+https://github.com/raviqqe/fmm?branch=main#f5d5175b4cb79bfe976e27adcc1922b85800561f"
 dependencies = [
  "fmm",
  "fnv",
@@ -96,7 +97,7 @@ dependencies = [
 [[package]]
 name = "fmm-llvm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#e004307f3b4f9aeeb773ba1ed2c37dc1b560df5b"
+source = "git+https://github.com/raviqqe/fmm?branch=main#f5d5175b4cb79bfe976e27adcc1922b85800561f"
 dependencies = [
  "fmm",
  "fnv",
