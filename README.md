@@ -1,6 +1,6 @@
 # ssf
 
-[![GitHub Action](https://img.shields.io/github/workflow/status/raviqqe/ssf/test?style=flat-square)](https://github.com/raviqqe/ssf/actions?query=workflow%3Atest)
+[![GitHub Action](https://img.shields.io/github/actions/workflow/status/raviqqe/ssf/test.yaml?branch=main&style=flat-square)](https://github.com/raviqqe/ssf/actions)
 [![Codecov](https://img.shields.io/codecov/c/github/raviqqe/ssf.svg?style=flat-square)](https://codecov.io/gh/raviqqe/ssf)
 [![License](https://img.shields.io/github/license/raviqqe/ssf.svg?style=flat-square)](LICENSE)
 
