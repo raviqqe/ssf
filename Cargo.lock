@@ -75,7 +75,7 @@ checksum = "279fb028e20b3c4c320317955b77c5e0c9701f05a1d309905d6fc702cdc5053e"
 [[package]]
 name = "fmm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#fe30a7370949eb37f630ed790e2336d0c2a0498b"
+source = "git+https://github.com/raviqqe/fmm?branch=main#3296f457c8b3a6ea964e37428c219fb1586f4755"
 dependencies = [
  "fnv",
  "indexmap",
@@ -87,7 +87,7 @@ dependencies = [
 [[package]]
 name = "fmm-c"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#fe30a7370949eb37f630ed790e2336d0c2a0498b"
+source = "git+https://github.com/raviqqe/fmm?branch=main#3296f457c8b3a6ea964e37428c219fb1586f4755"
 dependencies = [
  "fmm",
  "fnv",
@@ -97,7 +97,7 @@ dependencies = [
 [[package]]
 name = "fmm-llvm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#fe30a7370949eb37f630ed790e2336d0c2a0498b"
+source = "git+https://github.com/raviqqe/fmm?branch=main#3296f457c8b3a6ea964e37428c219fb1586f4755"
 dependencies = [
  "fmm",
  "fnv",
@@ -131,7 +131,7 @@ dependencies = [
 [[package]]
 name = "inkwell"
 version = "0.1.0"
-source = "git+https://github.com/TheDan64/inkwell?branch=master#3c5d7706861aac0750b4f0c98d6fcf8a91a2ca0a"
+source = "git+https://github.com/TheDan64/inkwell?branch=master#c77d05639c9b73d9bede713789b9707d45863530"
 dependencies = [
  "either",
  "inkwell_internals",
@@ -144,7 +144,7 @@ dependencies = [
 [[package]]
 name = "inkwell_internals"
 version = "0.6.0"
-source = "git+https://github.com/TheDan64/inkwell?branch=master#3c5d7706861aac0750b4f0c98d6fcf8a91a2ca0a"
+source = "git+https://github.com/TheDan64/inkwell?branch=master#c77d05639c9b73d9bede713789b9707d45863530"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -203,9 +203,9 @@ checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 
 [[package]]
 name = "once_cell"
-version = "1.12.0"
+version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7709cef83f0c1f58f666e746a08b21e0085f7440fa6a29cc194d68aac97a4225"
+checksum = "6f61fba1741ea2b3d6a1e3178721804bb716a68a6aeba1149b5d52e3d464ea66"
 
 [[package]]
 name = "output_vt100"
