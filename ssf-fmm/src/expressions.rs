@@ -192,11 +192,7 @@ fn compile_algebraic_alternatives(
                             let mut payload = instruction_builder.deconstruct_union(
                                 instruction_builder.deconstruct_record(
                                     argument.clone(),
-                                    if constructor.algebraic_type().is_singleton() {
-                                        0
-                                    } else {
-                                        1
-                                    },
+                                    constructor.algebraic_type().is_singleton().into(),
                                 )?,
                                 types::get_constructor_union_index(
                                     constructor.algebraic_type(),
