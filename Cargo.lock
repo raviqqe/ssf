@@ -96,7 +96,7 @@ checksum = "279fb028e20b3c4c320317955b77c5e0c9701f05a1d309905d6fc702cdc5053e"
 [[package]]
 name = "fmm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#75cb34096d0a97040bcbdb8165174b1d254dd926"
+source = "git+https://github.com/raviqqe/fmm?branch=main#87f92885fc4d838830f07dd43454df34557066ed"
 dependencies = [
  "fnv",
  "indexmap",
@@ -108,7 +108,7 @@ dependencies = [
 [[package]]
 name = "fmm-c"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#75cb34096d0a97040bcbdb8165174b1d254dd926"
+source = "git+https://github.com/raviqqe/fmm?branch=main#87f92885fc4d838830f07dd43454df34557066ed"
 dependencies = [
  "fmm",
  "fnv",
@@ -118,7 +118,7 @@ dependencies = [
 [[package]]
 name = "fmm-llvm"
 version = "0.1.0"
-source = "git+https://github.com/raviqqe/fmm?branch=main#75cb34096d0a97040bcbdb8165174b1d254dd926"
+source = "git+https://github.com/raviqqe/fmm?branch=main#87f92885fc4d838830f07dd43454df34557066ed"
 dependencies = [
  "fmm",
  "fnv",
@@ -141,9 +141,9 @@ checksum = "db0d4cf898abf0081f964436dc980e96670a0f36863e4b83aaacdb65c9d7ccc3"
 
 [[package]]
 name = "indexmap"
-version = "1.9.2"
+version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1885e79c1fc4b10f0e172c475f458b7f7b93061064d98c3293e98c5ba0c8b399"
+checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
 dependencies = [
  "autocfg",
  "hashbrown",
@@ -151,8 +151,8 @@ dependencies = [
 
 [[package]]
 name = "inkwell"
-version = "0.1.0"
-source = "git+https://github.com/TheDan64/inkwell?branch=master#468320973ec40c237ad34e266a680a875605aa3a"
+version = "0.1.1"
+source = "git+https://github.com/TheDan64/inkwell?branch=master#6801e0a69354aa06d2899e5733ea8d578fc503d4"
 dependencies = [
  "either",
  "inkwell_internals",
@@ -165,7 +165,7 @@ dependencies = [
 [[package]]
 name = "inkwell_internals"
 version = "0.7.0"
-source = "git+https://github.com/TheDan64/inkwell?branch=master#468320973ec40c237ad34e266a680a875605aa3a"
+source = "git+https://github.com/TheDan64/inkwell?branch=master#6801e0a69354aa06d2899e5733ea8d578fc503d4"
 dependencies = [
  "proc-macro2",
  "quote",
