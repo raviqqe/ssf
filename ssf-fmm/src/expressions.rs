@@ -131,7 +131,7 @@ fn compile_case(
                 instruction_builder,
                 if case
                     .alternatives()
-                    .get(0)
+                    .first()
                     .map(|alternative| alternative.constructor().algebraic_type().is_singleton())
                     .unwrap_or(true)
                 {
