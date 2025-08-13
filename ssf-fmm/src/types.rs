@@ -45,8 +45,8 @@ pub fn compile_constructor_union(algebraic_type: &ssf::types::Algebraic) -> fmm:
     fmm::types::Union::new(
         algebraic_type
             .constructors()
-            .iter()
-            .map(|(_, constructor)| compile_shallow_constructor(constructor))
+            .values()
+            .map(compile_shallow_constructor)
             .collect(),
     )
 }

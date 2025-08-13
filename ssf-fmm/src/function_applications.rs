@@ -154,7 +154,7 @@ fn compile_partially_applied_entry_function(
         .arguments()
         .iter()
         .enumerate()
-        .map(|(index, type_)| fmm::ir::Argument::new(format!("arg_{}", index), type_.clone()))
+        .map(|(index, type_)| fmm::ir::Argument::new(format!("arg_{index}"), type_.clone()))
         .collect::<Vec<_>>();
 
     module_builder.define_anonymous_function(
