@@ -7,24 +7,24 @@ jobs:
     steps:
       - uses: raviqqe/enable-homebrew@main
       - run: brew install llvm@14
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - run: cargo test
   format:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - run: cargo fmt -- --check
   lint:
     runs-on: ubuntu-22.04
     steps:
       - uses: raviqqe/enable-homebrew@main
       - run: brew install llvm@14
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - run: cargo clippy -- -D warnings
   spell-check:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: streetsidesoftware/cspell-action@main
         with:
           files: "**/*.{md,rs}"
@@ -33,7 +33,7 @@ jobs:
     steps:
       - uses: raviqqe/enable-homebrew@main
       - run: brew install llvm@14
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - run: |
           rustup component add llvm-tools-preview
           cargo install cargo-llvm-cov
