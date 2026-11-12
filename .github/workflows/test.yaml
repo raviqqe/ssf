@@ -5,39 +5,39 @@ jobs:
   test:
     runs-on: ubuntu-22.04
     steps:
-      - uses: raviqqe/enable-homebrew@98e3adf041d4f3c53ef592fe72a92ca692f22944 # v1.0.6
+      - uses: raviqqe/enable-homebrew@v1.0.6
       - run: brew install llvm@14
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
       - run: cargo test
   format:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
       - run: cargo fmt -- --check
   lint:
     runs-on: ubuntu-22.04
     steps:
-      - uses: raviqqe/enable-homebrew@98e3adf041d4f3c53ef592fe72a92ca692f22944 # v1.0.6
+      - uses: raviqqe/enable-homebrew@v1.0.6
       - run: brew install llvm@14
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
       - run: cargo clippy -- -D warnings
   spell-check:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: streetsidesoftware/cspell-action@ce1816e4ce36532956ac6e983737392774b6e169 # v9.2.0
+      - uses: actions/checkout@v7.0.1
+      - uses: streetsidesoftware/cspell-action@v9.2.0
         with:
           files: "**/*.{md,rs}"
   code-coverage:
     runs-on: ubuntu-22.04
     steps:
-      - uses: raviqqe/enable-homebrew@98e3adf041d4f3c53ef592fe72a92ca692f22944 # v1.0.6
+      - uses: raviqqe/enable-homebrew@v1.0.6
       - run: brew install llvm@14
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
       - run: |
           rustup component add llvm-tools-preview
           cargo install cargo-llvm-cov
           cargo llvm-cov --workspace --lcov --output-path lcov.info
-      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+      - uses: codecov/codecov-action@v7.1.1
         with:
           files: lcov.info
